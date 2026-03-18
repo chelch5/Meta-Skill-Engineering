@@ -1,0 +1,6 @@
+interface:
+  display_name: "Skill Description Optimizer"
+  short_description: "Apply skill description optimizer through a concrete workflow..."
+  default_prompt: "Use $skill-description-optimizer-codex-c to handle this task with a concrete workflow and explicit verification."
+policy:
+  allow_implicit_invocation: true

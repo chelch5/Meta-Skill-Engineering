@@ -1,0 +1,6 @@
+interface:
+  display_name: "Skill Eval Runner"
+  short_description: "Apply skill eval runner through a concrete workflow with expl..."
+  default_prompt: "Use $skill-eval-runner-codex-c to handle this task with a concrete workflow and explicit verification."
+policy:
+  allow_implicit_invocation: true

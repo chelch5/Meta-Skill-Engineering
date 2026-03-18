@@ -1,0 +1,3 @@
+{"id": "tp-001", "prompt": "Please improve this SKILL.md. The description is vague and it never triggers when I need it.", "should_trigger": true}
+{"id": "tp-002", "prompt": "Audit this existing skill package and tell me whether it needs references, evals, or scripts.", "should_trigger": true}
+{"id": "tp-003", "prompt": "Make this weak skill more robust without changing what it is for.", "should_trigger": true}

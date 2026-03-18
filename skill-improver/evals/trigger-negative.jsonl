@@ -1,0 +1,3 @@
+{"id": "tn-001", "prompt": "Create a brand new skill for PDF extraction from scratch.", "should_trigger": false}
+{"id": "tn-002", "prompt": "Review this repository architecture and suggest improvements.", "should_trigger": false}
+{"id": "tn-003", "prompt": "How do I install this skill into OpenCode?", "should_trigger": false}

@@ -1,0 +1,3 @@
+{"id": "bh-001", "prompt": "Improve an existing skill whose description is generic and whose body is only five vague bullets.", "assertions": ["tightens routing description", "adds procedural workflow or modes", "includes failure handling or stop condition"]}
+{"id": "bh-002", "prompt": "Review a skill package and decide whether it needs references or scripts.", "assertions": ["explains why support files are or are not needed", "does not add ornamental scripts", "keeps core workflow in SKILL.md"]}
+{"id": "bh-003", "prompt": "Upgrade a reusable skill into a maintainable package.", "assertions": ["adds eval or manifest guidance when justified", "preserves original purpose", "returns concise rationale for changes"]}

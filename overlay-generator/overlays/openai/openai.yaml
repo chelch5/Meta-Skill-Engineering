@@ -1,0 +1,18 @@
+name: overlay-generator-codex-c
+version: 1
+summary: "Build overlay generator artifacts with deterministic structure, validation, and handoff notes."
+invocation:
+  policy: auto
+  aliases:
+    - "overlay-generator"
+    - "overlay generator"
+artifacts:
+  skill_file: "../../SKILL.md"
+  references:
+    - "../../references/inputs-and-variants.md"
+    - "../../references/packaging-checklist.md"
+    - "../../references/handoff-notes.md"
+  evals:
+    - "../../evals/trigger-positive.jsonl"
+    - "../../evals/trigger-negative.jsonl"
+    - "../../evals/behavior.jsonl"

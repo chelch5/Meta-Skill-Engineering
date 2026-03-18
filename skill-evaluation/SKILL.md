@@ -1,0 +1,103 @@
+---
+name: skill-evaluation
+description: >-
+  Evaluate whether a single skill routes correctly and produces better output
+  than a no-skill baseline — measuring trigger precision/recall and output win
+  rate. Use when someone says "is this skill working?", "validate before
+  promoting", or "does this skill still add value?". Do not use for comparing
+  multiple variants head-to-head (skill-benchmarking), building test
+  infrastructure or eval suites (skill-testing-harness), or fixing a broken
+  skill (skill-improver).
+license: Apache-2.0
+compatibility:
+  clients: [opencode, copilot, codex, gemini-cli, claude-code]
+---
+
+# Purpose
+
+Produce quantitative evidence that a single skill adds value: it triggers on the right inputs, stays silent on wrong inputs, and improves output quality over the no-skill baseline.
+
+# When to use
+
+- "Is this skill working?" / "evaluate this skill" / "does this help?"
+- New skill needs validation before promotion to stable
+- Skill was refined and you need to verify the fix worked
+- Periodic audit of whether an existing skill still adds value
+
+# When NOT to use
+
+- Comparing two or more skill variants head-to-head → `skill-benchmarking`
+- Creating eval files, trigger tests, or test infrastructure → `skill-testing-harness`
+- Skill is obviously broken or producing bad output → `skill-improver`
+
+# Procedure
+
+1. **Define success criteria**
+   - Routing: triggers on positive cases, stays silent on negative cases
+   - Quality: outputs are correct, complete, well-formatted, no hallucination
+   - Baseline: outputs are better than running without the skill
+
+2. **Prepare evaluation inputs**
+   - 5–10 positive trigger cases (should activate the skill)
+   - 5–10 negative trigger cases (should NOT activate)
+   - 3–5 quality cases for output assessment
+
+   **How to construct effective test cases:**
+   - **Positive cases**: Read the skill's "When to use" section. Each bullet becomes at least one test case using realistic phrasing. Then add paraphrased versions — formal ("Please evaluate this skill's effectiveness"), casual ("is this skill any good?"), and indirect ("I'm not sure this skill helps"). This tests routing robustness, not just keyword matching.
+   - **Negative cases**: Read the skill's "Do NOT use when" section. Each bullet becomes at least one test case. Then add near-miss cases drawn from adjacent skills' trigger phrases — these test whether the boundary is sharp. For example, if evaluating `skill-evaluation`, add trigger phrases from `skill-benchmarking` as negative cases.
+   - **Quality cases**: Use realistic, complete task prompts that exercise the full procedure — not just routing. Include at least one edge case where the skill must make a judgment call (e.g., ambiguous input, missing data, conflicting requirements).
+   - **Anti-pattern to avoid**: Do not write trigger tests that contain the skill name (e.g., "use skill-evaluation to assess this"). Real users rarely name the skill explicitly; tests that do will inflate precision and miss real routing failures.
+
+3. **Evaluate routing accuracy**
+   - Run each positive case — did the skill trigger? (target: 100%)
+   - Run each negative case — did the skill stay silent? (target: 100%)
+   - Precision = TP / (TP + FP), Recall = TP / (TP + FN)
+
+4. **Evaluate output quality**
+   - Run each quality case with the skill active
+   - Score against rubric: correct? complete? well-formatted? no hallucination?
+
+5. **Run baseline comparison**
+   - Run the same quality cases without the skill
+   - Blind-compare outputs where possible
+   - Win rate = skill-wins / total-cases
+
+6. **Synthesize and verdict**
+   - Routing passes if precision ≥ 95% and recall ≥ 90%
+   - Quality passes if ≥ 80% of outputs meet the rubric
+   - Baseline passes if win rate ≥ 60%
+   - Verdict: **Pass** / **Fail** / **Needs Work** with the specific failing metrics
+
+# Output format
+
+```
+## Skill Evaluation: [skill-name]
+
+### Routing Accuracy
+| Metric    | Value | Target | Pass? |
+|-----------|-------|--------|-------|
+| Precision | X%    | ≥ 95%  | ✓/✗   |
+| Recall    | X%    | ≥ 90%  | ✓/✗   |
+
+Misrouted cases: [list or "None"]
+
+### Output Quality (N cases)
+Score: X/N pass (Y%)
+
+### Baseline Comparison
+Win rate: X/N (Y%)
+
+### Verdict: [Pass | Fail | Needs Work]
+Failing metrics: [list or "None"]
+Next action: [specific remediation or "Ready for promotion"]
+```
+
+# Failure handling
+
+| Situation | Action |
+|-----------|--------|
+| No eval cases exist | Create minimum set: 3 positive triggers, 3 negative triggers, 2 quality cases. Mark them as ad-hoc in the report. |
+| Cannot determine whether skill triggered | Inspect client routing logs. If unavailable, compare output structure with and without the skill description present. |
+| Baseline comparison inconclusive (win rate 45–55%) | Double the sample size. If still inconclusive, report as "neutral — skill neither helps nor hurts." |
+| Routing passes but output quality fails | Stop evaluation. Route to `skill-improver` with the failing cases attached. |
+| Skill passes eval but fails in real usage | Eval set has coverage gaps. Add the failing real-world case and re-run. |
