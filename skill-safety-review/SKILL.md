@@ -110,6 +110,4 @@ Always produce this structure. Omit table sections that have zero findings.
 # Next steps
 
 After safety review:
-- Record provenance and trust level → `skill-provenance`
-- If ready for release → `skill-packaging`
 - If needs improvement → `skill-improver`

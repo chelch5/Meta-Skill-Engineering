@@ -142,5 +142,4 @@ After evaluation:
 - If routing fails → `skill-trigger-optimization`
 - If output quality fails → `skill-improver`
 - If comparing variants → `skill-benchmarking`
-- If ready for release → `skill-packaging`
-- Before promotion to stable → `skill-provenance`, `skill-safety-review`
+- Before promotion to stable → `skill-safety-review`

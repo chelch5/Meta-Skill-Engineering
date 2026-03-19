@@ -5,8 +5,7 @@ description: >-
   test-review-improve cycles. Use this for "create a skill for X", "write a
   skill that handles Y", "I need a new skill to do Z", "turn this workflow
   into a skill", or when a repeated task pattern should become a reusable
-  agent procedure. Do not use for installing packaged
-  skills (skill-installer), splitting a broad skill into variants
+  agent procedure. Do not use for splitting a broad skill into variants
   (skill-variant-splitting), adapting a skill to a different environment
   (skill-adaptation), improving an existing skill without full iteration
   (skill-improver), or running standalone evaluations without creation
@@ -31,10 +30,8 @@ draft-test-review-improve cycles.
 - Skill exists and needs improvement without full creation iteration → `skill-improver`
 - Only the description/trigger needs fixing → `skill-trigger-optimization`
 - Skill needs porting to a different environment → `skill-adaptation`
-- User wants to install a packaged skill → `skill-installer`
 - User wants to split one broad skill into several → `skill-variant-splitting`
 - User wants a standalone evaluation without creation → `skill-evaluation`
-- User wants to find external skills before building → `community-skill-harvester`
 
 # Procedure
 
@@ -311,8 +308,7 @@ The SKILL.md must pass all Phase 2 Step 7 validation checks before delivery.
 3. Compare variants if multiple drafts → `skill-benchmarking`
 4. Optimize trigger description → `skill-trigger-optimization`
 5. Review for safety hazards → `skill-safety-review`
-6. Record provenance → `skill-provenance`
-7. Package for distribution → `skill-packaging`
+6. Manage lifecycle state → `skill-lifecycle-management`
 
 # References
 

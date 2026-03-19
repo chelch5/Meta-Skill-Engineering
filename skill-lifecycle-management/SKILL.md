@@ -183,6 +183,5 @@ If no transitions are warranted, state that explicitly — do not invent changes
 # Next steps
 
 Before promoting a skill to stable:
-- Verify provenance is documented → `skill-provenance`
 - Run safety review → `skill-safety-review`
 - Run evaluation → `skill-evaluation`

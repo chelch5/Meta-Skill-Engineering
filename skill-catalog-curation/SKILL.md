@@ -2,17 +2,16 @@
 name: skill-catalog-curation
 description: >-
   Audit a skill library for duplicates, category drift, and discoverability gaps;
-  maintain the catalog index, metadata, tags, and naming conventions.
+  maintain catalog consistency, metadata, tags, and naming conventions.
   Use when: "audit the skill library", "clean up overlapping skills",
-  "organize the catalog before release", "update the registry", "add this to the catalog",
-  "generate the skill index".
+  "organize the catalog", "find duplicate skills".
   Do not use for: improving a single skill (skill-improver), creating a new skill (skill-creator),
   promoting or deprecating individual skills through lifecycle states (skill-lifecycle-management).
 ---
 
 # Purpose
 
-Detect duplicates, enforce category consistency, flag deprecation candidates, verify discoverability, and maintain the catalog index across an entire skill library. Produces structured curation reports and keeps the library index (skills-lock.json, CATALOG.md) current.
+Detect duplicates, enforce category consistency, flag deprecation candidates, verify discoverability, and maintain catalog consistency across an entire skill library. Produces structured curation reports with prioritized action items.
 
 # When to use
 
@@ -20,16 +19,12 @@ Detect duplicates, enforce category consistency, flag deprecation candidates, ve
 - Before a major release or after a bulk import
 - Periodic maintenance pass (monthly for active libraries)
 - User asks to "audit the library", "clean up skills", or "find duplicate skills"
-- Adding a new skill to the registry
-- Updating skill metadata after changes
-- Generating a publishable skill index
 
 # When NOT to use
 
 - Improving or refining a single skill → `skill-improver`
 - Creating a new skill from scratch → `skill-creator`
 - Promoting, deprecating, or archiving individual skills through lifecycle gates → `skill-lifecycle-management`
-- Installing or packaging skills → `skill-installer` / `skill-packaging`
 
 # Procedure
 
@@ -130,70 +125,9 @@ When the audit identifies true duplicates (recommendation: "merge"), execute:
    About to delete [absorbed-skill]/ directory. Proceed? [y/N]
    ```
    Do NOT delete without explicit user confirmation.
-7. **Update the catalog** — update README, CATALOG.md, or skills-lock.json to reflect the merge
+7. **Update the catalog** — update the README inventory to reflect the merge
 
-# Registry operations
-
-## Register a new skill
-
-When adding a skill to the catalog:
-
-1. Verify SKILL.md has required frontmatter (`name`, `description`)
-2. Assign maturity level (default: `draft`)
-3. Verify no name collision with existing skills
-4. Update library index files (see below)
-
-## Update skill metadata
-
-When a skill changes:
-
-1. Read current catalog entry
-2. Update changed fields (description, maturity, tags)
-3. Record modification timestamp
-4. Regenerate affected index entries
-
-## Generate library index
-
-Produce a machine-readable index and a human-readable catalog:
-
-**skills-lock.json** (machine-readable):
-```json
-{
-  "version": "1.0.0",
-  "generated": "<ISO timestamp>",
-  "skills": {
-    "<skill-name>": {
-      "path": "<relative path>",
-      "description": "<description>",
-      "maturity": "<draft|beta|stable|deprecated>",
-      "tags": ["<tag1>", "<tag2>"],
-      "last_updated": "<ISO date>"
-    }
-  }
-}
-```
-
-**CATALOG.md** (human-readable):
-```markdown
-# Skill Catalog
-
-## Active Skills
-| Name | Maturity | Description |
-|------|----------|-------------|
-| [name] | [maturity] | [description] |
-
-## Deprecated Skills
-| Name | Replacement | Deprecated Date |
-|------|-------------|----------------|
-```
-
-## Enforce naming conventions
-
-- Skill names: kebab-case, descriptive, 2-4 words
-- Directory names match skill names exactly
-- No abbreviations unless universally understood (e.g., `pr`, `qa`)
-
-## Next steps
+# Next steps
 
 After curation:
 - Execute merge recommendations → use the merge procedure above

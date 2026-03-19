@@ -106,4 +106,3 @@ Rationale: [one sentence explaining the deciding factor]
 After benchmarking:
 - Improve the weaker variant → `skill-improver`
 - Deprecate the losing variant → `skill-lifecycle-management`
-- Package the winner → `skill-packaging`
