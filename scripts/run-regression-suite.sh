@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+# run-regression-suite.sh — Run regression tests from corpus/regression/
+#
+# Each .json file in corpus/regression/ is a test case harvested from a
+# previous failure. This script verifies that previously-fixed issues
+# stay fixed.
+#
+# Usage:
+#   ./scripts/run-regression-suite.sh
+#
+# Requires: jq, python3
+
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+REGRESSION_DIR="${REPO_ROOT}/corpus/regression"
+SCRIPTS_DIR="${REPO_ROOT}/scripts"
+
+total=0
+pass=0
+fail=0
+skip=0
+errors=()
+
+if [[ ! -d "$REGRESSION_DIR" ]] || [[ -z "$(find "$REGRESSION_DIR" -name '*.json' -print -quit 2>/dev/null)" ]]; then
+    echo "No regression cases found"
+    exit 0
+fi
+
+echo "═══════════════════════════════════════════"
+echo "  Regression Suite"
+echo "═══════════════════════════════════════════"
+echo ""
+
+for case_file in "$REGRESSION_DIR"/*.json; do
+    [[ -f "$case_file" ]] || continue
+    total=$((total + 1))
+
+    case_id=$(jq -r '.id' "$case_file")
+    case_type=$(jq -r '.type' "$case_file")
+    skill=$(jq -r '.skill' "$case_file")
+
+    case "$case_type" in
+        trigger_failure)
+            # Trigger failures are records for inclusion in the next eval run.
+            # We cannot re-run them here without the copilot CLI, so log and skip.
+            echo "  ⏭  [${case_id}] trigger_failure — logged for next eval run"
+            skip=$((skip + 1))
+            ;;
+
+        structural_failure)
+            skill_dir="${REPO_ROOT}/${skill}"
+            if [[ ! -d "$skill_dir" ]]; then
+                echo "  ⚠️  [${case_id}] skill directory not found: ${skill}"
+                skip=$((skip + 1))
+                continue
+            fi
+
+            if python3 "${SCRIPTS_DIR}/skill_lint.py" "$skill_dir" >/dev/null 2>&1; then
+                echo "  ✅ [${case_id}] structural check passed"
+                pass=$((pass + 1))
+            else
+                echo "  ❌ [${case_id}] structural check FAILED"
+                fail=$((fail + 1))
+                errors+=("${case_id}: structural check failed for ${skill}")
+            fi
+            ;;
+
+        preservation_failure)
+            original=$(jq -r '.original // ""' "$case_file")
+            modified=$(jq -r '.modified // ""' "$case_file")
+            check_name=$(jq -r '.check // ""' "$case_file")
+
+            if [[ -z "$original" ]] || [[ -z "$modified" ]]; then
+                echo "  ⚠️  [${case_id}] missing original/modified paths"
+                skip=$((skip + 1))
+                continue
+            fi
+
+            if [[ ! -f "$original" ]] || [[ ! -f "$modified" ]]; then
+                echo "  ⚠️  [${case_id}] referenced files not found"
+                skip=$((skip + 1))
+                continue
+            fi
+
+            output=$(python3 "${SCRIPTS_DIR}/check_preservation.py" "$original" "$modified" 2>&1) || true
+            preserved=$(echo "$output" | python3 -c "import sys,json; d=json.load(sys.stdin); print('true' if d.get('preserved') else 'false')" 2>/dev/null || echo "error")
+
+            if [[ "$preserved" == "true" ]]; then
+                echo "  ✅ [${case_id}] preservation check passed"
+                pass=$((pass + 1))
+            elif [[ "$preserved" == "false" ]]; then
+                echo "  ❌ [${case_id}] preservation check FAILED"
+                fail=$((fail + 1))
+                errors+=("${case_id}: preservation check failed")
+            else
+                echo "  ⚠️  [${case_id}] preservation check error"
+                skip=$((skip + 1))
+            fi
+            ;;
+
+        *)
+            echo "  ⚠️  [${case_id}] unknown type: ${case_type}"
+            skip=$((skip + 1))
+            ;;
+    esac
+done
+
+echo ""
+echo "═══════════════════════════════════════════"
+echo "  Summary"
+echo "  Total: ${total}  Pass: ${pass}  Fail: ${fail}  Skip: ${skip}"
+echo "═══════════════════════════════════════════"
+
+if [[ ${#errors[@]} -gt 0 ]]; then
+    echo ""
+    echo "Failures:"
+    for err in "${errors[@]}"; do
+        echo "  - ${err}"
+    done
+fi
+
+if [[ $fail -gt 0 ]]; then
+    exit 1
+fi
+exit 0

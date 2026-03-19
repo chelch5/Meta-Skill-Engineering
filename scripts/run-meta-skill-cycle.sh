@@ -3,13 +3,15 @@
 # Runs copilot in non-interactive mode with all permissions to execute
 # the meta-skill orchestrator against the repository's own skill packages.
 #
+# Requires: copilot CLI, meta-skill-orchestrator skill installed in ~/.copilot/skills/
+#
 # Usage: ./scripts/run-meta-skill-cycle.sh [cycle_number]
 #   cycle_number: optional, defaults to 1. Used for labeling the output.
 
 set -euo pipefail
 
 CYCLE="${1:-1}"
-REPO_DIR="/home/rowan/Meta-Skill-Engineering"
+REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 LOG_DIR="${REPO_DIR}/tasks/worklogs"
 
 echo "=== Meta-Skill Orchestrator Cycle ${CYCLE} ==="
@@ -24,7 +26,7 @@ cd "${REPO_DIR}"
 
 # Run copilot in non-interactive mode with full permissions
 # The prompt invokes the meta-skill-orchestrator entry point skill
-copilot -p "You have the meta-skill-orchestrator skill installed. Invoke it now to run a full quality-improvement cycle (cycle ${CYCLE}) against all 20 skill packages in this repository. Follow the orchestrator's procedure exactly through all 7 phases. Apply improvements directly to SKILL.md files where warranted. Create the cycle report at tasks/worklogs/orchestrator-cycle-${CYCLE}-report.md. Commit all changes with message 'cycle-${CYCLE}: meta-skill orchestrator improvements' and the Co-authored-by trailer for Copilot." \
+copilot -p "You have the meta-skill-orchestrator skill installed. Invoke it now to run a full quality-improvement cycle (cycle ${CYCLE}) against all skill packages in this repository. Follow the orchestrator's procedure exactly through all 7 phases. Apply improvements directly to SKILL.md files where warranted. Create the cycle report at tasks/worklogs/orchestrator-cycle-${CYCLE}-report.md. Commit all changes with message 'cycle-${CYCLE}: meta-skill orchestrator improvements' and the Co-authored-by trailer for Copilot." \
   --model claude-opus-4.6 \
   --reasoning-effort high \
   --allow-all \
