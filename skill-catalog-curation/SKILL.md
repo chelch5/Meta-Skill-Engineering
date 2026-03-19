@@ -3,11 +3,8 @@ name: skill-catalog-curation
 description: >-
   Audit a skill library for duplicates, category drift, and discoverability gaps.
   Use when: "audit the skill library", "clean up overlapping skills", "organize the catalog before release".
-  Do not use for: improving a single skill (skill-improver), creating a new skill (skill-authoring),
+  Do not use for: improving a single skill (skill-improver), creating a new skill (skill-creator),
   promoting or deprecating individual skills through lifecycle states (skill-lifecycle-management).
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
 ---
 
 # Purpose
@@ -24,7 +21,7 @@ Detect duplicates, enforce category consistency, flag deprecation candidates, an
 # When NOT to use
 
 - Improving or refining a single skill → `skill-improver`
-- Creating a new skill from scratch → `skill-authoring`
+- Creating a new skill from scratch → `skill-creator`
 - Promoting, deprecating, or archiving individual skills through lifecycle gates → `skill-lifecycle-management`
 - Installing or packaging skills → `skill-installer` / `skill-packaging`
 
@@ -112,3 +109,30 @@ The report MUST contain all six sections. Omit rows only when a section has zero
 - **Category scheme is incoherent** (no consistent axis): propose a replacement taxonomy with explicit grouping criteria and flag it as a blocking action before other category fixes.
 - **No usage metrics available**: fall back to last-modified date and whether the skill's target tool/framework still exists in the stack.
 - **Findings exceed 30 action items**: split into phases — Phase 1: duplicates and broken boundaries (high), Phase 2: category restructuring (medium), Phase 3: discoverability polish (low). Do not emit an unprioritized list.
+
+## Merge procedure
+
+When the audit identifies true duplicates (recommendation: "merge"), execute:
+
+1. **Choose the survivor** — the skill with broader coverage, better routing, or more support files
+2. **Inventory the absorbed skill** — list all unique procedure steps, failure cases, and support files not present in the survivor
+3. **Merge content** — add unique elements from the absorbed skill into the survivor. Do not duplicate content that already exists.
+4. **Update routing** — rewrite the survivor's description to cover trigger phrases from both skills
+5. **Update cross-references** — find all skills that reference the absorbed skill name and update to point to the survivor
+6. **Remove the absorbed skill** — confirm with user before deleting:
+   ```
+   About to delete [absorbed-skill]/ directory. Proceed? [y/N]
+   ```
+   Do NOT delete without explicit user confirmation.
+7. **Update the catalog** — update README, CATALOG.md, or skills-lock.json to reflect the merge
+
+## Next steps
+
+After curation:
+- Execute merge recommendations → use the merge procedure above
+- Fix discoverability issues → `skill-trigger-optimization`
+- Deprecate identified candidates → `skill-deprecation-manager`
+
+## References
+
+- Agent Skills specification: https://agentskills.io/specification

@@ -4,13 +4,11 @@ description: >-
   Evaluate whether a single skill routes correctly and produces better output
   than a no-skill baseline — measuring trigger precision/recall and output win
   rate. Use when someone says "is this skill working?", "validate before
-  promoting", or "does this skill still add value?". Do not use for comparing
-  multiple variants head-to-head (skill-benchmarking), building test
-  infrastructure or eval suites (skill-testing-harness), or fixing a broken
-  skill (skill-improver).
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
+  promoting", "does this skill still add value?", "run the eval suite", or
+  "regression test this skill". Supports both ad-hoc evaluation and running
+  existing eval suites. Do not use for comparing multiple variants head-to-head
+  (skill-benchmarking), building test infrastructure or eval suites
+  (skill-testing-harness), or fixing a broken skill (skill-improver).
 ---
 
 # Purpose
@@ -20,8 +18,11 @@ Produce quantitative evidence that a single skill adds value: it triggers on the
 # When to use
 
 - "Is this skill working?" / "evaluate this skill" / "does this help?"
+- "Run the eval suite" / "regression test this skill"
 - New skill needs validation before promotion to stable
 - Skill was refined and you need to verify the fix worked
+- Skill has been modified and needs regression testing against its eval suite
+- CI/pre-release validation requires documented eval results
 - Periodic audit of whether an existing skill still adds value
 
 # When NOT to use
@@ -32,7 +33,31 @@ Produce quantitative evidence that a single skill adds value: it triggers on the
 
 # Procedure
 
-1. **Define success criteria**
+## Entry mode selection
+
+Check whether the skill has an existing eval suite:
+- If `evals/` directory exists with test files → use **Suite Mode** (Step 0)
+- If no eval suite exists → use **Ad-hoc Mode** (start at Step 1)
+
+## Step 0 — Suite mode: run existing eval suite
+
+Locate test files in the skill directory. Supported formats:
+- `evals/trigger-positive.jsonl` and `evals/trigger-negative.jsonl`
+- `evals/triggers.yaml` (combined positive/negative)
+- `evals/behavior.jsonl` or `evals/outputs.yaml`
+- `evals/baselines.yaml`
+
+For each trigger test case, run the prompt and record whether the skill fired.
+For each behavior test case, run the skill and check against expected patterns.
+For each baseline test case, compare skill-active vs skill-inactive output.
+
+Calculate precision, recall, output pass rate, and baseline win rate.
+Then skip to Step 6 to synthesize the verdict.
+
+If some eval files are missing, note incomplete coverage and fall through to
+ad-hoc mode for the missing test types.
+
+## 1. **Define success criteria**
    - Routing: triggers on positive cases, stays silent on negative cases
    - Quality: outputs are correct, complete, well-formatted, no hallucination
    - Baseline: outputs are better than running without the skill
@@ -58,17 +83,20 @@ Produce quantitative evidence that a single skill adds value: it triggers on the
    - Score against rubric: correct? complete? well-formatted? no hallucination?
 
 5. **Run baseline comparison**
-   - Run the same quality cases without the skill
-   - Blind-compare outputs where possible
+   - To create a baseline: temporarily remove or rename the skill's SKILL.md from the agent client's skill directory so it cannot be loaded
+   - Run the same quality cases without the skill active
+   - Restore the skill's SKILL.md after baseline runs complete
+   - Blind-compare outputs where possible (judge without knowing which is skill vs baseline)
    - Win rate = skill-wins / total-cases
 
 6. **Synthesize and verdict**
-   - Routing passes if precision ≥ 95% and recall ≥ 90%
-   - Quality passes if ≥ 80% of outputs meet the rubric
-   - Baseline passes if win rate ≥ 60%
+   - Routing target: precision ≥ 95% and recall ≥ 90%
+   - Quality target: ≥ 80% of outputs meet the rubric
+   - Baseline target: win rate ≥ 60%
+   - These are targets, not bright lines. Use judgment when results are near the boundary (e.g., 93% precision on 15 cases is one misrouted case — investigate whether it's a genuine routing failure or an ambiguous edge case).
    - Verdict: **Pass** / **Fail** / **Needs Work** with the specific failing metrics
 
-# Output format
+# Output contract
 
 ```
 ## Skill Evaluation: [skill-name]
@@ -101,3 +129,16 @@ Next action: [specific remediation or "Ready for promotion"]
 | Baseline comparison inconclusive (win rate 45–55%) | Double the sample size. If still inconclusive, report as "neutral — skill neither helps nor hurts." |
 | Routing passes but output quality fails | Stop evaluation. Route to `skill-improver` with the failing cases attached. |
 | Skill passes eval but fails in real usage | Eval set has coverage gaps. Add the failing real-world case and re-run. |
+
+## Next steps
+
+After evaluation:
+- If routing fails → `skill-trigger-optimization`
+- If output quality fails → `skill-improver`
+- If comparing variants → `skill-benchmarking`
+- If ready for release → `skill-packaging`
+- Before promotion to stable → `skill-provenance`, `skill-safety-review`
+
+## References
+
+- Agent Skills specification: https://agentskills.io/specification

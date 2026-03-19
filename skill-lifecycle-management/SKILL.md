@@ -5,12 +5,9 @@ description: >-
   (draft → beta → stable → deprecated → archived). Use when auditing maturity
   across a skill library, promoting a tested skill to stable, retiring a
   superseded skill, or checking which skills are production-ready. Do not use for
-  creating new skills (use skill-authoring), improving individual skill quality
+  creating new skills (use skill-creator), improving individual skill quality
   (use skill-improver), or reorganizing the library catalog
   (use skill-catalog-curation).
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
 ---
 
 # Purpose
@@ -25,7 +22,7 @@ Manage skills through lifecycle states: draft → beta → stable → deprecated
 - Tracking lifecycle transitions across a skill library
 
 Do NOT use when:
-- Creating a new skill from scratch → `skill-authoring`
+- Creating a new skill from scratch → `skill-creator`
 - Improving an existing skill's quality or output → `skill-improver`
 - Reorganizing the library catalog, deduplicating, or enforcing naming → `skill-catalog-curation`
 
@@ -93,3 +90,14 @@ If no transitions are warranted, state that explicitly — do not invent changes
 | Deprecated skill has active dependents | Identify or create replacement first; do not deprecate until dependents have a migration path |
 | Disputed maturity (e.g. "stable" but failing evals) | Default to the more conservative state and note the discrepancy |
 | No evaluation data available for promotion | Block promotion; recommend running `skill-evaluation` first |
+
+## Next steps
+
+Before promoting a skill to stable:
+- Verify provenance is documented → `skill-provenance`
+- Run safety review → `skill-safety-review`
+- Run evaluation → `skill-evaluation`
+
+## References
+
+- Agent Skills specification: https://agentskills.io/specification

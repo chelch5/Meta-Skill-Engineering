@@ -8,9 +8,6 @@ description: >-
   variant. Do not use for evaluating a single skill in isolation (use
   skill-evaluation) or for building test infrastructure (use
   skill-testing-harness).
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
 ---
 
 # Purpose
@@ -25,7 +22,7 @@ Compare two or more skill variants (A vs B, before vs after, skill vs no-skill) 
 - Periodic audit to cull underperforming variants
 - Justifying whether skill maintenance investment is paying off
 
-# Do NOT use when
+# When NOT to use
 
 - Only one skill, no variant to compare → `skill-evaluation`
 - Need to build test cases or harness → `skill-testing-harness`
@@ -103,3 +100,14 @@ Rationale: [one sentence explaining the deciding factor]
 - **Metrics too close to call**: Recommend keeping the simpler or smaller variant as tiebreaker. Never force a winner when differences are within noise.
 - **Variants serve different purposes**: Do not force a single winner. Document which contexts favor each variant and recommend keeping both with routing guidance.
 - **Missing acceptance criteria**: Ask the user to define pass/fail before running. Do not invent criteria.
+
+## Next steps
+
+After benchmarking:
+- Improve the weaker variant → `skill-improver`
+- Deprecate the losing variant → `skill-deprecation-manager`
+- Package the winner → `skill-packaging`
+
+## References
+
+- Agent Skills specification: https://agentskills.io/specification

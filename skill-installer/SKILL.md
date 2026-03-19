@@ -4,11 +4,8 @@ description: >-
   Install a skill package into the local agent client from a GitHub repository,
   local folder, or archive. Use when the user says "install this skill", "add
   skill from GitHub", or "list available skills". Do not use for creating new
-  skills (use skill-authoring), packaging skills for distribution (use
+  skills (use skill-creator), packaging skills for distribution (use
   skill-packaging), or improving already-installed skills (use skill-improver).
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
 ---
 
 # Purpose
@@ -24,7 +21,7 @@ Install a skill package into the local agent client's skill directory so it beco
 
 Do NOT use when:
 
-- Creating a new skill from scratch → `skill-authoring`
+- Creating a new skill from scratch → `skill-creator`
 - Packaging a skill for distribution → `skill-packaging`
 - Improving an already-installed skill → `skill-improver`
 - Reconfiguring or removing an already-installed skill (manual task)
@@ -117,3 +114,14 @@ On failure, report the specific error (see Failure handling) and stop — do not
 | HTTP 401/403/404 on download | Fall back to git sparse checkout; if that also fails, tell user to set `GITHUB_TOKEN` |
 | Archive contains path-traversal entries | Abort: "Archive rejected — contains paths outside destination" |
 | Network unavailable | Report the error and suggest sandbox escalation or manual download |
+
+## Next steps
+
+After installing a skill:
+- If imported from external source → run `skill-provenance` to record origin and trust
+- If imported from untrusted source → run `skill-safety-review` before use
+- Verify the skill works → `skill-evaluation`
+
+## References
+
+- Agent Skills specification: https://agentskills.io/specification

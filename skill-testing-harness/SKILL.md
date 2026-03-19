@@ -1,20 +1,17 @@
 ---
 name: skill-testing-harness
 description: >-
-  Build trigger tests, output-format tests, and baseline comparisons for a
-  skill's evals/ directory. Use when: "create tests for this skill", "set up
-  evals", "build a test harness", a new skill needs test coverage, or a skill
-  lacks an evals/ directory. Do not use for running existing tests (use
-  skill-evaluation), comparing skill variants (use skill-benchmarking), or
-  updating tests that already exist (edit directly).
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
+  Build trigger tests and output-format tests for a skill's evals/ directory.
+  Use when "create tests for this skill", "set up evals", "build a test
+  harness", a new skill needs test coverage, or a skill lacks an evals/
+  directory. Do not use for running existing tests (use skill-evaluation),
+  comparing skill variants (use skill-benchmarking), or updating tests that
+  already exist (edit directly).
 ---
 
 # Purpose
 
-Build test infrastructure for a skill: trigger tests (positive and negative JSONL cases), output-format tests, and baseline comparisons. Enables repeatable evaluation during development and refinement.
+Build test infrastructure for a skill: trigger tests (positive and negative JSONL cases) and output-format tests. Enables repeatable evaluation during development and refinement.
 
 # When to use
 
@@ -23,7 +20,7 @@ Build test infrastructure for a skill: trigger tests (positive and negative JSON
 - Skill lacks an evals/ directory or test fixtures
 - Skill refinement requires regression tests
 
-# Do NOT use when
+# When NOT to use
 
 - Running existing tests → `skill-evaluation`
 - Comparing skill variants → `skill-benchmarking`
@@ -160,6 +157,16 @@ All JSONL files use one JSON object per line, newline-delimited.
 
 - **No clear triggers in description**: Cannot write trigger tests — flag for `skill-trigger-optimization` first
 - **Output format undefined**: Cannot write output tests — flag for `skill-improver` to add output contract
-- **Too few distinct trigger phrases**: Minimum 5 positive, 5 negative; if the skill is too narrow, merge via `skill-variant-splitting` or widen the trigger set
+- **Too few distinct trigger phrases**: Minimum 5 positive, 5 negative; if the skill is too narrow, consult `skill-catalog-curation` to assess whether it should be merged
 - **Skill too complex for single harness**: Split into sub-capabilities with separate JSONL files per capability
 - **No comparable baseline**: Skip baseline comparison; focus on trigger accuracy and output format compliance
+
+## Next steps
+
+After building the test harness:
+- Run the tests → `skill-evaluation`
+- Compare variants → `skill-benchmarking`
+
+## References
+
+- Agent Skills specification: https://agentskills.io/specification

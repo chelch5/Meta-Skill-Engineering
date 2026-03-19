@@ -1,0 +1,6 @@
+{"prompt": "create a skill for X", "should_trigger": true, "skill": "skill-creator"}
+{"prompt": "write a skill that handles code review for our team", "should_trigger": true, "skill": "skill-creator"}
+{"prompt": "I need a new skill to automate our deploy process", "should_trigger": true, "skill": "skill-creator"}
+{"prompt": "turn this workflow into a skill", "should_trigger": true, "skill": "skill-creator"}
+{"prompt": "I have a draft skill, can we iterate on it with some test cases?", "should_trigger": true, "skill": "skill-creator"}
+{"prompt": "make a reusable skill from the steps I just showed you", "should_trigger": true, "skill": "skill-creator"}

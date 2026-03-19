@@ -1,6 +1,0 @@
-interface:
-  display_name: "Provenance Audit"
-  short_description: "Review provenance audit work with explicit evidence, risk ran..."
-  default_prompt: "Use $provenance-audit-codex-c to handle this task with a concrete workflow and explicit verification."
-policy:
-  allow_implicit_invocation: true

@@ -2,14 +2,12 @@
 name: skill-packaging
 description: >-
   Bundle a completed skill folder into a versioned distributable archive
-  with manifest and integrity checksums. Use when a user says "package this
-  skill", "bundle for distribution", or "prepare a versioned release".
-  Do not use for installing bundles (use skill-installer), writing new
-  skills (use skill-authoring), or documenting skill origin and trust
-  chain (use skill-provenance).
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
+  with manifest, integrity checksums, and client-specific overlays. Use when
+  a user says "package this skill", "bundle for distribution", "prepare a
+  versioned release", "generate overlays for this skill", or "publish to
+  multiple agent clients". Do not use for installing bundles
+  (use skill-installer), writing new skills (use skill-creator), or
+  documenting skill origin and trust chain (use skill-provenance).
 ---
 
 # Purpose
@@ -26,7 +24,7 @@ Bundle a finished skill folder into a distributable archive (tar.gz or zip) cont
 
 - Skill is still being written or refined — finish authoring first
 - User wants to install a bundle — use **skill-installer**
-- User wants to create a skill from scratch — use **skill-authoring**
+- User wants to create a skill from scratch — use **skill-creator**
 - User wants to document origin or trust chain — use **skill-provenance**
 - Simple folder copy with no versioning or integrity needs
 
@@ -73,11 +71,44 @@ compatibility:
 
 ## 3. Generate client overlays (only when needed)
 
-If the skill has client-specific frontmatter or path differences:
-- Create `overlays/<client>.yaml` containing only the delta
-- Overlays must not contradict the base manifest — they extend it
+If the skill targets multiple agent clients, generate per-client overlay files.
 
-Skip this step entirely when the skill is client-agnostic.
+**Supported overlay formats:**
+
+Copilot (`overlays/copilot/metadata.json`):
+```json
+{
+  "name": "<name>",
+  "version": "<version>",
+  "description": "<description>",
+  "main": "SKILL.md"
+}
+```
+
+OpenCode (`overlays/opencode/permissions.yaml`):
+```yaml
+name: <name>
+description: "<description>"
+permissions:
+  read: ["src/**/*", "tests/**/*", "docs/**/*"]
+  write: ["src/**/*", "tests/**/*"]
+```
+
+Codex (`overlays/codex/openai.yaml`):
+```yaml
+name: <name>
+description: "<description>"
+schema_version: "1.0"
+capabilities: [file_read, file_write, shell_execute]
+```
+
+Overlays must not contradict the base manifest — they extend it.
+All overlays must reference the same name and description as the canonical SKILL.md.
+
+Skip this step entirely when the skill is client-agnostic or targets a single client.
+
+For batch overlay generation across a skill library, iterate over all skill
+directories and generate overlays for each.
 
 ## 4. Create the archive
 
@@ -138,3 +169,14 @@ If verification fails, print the specific mismatches and do **not** declare succ
 | No `version` in frontmatter | Ask the user for a semver version. Do not guess. |
 | Checksum mismatch after extraction | Print the file(s) that differ and the expected vs actual hashes. Re-bundle. |
 | Overlay contradicts base manifest | Stop. Explain the conflict. Overlays may only add or narrow, not replace base values. |
+
+## Next steps
+
+After packaging:
+- Install the package → `skill-installer`
+- Register in the catalog → `skill-registry-manager`
+- Manage lifecycle state → `skill-lifecycle-management`
+
+## References
+
+- Agent Skills specification: https://agentskills.io/specification

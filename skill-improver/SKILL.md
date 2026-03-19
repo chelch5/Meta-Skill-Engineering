@@ -5,13 +5,10 @@ description: >-
   prune support layers, upgrade packaging. Use when the user says "improve this
   skill", "this skill is weak/vague/bloated", "harden this SKILL.md", or "add
   evals/references to this skill package". Do not use for creating a new skill
-  from scratch (use skill-authoring), trigger-only fixes when the body is fine
+  from scratch (use skill-creator), trigger-only fixes when the body is fine
   (use skill-trigger-optimization), porting a skill to a different stack or
   context (use skill-adaptation), or quick structural audits with no rewrite
   (use skill-anti-patterns).
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
 ---
 
 # Purpose
@@ -25,7 +22,7 @@ Improve an existing skill package. A skill is a reusable operating manual for an
 
 Preserve the skill's core purpose unless the user explicitly asks to reposition it.
 
-# When to use this skill
+# When to use
 
 Use when:
 
@@ -37,7 +34,7 @@ Use when:
 
 Do not use when:
 
-- creating a brand-new skill from scratch — use **skill-authoring**,
+- creating a brand-new skill from scratch — use **skill-creator**,
 - the problem is only the description/trigger and the body is fine — use **skill-trigger-optimization**,
 - porting or adapting a skill to a different stack or context — use **skill-adaptation**,
 - running a quick structural audit with no rewrite planned — use **skill-anti-patterns**,
@@ -195,6 +192,39 @@ Return:
 - 2–5 recommended eval prompts for the improved skill,
 - risks or open questions, only if something could not be settled cleanly.
 
+# Output contract
+
+Every improvement produces:
+
+1. **Updated skill files** — the modified SKILL.md and any new/changed support files
+2. **Change summary** — for each change: section affected, before text, after text, rationale
+3. **Eval prompts** — 2–5 recommended test prompts to verify the improvement
+4. **Next steps** — specific follow-up actions (e.g., "run skill-evaluation to verify routing")
+
+```
+## Improvement Report: [skill-name]
+
+### Mode: [Surgical edit | Structural refactor | Package upgrade]
+### Primary failure mode: [from Phase 2 table]
+
+### Changes
+| Section | Before | After | Rationale |
+|---------|--------|-------|-----------|
+| ... | ... | ... | ... |
+
+### Files modified
+- [list of files changed/added/removed]
+
+### Recommended eval prompts
+1. [prompt that should trigger the skill]
+2. [prompt that should NOT trigger]
+3. [edge case prompt]
+
+### Next steps
+- Run `skill-evaluation` to verify routing accuracy
+- Run `skill-testing-harness` if no evals/ directory exists
+```
+
 # Anti-patterns
 
 Avoid these when improving a skill:
@@ -217,3 +247,14 @@ If the skill is too incomplete to improve cleanly:
 4. Mark assumptions explicitly.
 
 If the user wants a quick pass rather than a full package upgrade, do that. The point is to improve the skill, not force ceremony.
+
+## Next steps
+
+After improving a skill:
+- Verify the improvement → `skill-evaluation`
+- Build test infrastructure if none exists → `skill-testing-harness`
+- Optimize triggers if routing changed → `skill-trigger-optimization`
+
+## References
+
+- Agent Skills specification: https://agentskills.io/specification

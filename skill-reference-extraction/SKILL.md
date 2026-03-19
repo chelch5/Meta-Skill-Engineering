@@ -9,9 +9,6 @@ description: >-
   skill-improver for general tightening), when the candidate material is core procedure
   rather than reference (use skill-improver), or when the total extractable content is
   under 50 lines (not worth the indirection).
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
 ---
 
 # Purpose
@@ -114,3 +111,13 @@ Produce a summary in this format:
 - **Extraction would fragment a coherent procedure section** → leave inline, note in summary
 - **Circular cross-references between extracted files** → flatten into a single reference file
 - **Two skills want the same reference** → create a skill-specific copy; shared references are fragile
+
+## Next steps
+
+After extracting references:
+- Verify the skill still works end-to-end → `skill-evaluation`
+- Further tighten the skill if needed → `skill-improver`
+
+## References
+
+- Agent Skills specification: https://agentskills.io/specification

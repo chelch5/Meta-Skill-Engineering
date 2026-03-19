@@ -1,56 +1,89 @@
 # Meta Skill Engineering
 
-This repository is a working area for repo-owned meta-skills that create, refine, test, package, and govern agent skills.
-
-Current state:
-
-- 26 repo-owned skill packages total
-- 22 packages live at the repository root
-- 4 creation-focused packages live under `skill creator/`
-- The imported `foundskills/` corpus has been removed from the active tree
+A meta-skill engineering workspace containing 20 skills that create, refine, test, package, and govern agent skills.
 
 ## Repository Layout
 
-- `./<skill-name>/` - repo-owned skill packages at the repository root. Each package has a `SKILL.md` baseline contract and may include supporting files such as `manifest.yaml`, `references/`, `scripts/`, `evals/`, `assets/`, `agents/`, or `overlays/`.
-- `skill creator/` - grouped workspace for creation-focused skill packages. It is not itself a skill package.
-- `tasks/` - task notes, worklogs, and repo maintenance instructions.
+- `./<skill-name>/` — repo-owned skill packages at the repository root. Each package has a `SKILL.md` baseline contract and may include `references/`, `scripts/`, `evals/`, `assets/`, or `agents/`.
+- `skill creator/` — archived source material from the pre-consolidation state.
+- `tasks/` — task notes, worklogs, reviews, and maintenance instructions.
 
-## Root Skill Inventory
+## Skill Lifecycle Pipeline
 
-The table below covers the 22 repo-owned skill packages at the repository root.
+The standard workflow for creating and managing a skill:
 
-| Folder | Canonical name | Purpose | Support files |
-| --- | --- | --- | --- |
-| `overlay-generator` | `overlay-generator` | Generate client-specific overlays from a canonical `SKILL.md`. | `manifest.yaml`, `references/`, `evals/`, `agents/`, `overlays/` |
-| `provenance-audit` | `provenance-audit` | Audit a skill or artifact origin chain and assign trust. | `manifest.yaml`, `references/`, `evals/`, `agents/`, `overlays/` |
-| `skill-adaptation` | `skill-adaptation` | Rewrite a skill's context-dependent references for a new environment. | `SKILL.md` only |
-| `skill-anti-patterns` | `skill-anti-patterns` | Scan `SKILL.md` for concrete anti-patterns and report fixes. | `SKILL.md` only |
-| `skill-benchmarking` | `skill-benchmarking` | Compare skill variants on the same test cases. | `SKILL.md` only |
-| `skill-catalog-curation` | `skill-catalog-curation` | Detect duplicates, enforce category consistency, and verify discoverability. | `SKILL.md` only |
-| `skill-deprecation-manager` | `skill-deprecation-manager` | Safely deprecate, retire, or merge obsolete skills. | `manifest.yaml`, `references/`, `evals/`, `agents/`, `overlays/` |
-| `skill-description-optimizer` | `skill-description-optimizer` | Rewrite a skill description to fix routing problems. | `manifest.yaml`, `references/`, `evals/`, `agents/`, `overlays/` |
-| `skill-eval-runner` | `skill-eval-runner` | Run trigger tests, output tests, and baseline comparisons. | `manifest.yaml`, `references/`, `evals/`, `agents/`, `overlays/` |
-| `skill-evaluation` | `skill-evaluation` | Produce quantitative evidence that a single skill adds value. | `SKILL.md` only |
-| `skill-improver` | `skill-improver` | Improve an existing skill package. | `manifest.yaml`, `README.md`, `CHANGELOG.md`, `scripts/`, `references/`, `evals/` |
-| `skill-installer` | `skill-installer` | Install a skill package into a local agent client skill directory. | `scripts/`, `assets/` |
-| `skill-lifecycle-management` | `skill-lifecycle-management` | Manage skills through draft, beta, stable, deprecated, and archived states. | `SKILL.md` only |
-| `skill-packager` | `skill-packager` | Build distributable bundles, manifests, and checksums. | `manifest.yaml`, `references/`, `evals/`, `agents/`, `overlays/` |
-| `skill-packaging` | `skill-packaging` | Bundle a finished skill folder into a distributable archive. | `SKILL.md` only |
-| `skill-provenance` | `skill-provenance` | Produce a provenance record for a skill. | `SKILL.md` only |
-| `skill-reference-extraction` | `skill-reference-extraction` | Split large reference material out of a `SKILL.md`. | `SKILL.md` only |
-| `skill-registry-manager` | `skill-registry-manager` | Maintain the skill library catalog and generate the index. | `manifest.yaml`, `references/`, `evals/`, `agents/`, `overlays/` |
-| `skill-safety-review` | `skill-safety-review` | Audit a skill for safety hazards before publication or import. | `SKILL.md` only |
-| `skill-testing-harness` | `skill-testing-harness` | Build test infrastructure for a skill. | `SKILL.md` only |
-| `skill-trigger-optimization` | `skill-trigger-optimization` | Fix skill routing by rewriting description and boundary text. | `SKILL.md` only |
-| `skill-variant-splitting` | `skill-variant-splitting` | Split a broad skill into focused variants. | `SKILL.md` only |
+```
+skill-creator → skill-testing-harness → skill-evaluation → skill-benchmarking
+                                                                ↓
+skill-lifecycle-management ← skill-packaging ← skill-safety-review ← skill-trigger-optimization
+```
 
-## Skill Creator Workspace
+1. **Create** a skill → `skill-creator`
+2. **Build tests** → `skill-testing-harness`
+3. **Evaluate** routing and output → `skill-evaluation`
+4. **Benchmark** variants (if needed) → `skill-benchmarking`
+5. **Optimize** triggers → `skill-trigger-optimization`
+6. **Safety review** → `skill-safety-review`
+7. **Record provenance** → `skill-provenance`
+8. **Package** for distribution → `skill-packaging`
+9. **Install** → `skill-installer`
+10. **Manage lifecycle** → `skill-lifecycle-management`
 
-The table below covers the four creation-focused packages stored under `skill creator/`.
+## Skill Inventory
 
-| Folder | Canonical name | Purpose | Support files |
-| --- | --- | --- | --- |
-| `skill creator/anthropiuc-skill-creator` | `skill-creator` | Create new skills, improve existing skills, and measure skill performance. | `LICENSE.txt`, `agents/`, `assets/`, `eval-viewer/`, `references/`, `scripts/` |
-| `skill creator/community-skill-harvester` | `community-skill-harvester` | Find external skills and evaluate them for adoption. | `manifest.yaml`, `references/`, `evals/`, `agents/`, `overlays/` |
-| `skill creator/microsoft-skill-creator` | `microsoft-skill-creator` | Create skills for Microsoft technologies using Learn MCP tools. | `references/` |
-| `skill creator/skill-authoring` | `skill-authoring` | Create new agent skills in the `SKILL.md` format. | `references/` |
+| Folder | Purpose |
+| --- | --- |
+| `community-skill-harvester` | Find external skills from public registries and evaluate them for adoption. |
+| `skill-adaptation` | Rewrite a skill's context-dependent references for a new environment. |
+| `skill-anti-patterns` | Scan SKILL.md for concrete anti-patterns and report fixes. |
+| `skill-benchmarking` | Compare skill variants on the same test cases. |
+| `skill-catalog-curation` | Detect duplicates, enforce category consistency, and verify discoverability. |
+| `skill-creator` | Create new agent skills from scratch and iterate through test-review-improve cycles. |
+| `skill-deprecation-manager` | Safely deprecate, retire, or merge obsolete skills. |
+| `skill-evaluation` | Evaluate a single skill's routing accuracy, output quality, and baseline value. |
+| `skill-improver` | Improve an existing skill package. |
+| `skill-installer` | Install a skill package into a local agent client skill directory. |
+| `skill-lifecycle-management` | Manage skills through draft, beta, stable, deprecated, and archived states. |
+| `skill-packager` | Build distributable bundles for one or more skills in a release. |
+| `skill-packaging` | Bundle a finished skill into a versioned archive with manifest, checksums, and overlays. |
+| `skill-provenance` | Audit and record origin, authorship, license, and trust level for a skill. |
+| `skill-reference-extraction` | Split large reference material out of a SKILL.md. |
+| `skill-registry-manager` | Maintain the skill library catalog and generate the index. |
+| `skill-safety-review` | Audit a skill for safety hazards before publication or import. |
+| `skill-testing-harness` | Build test infrastructure for a skill. |
+| `skill-trigger-optimization` | Fix skill routing by rewriting description and boundary text. |
+| `skill-variant-splitting` | Split a broad skill into focused variants. |
+
+## Skill Categories
+
+**Creation & Improvement**
+- `skill-creator` — create new skills
+- `skill-improver` — improve existing skills
+- `community-skill-harvester` — find and evaluate external skills
+
+**Quality & Testing**
+- `skill-testing-harness` — build test infrastructure
+- `skill-evaluation` — evaluate routing and output quality
+- `skill-benchmarking` — compare skill variants
+- `skill-anti-patterns` — audit for structural anti-patterns
+- `skill-trigger-optimization` — fix routing descriptions
+
+**Safety & Provenance**
+- `skill-safety-review` — audit for safety hazards
+- `skill-provenance` — audit and record origin and trust
+
+**Packaging & Distribution**
+- `skill-packaging` — bundle a skill with manifest and overlays
+- `skill-packager` — orchestrate multi-skill releases
+- `skill-installer` — install skill packages
+
+**Library Management**
+- `skill-catalog-curation` — audit library for duplicates and gaps
+- `skill-registry-manager` — maintain catalog and index
+- `skill-lifecycle-management` — manage skill maturity states
+- `skill-deprecation-manager` — execute skill deprecation
+
+**Transformation**
+- `skill-adaptation` — port skills to new environments
+- `skill-variant-splitting` — split broad skills into focused variants
+- `skill-reference-extraction` — extract reference material from SKILL.md
