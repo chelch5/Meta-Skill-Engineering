@@ -9,9 +9,6 @@ description: >-
   skill-improver for general tightening), when the candidate material is core procedure
   rather than reference (use skill-improver), or when the total extractable content is
   under 50 lines (not worth the indirection).
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
 ---
 
 # Purpose

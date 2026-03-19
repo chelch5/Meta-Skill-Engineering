@@ -8,9 +8,6 @@ description: >-
   new skill from scratch (use skill-authoring), improving an existing
   project-specific skill without changing context (use skill-improver), or
   splitting one skill into stack-specific variants (use skill-variant-splitting).
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
 ---
 
 # Purpose

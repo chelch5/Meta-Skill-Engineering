@@ -8,9 +8,6 @@ description: >-
   creating new skills (use skill-authoring), improving individual skill quality
   (use skill-improver), or reorganizing the library catalog
   (use skill-catalog-curation).
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
 ---
 
 # Purpose

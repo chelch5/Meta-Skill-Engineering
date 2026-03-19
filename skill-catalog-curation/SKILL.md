@@ -5,9 +5,6 @@ description: >-
   Use when: "audit the skill library", "clean up overlapping skills", "organize the catalog before release".
   Do not use for: improving a single skill (skill-improver), creating a new skill (skill-authoring),
   promoting or deprecating individual skills through lifecycle states (skill-lifecycle-management).
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
 ---
 
 # Purpose

@@ -7,9 +7,6 @@ description: >-
   use for porting a skill to a different context (skill-adaptation),
   trigger-only fixes (skill-trigger-optimization), or catalog-level
   reorganization (skill-catalog-curation).
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
 ---
 
 # Purpose

@@ -11,9 +11,6 @@ description: >-
   deployments). Do not use for routing or output-quality evaluation (use
   skill-evaluation), structural anti-pattern detection (use skill-anti-patterns),
   or skills that are purely informational with no side effects.
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
 ---
 
 # Purpose

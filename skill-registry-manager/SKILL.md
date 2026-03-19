@@ -1,9 +1,6 @@
 ---
 name: skill-registry-manager
 description: "Maintain the skill library catalog: add entries, update metadata, manage tags, track maturity/status, enforce naming conventions, and generate the library index. Use when adding a new skill to the registry, updating skill metadata after changes, auditing catalog consistency, or generating a publishable skill index. Do not use for editing skill content (edit SKILL.md directly) or for deprecating skills (use skill-deprecation-manager)."
-license: Apache-2.0
-compatibility:
-  clients: [openai-codex, gemini-cli, opencode, github-copilot]
 ---
 
 # Skill Registry Manager

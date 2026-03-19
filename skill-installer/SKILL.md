@@ -6,9 +6,6 @@ description: >-
   skill from GitHub", or "list available skills". Do not use for creating new
   skills (use skill-authoring), packaging skills for distribution (use
   skill-packaging), or improving already-installed skills (use skill-improver).
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
 ---
 
 # Purpose

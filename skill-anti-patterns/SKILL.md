@@ -9,9 +9,6 @@ description: >-
   (use skill-authoring), trigger-only fixes (use skill-trigger-optimization),
   surgical fixes to known problems (use skill-improver), or measuring
   routing precision/recall (use skill-evaluation).
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
 ---
 
 # Purpose

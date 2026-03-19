@@ -1,9 +1,6 @@
 ---
 name: community-skill-harvester
 description: "Find external skills from public registries, GitHub repos, and official skill collections, then evaluate them for quality, licensing, and fitness for adoption. Use when looking for existing skills before building from scratch, evaluating external skill quality, or migrating community skills into a local library. Do not use when building a novel skill with no external precedent or for quick one-off evaluation (just read the skill directly)."
-license: Apache-2.0
-compatibility:
-  clients: [openai-codex, gemini-cli, opencode, github-copilot]
 ---
 
 # Community Skill Harvester

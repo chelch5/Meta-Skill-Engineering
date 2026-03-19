@@ -1,9 +1,6 @@
 ---
 name: skill-packager
 description: "Build distributable bundles, manifests, and checksums for publishing or sharing one or more skills. Use when packaging skills for release, building a distribution bundle, creating CI/CD skill artifacts, or releasing a new library version. Do not use for packaging a single skill in isolation (just create its manifest directly) or when skills aren't ready for release."
-license: Apache-2.0
-compatibility:
-  clients: [openai-codex, gemini-cli, opencode, github-copilot]
 ---
 
 # Skill Packager

@@ -8,9 +8,6 @@ description: >-
   variant. Do not use for evaluating a single skill in isolation (use
   skill-evaluation) or for building test infrastructure (use
   skill-testing-harness).
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
 ---
 
 # Purpose

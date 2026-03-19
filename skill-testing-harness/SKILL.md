@@ -7,9 +7,6 @@ description: >-
   lacks an evals/ directory. Do not use for running existing tests (use
   skill-evaluation), comparing skill variants (use skill-benchmarking), or
   updating tests that already exist (edit directly).
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
 ---
 
 # Purpose

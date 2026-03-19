@@ -9,9 +9,6 @@ description: >-
   (use skill-trigger-optimization), porting a skill to a different stack or
   context (use skill-adaptation), or quick structural audits with no rewrite
   (use skill-anti-patterns).
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
 ---
 
 # Purpose

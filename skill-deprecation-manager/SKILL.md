@@ -1,9 +1,6 @@
 ---
 name: skill-deprecation-manager
 description: "Safely deprecate, retire, or merge obsolete skills while preserving backward references and library clarity. Use when a user says 'deprecate this skill', 'retire this', or 'this is replaced by X', when a catalog audit identifies a skill for retirement, or when a skill is causing harm and needs immediate pull. Do not use when the skill needs improvement (use skill-improver) or when the repo doesn't support deprecation (just delete)."
-license: Apache-2.0
-compatibility:
-  clients: [openai-codex, gemini-cli, opencode, github-copilot]
 ---
 
 # Skill Deprecation Manager

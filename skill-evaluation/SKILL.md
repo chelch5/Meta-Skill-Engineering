@@ -4,13 +4,11 @@ description: >-
   Evaluate whether a single skill routes correctly and produces better output
   than a no-skill baseline — measuring trigger precision/recall and output win
   rate. Use when someone says "is this skill working?", "validate before
-  promoting", or "does this skill still add value?". Do not use for comparing
-  multiple variants head-to-head (skill-benchmarking), building test
-  infrastructure or eval suites (skill-testing-harness), or fixing a broken
-  skill (skill-improver).
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
+  promoting", "does this skill still add value?", "run the eval suite", or
+  "regression test this skill". Supports both ad-hoc evaluation and running
+  existing eval suites. Do not use for comparing multiple variants head-to-head
+  (skill-benchmarking), building test infrastructure or eval suites
+  (skill-testing-harness), or fixing a broken skill (skill-improver).
 ---
 
 # Purpose
@@ -20,8 +18,11 @@ Produce quantitative evidence that a single skill adds value: it triggers on the
 # When to use
 
 - "Is this skill working?" / "evaluate this skill" / "does this help?"
+- "Run the eval suite" / "regression test this skill"
 - New skill needs validation before promotion to stable
 - Skill was refined and you need to verify the fix worked
+- Skill has been modified and needs regression testing against its eval suite
+- CI/pre-release validation requires documented eval results
 - Periodic audit of whether an existing skill still adds value
 
 # When NOT to use
@@ -32,7 +33,31 @@ Produce quantitative evidence that a single skill adds value: it triggers on the
 
 # Procedure
 
-1. **Define success criteria**
+## Entry mode selection
+
+Check whether the skill has an existing eval suite:
+- If `evals/` directory exists with test files → use **Suite Mode** (Step 0)
+- If no eval suite exists → use **Ad-hoc Mode** (start at Step 1)
+
+## Step 0 — Suite mode: run existing eval suite
+
+Locate test files in the skill directory. Supported formats:
+- `evals/trigger-positive.jsonl` and `evals/trigger-negative.jsonl`
+- `evals/triggers.yaml` (combined positive/negative)
+- `evals/behavior.jsonl` or `evals/outputs.yaml`
+- `evals/baselines.yaml`
+
+For each trigger test case, run the prompt and record whether the skill fired.
+For each behavior test case, run the skill and check against expected patterns.
+For each baseline test case, compare skill-active vs skill-inactive output.
+
+Calculate precision, recall, output pass rate, and baseline win rate.
+Then skip to Step 6 to synthesize the verdict.
+
+If some eval files are missing, note incomplete coverage and fall through to
+ad-hoc mode for the missing test types.
+
+## 1. **Define success criteria**
    - Routing: triggers on positive cases, stays silent on negative cases
    - Quality: outputs are correct, complete, well-formatted, no hallucination
    - Baseline: outputs are better than running without the skill

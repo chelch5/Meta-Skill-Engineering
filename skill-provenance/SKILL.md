@@ -1,14 +1,13 @@
 ---
 name: skill-provenance
 description: >-
-  Record origin, authorship, evidence basis, and encoded assumptions for a skill
-  to establish trust and traceability. Use when someone asks "where did this skill
-  come from?", "document this skill's origin", or "audit skill trustworthiness".
-  Do not use for quality assessment (use skill-evaluation), lifecycle state tracking
-  (use skill-lifecycle-management), or safety audits (use skill-safety-review).
-license: Apache-2.0
-compatibility:
-  clients: [opencode, copilot, codex, gemini-cli, claude-code]
+  Audit and record origin, authorship, evidence basis, license, and trust level
+  for a skill. Use when someone asks "where did this skill come from?",
+  "audit this skill's origin", "document provenance", or when evaluating
+  external skills for adoption or establishing trust before execution.
+  Do not use for quality assessment (use skill-evaluation), lifecycle state
+  tracking (use skill-lifecycle-management), or safety audits
+  (use skill-safety-review).
 ---
 
 # Purpose
@@ -18,18 +17,83 @@ Produce a provenance record for a skill—answering "where did this come from, w
 # When to use
 
 - User asks "where did this come from?", "document origin", "add provenance"
+- "Audit this skill's origin", "check the license", "establish trust level"
+- Evaluating external skills for adoption
+- Auditing existing skills for license compliance
 - Publishing a skill to a shared registry that requires attribution
 - Importing a skill from an external source that needs trust assessment
 - A skill encodes non-obvious assumptions that future editors must understand
 
 # When NOT to use
 
+- Creating new skills from scratch where provenance is simply "authored here" and obvious
 - Git history alone provides sufficient provenance for internal-only skills
 - You need quality evaluation → `skill-evaluation`
 - You need lifecycle state tracking → `skill-lifecycle-management`
 - You need safety or security audit → `skill-safety-review`
 
+# Modes
+
+This skill operates in two modes:
+
+- **Audit mode** — Read-only assessment: investigate origin, verify source claims, check license, assign trust level. Produces an audit report.
+- **Record mode** — Write provenance metadata: produce a frontmatter patch and PROVENANCE.md. Produces written artifacts.
+
+Use audit mode when evaluating skills for adoption or compliance. Use record mode when documenting provenance for an existing skill. Both modes can be combined: audit first, then record the findings.
+
 # Procedure
+
+## Audit mode steps (read-only assessment)
+
+### A1. Identify origin type
+
+| Origin Type | Default Trust |
+|-------------|---------------|
+| `authored` | High |
+| `forked` | Medium |
+| `imported` | Medium |
+| `generated` | Low |
+| `unknown` | Untrusted |
+
+### A2. Extract provenance metadata
+
+From SKILL.md frontmatter: `name`, `source`, `license`.
+
+From git history:
+```bash
+git log --follow --format="%H %an %ad %s" -- SKILL.md | tail -1
+git log --follow --oneline -- SKILL.md
+```
+
+### A3. Verify source claims
+
+If `source` claims external origin:
+```bash
+curl -s "<original-raw-url>" > /tmp/original.md
+diff SKILL.md /tmp/original.md
+```
+If different → origin is `forked`, not `imported`.
+
+### A4. Check license compatibility
+
+| License | Category | Action |
+|---------|----------|--------|
+| Apache-2.0, MIT, BSD-* | Permissive | OK for any use |
+| GPL-3.0, AGPL-3.0 | Copyleft | Check derivative work implications |
+| (none) | Unknown | Do not adopt — flag for manual review |
+
+### A5. Assign trust level
+
+| Origin | License OK | Source Verified | Mods Reviewed | Trust |
+|--------|-----------|----------------|---------------|-------|
+| authored | N/A | N/A | N/A | HIGH |
+| forked | YES | YES | YES | HIGH |
+| forked | YES | YES | NO | MEDIUM |
+| imported | YES | YES | N/A | MEDIUM |
+| generated | N/A | N/A | YES | MEDIUM |
+| unknown | * | * | * | UNTRUSTED |
+
+## Record mode steps (write provenance artifacts)
 
 ## 1. Document origin
 - If adapted: source URL, percentage original vs adapted
@@ -83,7 +147,28 @@ Assign one level. Write a one-sentence rationale.
 
 # Output contract
 
-Produce exactly two artifacts:
+Produce artifacts based on the mode used:
+
+**Audit mode output:**
+```markdown
+# Provenance Audit: [skill-name]
+
+## Origin
+- Type: [authored|forked|imported|generated|unknown]
+- Source: [URL or "this repo"]
+- License: [SPDX]
+
+## Trust Assessment
+- License: [PASS|WARN|FAIL]
+- Source verified: [YES|NO|UNABLE]
+- Modifications reviewed: [YES|NO|N/A]
+- Overall trust: [HIGH|MEDIUM|LOW|UNTRUSTED]
+
+## Recommendation
+[Action to take]
+```
+
+**Record mode output — two artifacts:**
 
 **1. Frontmatter patch** — merge into the skill's existing YAML metadata:
 ```yaml
@@ -124,3 +209,10 @@ If the skill is too trivial for a full record, produce the frontmatter patch onl
 | Author unreachable | Document what is known, mark authorship as "unverified" in PROVENANCE.md |
 | Assumptions undeterminable | Set trust to `low` with rationale "assumptions undocumented—treat as fragile" |
 | Multiple conflicting sources | List all sources with which takes precedence and why |
+| Cannot reach source URL | Mark "source unverified", lower trust level |
+| License unclear | Flag for manual review, do not auto-adopt |
+| Skill has no frontmatter | Treat as unknown origin, untrusted |
+
+## References
+
+- SPDX license identifiers: https://spdx.org/licenses/

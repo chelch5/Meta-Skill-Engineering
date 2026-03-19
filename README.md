@@ -4,7 +4,7 @@ This repository is a working area for repo-owned meta-skills that create, refine
 
 Current state:
 
-- 24 repo-owned skill packages at the repository root
+- 20 repo-owned skill packages at the repository root
 - The `skill creator/` workspace contains archived source material that was consolidated into `skill-creator/`
 - The imported `foundskills/` corpus has been removed from the active tree
 
@@ -19,23 +19,19 @@ Current state:
 | Folder | Purpose |
 | --- | --- |
 | `community-skill-harvester` | Find external skills from public registries and evaluate them for adoption. |
-| `overlay-generator` | Generate client-specific overlays from a canonical SKILL.md. |
-| `provenance-audit` | Audit a skill or artifact origin chain and assign trust. |
 | `skill-adaptation` | Rewrite a skill's context-dependent references for a new environment. |
 | `skill-anti-patterns` | Scan SKILL.md for concrete anti-patterns and report fixes. |
 | `skill-benchmarking` | Compare skill variants on the same test cases. |
 | `skill-catalog-curation` | Detect duplicates, enforce category consistency, and verify discoverability. |
 | `skill-creator` | Create new agent skills from scratch and iterate through test-review-improve cycles. |
 | `skill-deprecation-manager` | Safely deprecate, retire, or merge obsolete skills. |
-| `skill-description-optimizer` | Rewrite a skill description to fix routing problems. |
-| `skill-eval-runner` | Run trigger tests, output tests, and baseline comparisons. |
-| `skill-evaluation` | Produce quantitative evidence that a single skill adds value. |
+| `skill-evaluation` | Evaluate a single skill's routing accuracy, output quality, and baseline value. |
 | `skill-improver` | Improve an existing skill package. |
 | `skill-installer` | Install a skill package into a local agent client skill directory. |
 | `skill-lifecycle-management` | Manage skills through draft, beta, stable, deprecated, and archived states. |
-| `skill-packager` | Build distributable bundles, manifests, and checksums. |
-| `skill-packaging` | Bundle a finished skill folder into a distributable archive. |
-| `skill-provenance` | Produce a provenance record for a skill. |
+| `skill-packager` | Build distributable bundles for one or more skills in a release. |
+| `skill-packaging` | Bundle a finished skill into a versioned archive with manifest, checksums, and overlays. |
+| `skill-provenance` | Audit and record origin, authorship, license, and trust level for a skill. |
 | `skill-reference-extraction` | Split large reference material out of a SKILL.md. |
 | `skill-registry-manager` | Maintain the skill library catalog and generate the index. |
 | `skill-safety-review` | Audit a skill for safety hazards before publication or import. |
