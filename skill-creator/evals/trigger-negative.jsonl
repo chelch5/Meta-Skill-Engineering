@@ -1,0 +1,6 @@
+{"prompt": "install this skill package into my agent", "should_trigger": false, "better_skill": "skill-installer"}
+{"prompt": "split this skill into smaller focused skills", "should_trigger": false, "better_skill": "skill-variant-splitting"}
+{"prompt": "port this skill from Python to Rust environment", "should_trigger": false, "better_skill": "skill-adaptation"}
+{"prompt": "run evals on this skill to check if its routing works", "should_trigger": false, "better_skill": "skill-evaluation"}
+{"prompt": "fix just the description field so it triggers better", "should_trigger": false, "better_skill": "skill-trigger-optimization"}
+{"prompt": "find me an existing skill for code review before I build one", "should_trigger": false, "better_skill": "community-skill-harvester"}
