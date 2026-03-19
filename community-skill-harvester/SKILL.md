@@ -17,11 +17,11 @@ Search these sources in order:
 # GitHub search by topic
 gh search repos --topic agent-skills --limit 20 --json fullName,description,stargazersCount
 
-# Anthropic skills repo
-gh api repos/anthropics/skills/contents/skills --jq '.[].name' 2>/dev/null
-
-# Direct GitHub code search
+# Search for SKILL.md files across GitHub
 gh search code "name:" --filename SKILL.md --limit 20
+
+# Search known skill registries and collections
+# Add repository URLs for any skill registries relevant to your ecosystem
 ```
 
 ### 2. Evaluate skill quality
@@ -78,10 +78,10 @@ Before importing, document:
 ### 6. Execute import (if approved)
 
 ```bash
-mkdir -p COPILOT/[skill-name]-COPILOT-L
+mkdir -p skills/[skill-name]
 # Copy and adapt SKILL.md
 # Add provenance section documenting origin, license, import date, modifications
-git add COPILOT/[skill-name]-*
+git add skills/[skill-name]
 git commit -m "feat: import [skill-name] from [source]"
 ```
 
@@ -102,5 +102,5 @@ A harvest report containing:
 
 ## References
 
-- Anthropic Skills: https://github.com/anthropics/skills
+- Agent Skills specification: https://agentskills.io/specification
 - SPDX license list: https://spdx.org/licenses/

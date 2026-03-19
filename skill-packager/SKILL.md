@@ -87,4 +87,4 @@ dist/
 ## References
 
 - Semver: https://semver.org/
-- Anthropic Skills format: https://github.com/anthropics/skills
+- Agent Skills specification: https://agentskills.io/specification
