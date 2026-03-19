@@ -66,9 +66,8 @@ Merge the four overlapping skill-creator sub-packages into one consolidated skil
 - `skill-creator/SKILL.md` — Consolidated skill combining best of both sources
 - `skill-creator/evals/trigger-positive.jsonl` — Seed positive trigger test cases
 - `skill-creator/evals/trigger-negative.jsonl` — Seed negative trigger test cases
-- `skill-creator/scripts/package_skill.py` — Retained from anthropic creator
-- `skill-creator/scripts/quick_validate.py` — Retained from anthropic creator
-- `skill-creator/scripts/__init__.py` — Python package init
+- `scripts/quick_validate.py` — Moved from skill-creator to root scripts (repo-wide utility)
+- `archive/skill-packaging/scripts/package_skill.py` — Moved from skill-creator to archive
 - `skill-creator/references/schemas.md` — JSON schemas for eval artifacts
 
 ## Files moved
