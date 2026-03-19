@@ -99,6 +99,14 @@ mkdir -p skills/[skill-name]
 # Copy and adapt SKILL.md
 # Add provenance section documenting origin, license, import date, modifications
 git add skills/[skill-name]
+```
+
+Confirm with the user before committing:
+```
+About to commit imported skill [skill-name]. Proceed? [y/N]
+```
+
+```bash
 git commit -m "feat: import [skill-name] from [source]"
 ```
 
