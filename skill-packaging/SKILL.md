@@ -23,6 +23,7 @@ Bundle a finished skill folder into a distributable archive (tar.gz or zip) cont
 # When NOT to use
 
 - Skill is still being written or refined — finish authoring first
+- Packaging multiple skills for a coordinated release → **skill-packager**
 - User wants to install a bundle — use **skill-installer**
 - User wants to create a skill from scratch — use **skill-creator**
 - User wants to document origin or trust chain — use **skill-provenance**

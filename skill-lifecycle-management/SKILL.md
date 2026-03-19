@@ -12,7 +12,7 @@ description: >-
 
 # Purpose
 
-Manage skills through lifecycle states: draft → beta → stable → deprecated → archived. Ensure maturity labels reflect reality, retired skills don't silently break dependents, and promotion/deprecation criteria are applied consistently.
+Manage skills through lifecycle states: draft → beta → stable → deprecated → archived. Verify that maturity labels reflect reality, retired skills don't silently break dependents, and promotion/deprecation criteria are applied consistently.
 
 # When to use
 
@@ -25,9 +25,10 @@ Manage skills through lifecycle states: draft → beta → stable → deprecated
 
 - Creating a new skill from scratch → `skill-creator`
 - Improving an existing skill's quality or output → `skill-improver`
+- Executing the full deprecation workflow (notices, reference updates, archival) → `skill-deprecation-manager`
 - Reorganizing the library catalog, deduplicating, or enforcing naming → `skill-catalog-curation`
 
-# Lifecycle states
+## Lifecycle states
 
 | State | Meaning | Guidance |
 |-------|---------|----------|

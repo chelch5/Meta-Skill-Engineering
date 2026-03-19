@@ -94,6 +94,11 @@ Before importing, document:
 
 ## 6. Execute import (if approved)
 
+Confirm with the user before committing:
+```
+About to commit imported skill [skill-name]. Proceed? [y/N]
+```
+
 ```bash
 mkdir -p skills/[skill-name]
 # Copy and adapt SKILL.md

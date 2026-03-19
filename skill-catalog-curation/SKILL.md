@@ -23,6 +23,7 @@ Detect duplicates, enforce category consistency, flag deprecation candidates, an
 - Improving or refining a single skill → `skill-improver`
 - Creating a new skill from scratch → `skill-creator`
 - Promoting, deprecating, or archiving individual skills through lifecycle gates → `skill-lifecycle-management`
+- Maintaining registry metadata, generating index, or enforcing naming conventions → `skill-registry-manager`
 - Installing or packaging skills → `skill-installer` / `skill-packaging`
 
 # Procedure

@@ -100,7 +100,7 @@ Use when the skill should become a first-class reusable package: shared across p
 
 Output: improved SKILL.md, manifest, evals, references, scripts only where deterministic, changelog.
 
-# Workflow
+# Procedure
 
 Follow these phases in order unless the user clearly wants a lighter pass.
 
