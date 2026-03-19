@@ -22,8 +22,9 @@ community-skill-harvester → skill-creator → skill-testing-harness → skill-
 
 ### Improvement Pipeline
 ```
-skill-anti-patterns → skill-improver → skill-evaluation → skill-trigger-optimization
+skill-evaluation → skill-anti-patterns → skill-improver → skill-trigger-optimization
 ```
+Evaluation first (establish baseline), anti-patterns second (diagnose), improver third (fix), trigger-optimization fourth (polish routing).
 
 ### Library Management Pipeline
 ```
@@ -35,7 +36,7 @@ skill-catalog-curation → skill-lifecycle-management
 | Goal | Start here |
 |------|-----------|
 | Create a new skill | `skill-creator` |
-| Improve an existing skill | `skill-anti-patterns` (diagnose) → `skill-improver` (fix) |
+| Improve an existing skill | `skill-evaluation` (baseline) → `skill-anti-patterns` (diagnose) → `skill-improver` (fix) |
 | Audit the skill library | `skill-catalog-curation` |
 | Find external skills | `community-skill-harvester` |
 

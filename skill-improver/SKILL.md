@@ -239,14 +239,51 @@ For a full structural anti-pattern catalog, use **skill-anti-patterns**.
 
 # Failure handling
 
-If the skill is too incomplete to improve cleanly:
+## Incomplete skill
+
+If the skill is too incomplete to improve cleanly (missing description, no procedure, stub-only):
 
 1. Name what is missing.
 2. Preserve what can be salvaged.
 3. Produce the lightest viable improved draft.
 4. Mark assumptions explicitly.
 
-If the user wants a quick pass rather than a full package upgrade, do that. The point is to improve the skill, not force ceremony.
+## Quick pass requested
+
+If the user wants a quick pass rather than a full package upgrade, do that. The point is to improve the skill, not force ceremony. Skip support-layer generation and focus on the SKILL.md body only.
+
+## Scope change mid-improvement
+
+If analysis reveals the skill's purpose should fundamentally change (e.g., it should be split, merged, or retired):
+
+1. Stop the improvement.
+2. Document the finding: what the skill currently does vs what it should do.
+3. Recommend the appropriate next action: `skill-variant-splitting` for splits, `skill-catalog-curation` for merges, `skill-lifecycle-management` for retirement.
+4. Do not rewrite a skill into something it was never meant to be.
+
+## Contradictory requirements
+
+If the SKILL.md contains instructions that contradict each other (e.g., description says "never modify files" but procedure step 3 says "write the output file"):
+
+1. List each contradiction with line references.
+2. Ask the user which intent is correct before rewriting.
+3. If no user is available, favor the description (it is the contract) and flag the procedure steps for review.
+
+## Missing support files
+
+If the skill references files that do not exist (phantom references):
+
+1. List each missing reference with the line that references it.
+2. Decide per reference: create the file with reasonable content, or remove the reference.
+3. Default to removing the reference unless the content is essential to the procedure.
+
+## Circular or conflicting cross-references
+
+If the skill's cross-references create loops (A→B→A) or point to skills that contradict this skill's purpose:
+
+1. Map the reference chain.
+2. Remove circular links — keep only the outbound reference that adds value.
+3. Flag conflicting cross-references for manual review.
 
 ## Next steps
 

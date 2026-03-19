@@ -1,14 +1,13 @@
 ---
 name: skill-lifecycle-management
 description: >-
-  Promote, deprecate, and track skills through lifecycle states
-  (draft → beta → stable → deprecated → archived). Use when auditing maturity
-  across a skill library, promoting a tested skill to stable, retiring a
-  superseded skill, checking which skills are production-ready, or when a user
-  says "deprecate this skill", "retire this", or "this is replaced by X".
-  Do not use for creating new skills (use skill-creator), improving individual
-  skill quality (use skill-improver), or reorganizing the library catalog
-  (use skill-catalog-curation).
+  Manage skill lifecycle states (draft → beta → stable → deprecated → archived)
+  including promotion criteria, deprecation procedures, and maturity audits. Use
+  when a user says "deprecate this skill", "promote this to stable", "retire
+  this", "this is replaced by X", "which skills are production-ready", or
+  "audit maturity across the library". Do not use for creating new skills
+  (use skill-creator), improving individual skill quality (use skill-improver),
+  or reorganizing the library catalog (use skill-catalog-curation).
 ---
 
 # Purpose

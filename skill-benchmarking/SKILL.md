@@ -27,7 +27,7 @@ Compare two or more skill variants (A vs B, before vs after, skill vs no-skill) 
 - Only one skill, no variant to compare → `skill-evaluation`
 - Need to build test cases or harness → `skill-testing-harness`
 - Skill is broken and needs fixing → `skill-improver`
-- Quick spot-check, not systematic comparison
+- Quick spot-check, not systematic comparison → `skill-evaluation` (single-skill mode)
 
 # Procedure
 
