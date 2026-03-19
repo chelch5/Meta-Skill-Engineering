@@ -12,15 +12,32 @@
 # and evals/behavior.jsonl. Trigger tests check skill routing (precision/recall).
 # Behavior tests check output format compliance (required patterns, forbidden
 # patterns, minimum length).
+#
+# KNOWN LIMITATION: Trigger tests check whether the skill name appears in the
+# copilot CLI response. This is a proxy for skill activation, not a direct
+# measurement. False positives occur when the model mentions the skill name
+# without actually activating it. False negatives occur when the skill
+# activates but the response doesn't include the skill name verbatim.
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 RESULTS_DIR="${REPO_ROOT}/eval-results"
+TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 DRY_RUN=false
 TARGETS=()
 MODEL="${EVAL_MODEL:-claude-sonnet-4.5}"
 TIMEOUT="${EVAL_TIMEOUT:-60}"
+
+# Gate tracking globals (set by test functions, read by run_gates)
+GATE_POS_PASS=0
+GATE_POS_TOTAL=0
+GATE_NEG_PASS=0
+GATE_NEG_TOTAL=0
+GATE_BEH_PASS=0
+GATE_BEH_TOTAL=0
+CURRENT_REPORT=""
+OVERALL_FAIL=0
 
 usage() {
   echo "Usage: $0 [--all | --dry-run] [skill-name ...]"
@@ -168,7 +185,16 @@ run_trigger_tests() {
       done
       echo ""
     fi
-  } >> "${RESULTS_DIR}/${skill}-eval.md"
+  } >> "$CURRENT_REPORT"
+
+  # Expose counts for gate calculation
+  if [[ "$test_type" == "positive" ]]; then
+    GATE_POS_PASS=$pass
+    GATE_POS_TOTAL=$total
+  else
+    GATE_NEG_PASS=$pass
+    GATE_NEG_TOTAL=$total
+  fi
 }
 
 run_behavior_tests() {
@@ -285,7 +311,90 @@ run_behavior_tests() {
       done
       echo ""
     fi
-  } >> "${RESULTS_DIR}/${skill}-eval.md"
+  } >> "$CURRENT_REPORT"
+
+  # Expose counts for gate calculation
+  GATE_BEH_PASS=$pass
+  GATE_BEH_TOTAL=$total
+}
+
+run_gates() {
+  local skill="$1"
+
+  if $DRY_RUN; then
+    return
+  fi
+
+  local precision=0
+  local recall=0
+  local beh_rate=0
+  local precision_status="FAIL"
+  local recall_status="FAIL"
+  local beh_status="FAIL"
+  local struct_status="FAIL"
+  local struct_detail="not checked"
+
+  # Precision: positive trigger pass rate
+  if [[ $GATE_POS_TOTAL -gt 0 ]]; then
+    precision=$((GATE_POS_PASS * 100 / GATE_POS_TOTAL))
+  fi
+  [[ $precision -ge 80 ]] && precision_status="PASS"
+
+  # Recall: negative trigger pass rate (true negative rate)
+  if [[ $GATE_NEG_TOTAL -gt 0 ]]; then
+    recall=$((GATE_NEG_PASS * 100 / GATE_NEG_TOTAL))
+  fi
+  [[ $recall -ge 80 ]] && recall_status="PASS"
+
+  # Behavior pass rate
+  if [[ $GATE_BEH_TOTAL -gt 0 ]]; then
+    beh_rate=$((GATE_BEH_PASS * 100 / GATE_BEH_TOTAL))
+  fi
+  [[ $beh_rate -ge 80 ]] && beh_status="PASS"
+
+  # Structural validity
+  local skill_md="${REPO_ROOT}/${skill}/SKILL.md"
+  if [[ -f "$skill_md" ]]; then
+    local struct_json
+    struct_json=$(python3 "${REPO_ROOT}/scripts/check_skill_structure.py" "$skill_md" 2>/dev/null || true)
+    if [[ -n "$struct_json" ]]; then
+      local valid score max_score
+      valid=$(echo "$struct_json" | jq -r '.valid')
+      score=$(echo "$struct_json" | jq -r '.score')
+      max_score=$(echo "$struct_json" | jq -r '.max_score')
+      struct_detail="${score}/${max_score}"
+      [[ "$valid" == "true" ]] && struct_status="PASS"
+    else
+      struct_detail="checker error"
+    fi
+  else
+    struct_detail="SKILL.md not found"
+  fi
+
+  # Overall verdict
+  local verdict="PASS"
+  if [[ "$precision_status" == "FAIL" ]] || [[ "$recall_status" == "FAIL" ]] || \
+     [[ "$beh_status" == "FAIL" ]] || [[ "$struct_status" == "FAIL" ]]; then
+    verdict="FAIL"
+    OVERALL_FAIL=$((OVERALL_FAIL + 1))
+  fi
+
+  # Append gate table
+  {
+    echo "## Gates"
+    echo ""
+    echo "| Gate | Status | Detail |"
+    echo "|------|--------|--------|"
+    echo "| Trigger precision ≥ 80% | ${precision_status} | ${precision}% |"
+    echo "| Trigger recall ≥ 80% | ${recall_status} | ${recall}% |"
+    echo "| Behavior pass rate ≥ 80% | ${beh_status} | ${beh_rate}% |"
+    echo "| Structural validity | ${struct_status} | ${struct_detail} |"
+    echo ""
+    echo "## Verdict: ${verdict}"
+    echo ""
+  } >> "$CURRENT_REPORT"
+
+  echo "  Gate verdict: ${verdict}"
 }
 
 # Main loop
@@ -311,22 +420,41 @@ for skill in "${TARGETS[@]}"; do
 
   echo "━━━ ${skill} ━━━"
 
-  # Clear previous results
-  > "${RESULTS_DIR}/${skill}-eval.md"
-  echo "# Eval Results: ${skill}" >> "${RESULTS_DIR}/${skill}-eval.md"
-  echo "Date: $(date -Iseconds)" >> "${RESULTS_DIR}/${skill}-eval.md"
-  echo "Model: ${MODEL}" >> "${RESULTS_DIR}/${skill}-eval.md"
-  echo "" >> "${RESULTS_DIR}/${skill}-eval.md"
+  # Set up timestamped report file
+  CURRENT_REPORT="${RESULTS_DIR}/${skill}-${TIMESTAMP}.md"
+  > "$CURRENT_REPORT"
+  echo "# Eval Results: ${skill}" >> "$CURRENT_REPORT"
+  echo "Date: $(date -Iseconds)" >> "$CURRENT_REPORT"
+  echo "Model: ${MODEL}" >> "$CURRENT_REPORT"
+  echo "" >> "$CURRENT_REPORT"
+
+  # Reset gate tracking
+  GATE_POS_PASS=0; GATE_POS_TOTAL=0
+  GATE_NEG_PASS=0; GATE_NEG_TOTAL=0
+  GATE_BEH_PASS=0; GATE_BEH_TOTAL=0
 
   run_trigger_tests "$skill" "$skill_dir/evals/trigger-positive.jsonl" "positive"
   run_trigger_tests "$skill" "$skill_dir/evals/trigger-negative.jsonl" "negative"
   run_behavior_tests "$skill" "$skill_dir/evals/behavior.jsonl"
 
+  run_gates "$skill"
+
+  # Symlink to latest
+  ln -sf "${skill}-${TIMESTAMP}.md" "${RESULTS_DIR}/${skill}-eval.md"
+
   echo ""
-  echo "  Results saved: eval-results/${skill}-eval.md"
+  echo "  Results saved: eval-results/${skill}-${TIMESTAMP}.md"
+  echo "  (symlinked from eval-results/${skill}-eval.md)"
   echo ""
 done
 
 echo "═══════════════════════════════════════════"
 echo "  All eval results in: ${RESULTS_DIR}/"
+if [[ $OVERALL_FAIL -gt 0 ]]; then
+  echo "  ❌ OVERALL: FAIL (${OVERALL_FAIL} skill(s) failed gates)"
+else
+  echo "  ✅ OVERALL: PASS"
+fi
 echo "═══════════════════════════════════════════"
+
+exit $(( OVERALL_FAIL > 0 ? 1 : 0 ))
