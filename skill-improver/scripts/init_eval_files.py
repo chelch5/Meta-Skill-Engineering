@@ -19,13 +19,13 @@ def main() -> int:
     root = Path(args.skill_dir)
     evals = root / "evals"
     write_jsonl(evals / "trigger-positive.jsonl", [
-        {"id": "tp-001", "prompt": "Replace me with a realistic positive trigger prompt.", "should_trigger": True}
+        {"prompt": "Replace with a realistic positive trigger prompt", "expected": "trigger", "category": "core", "notes": "Replace with explanation of why this should trigger"}
     ])
     write_jsonl(evals / "trigger-negative.jsonl", [
-        {"id": "tn-001", "prompt": "Replace me with a realistic negative trigger prompt.", "should_trigger": False}
+        {"prompt": "Replace with a realistic negative trigger prompt", "expected": "no_trigger", "category": "anti-match", "notes": "Replace with explanation of why this should NOT trigger"}
     ])
     write_jsonl(evals / "behavior.jsonl", [
-        {"id": "bh-001", "prompt": "Replace me with a realistic behavior test.", "assertions": ["replace me"]}
+        {"prompt": "Replace with a realistic behavior test prompt", "expected_sections": ["Replace", "with", "expected", "sections"], "required_patterns": ["replace_pattern"], "forbidden_patterns": ["TODO", "placeholder"], "min_output_lines": 15, "notes": "Replace with explanation"}
     ])
     print(json.dumps({"status": "ok", "eval_dir": str(evals)}))
     return 0

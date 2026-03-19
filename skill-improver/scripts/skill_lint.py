@@ -5,7 +5,10 @@ from pathlib import Path
 
 REQUIRED_SECTIONS = [
     "# Purpose",
-    "# When to use this skill",
+    "# When to use",
+    "# When NOT to use",
+    "# Procedure",
+    "# Output contract",
     "# Failure handling",
 ]
 
@@ -41,9 +44,19 @@ def main() -> int:
         problems.append("frontmatter missing name")
     if "description:" not in fm:
         problems.append("frontmatter missing description")
-    if "Do not use" not in text:
+    has_negative_boundary = (
+        "# When NOT to use" in text
+        or "Do not use" in text
+        or "Do NOT use" in text
+    )
+    if not has_negative_boundary:
         problems.append("skill body may be missing a negative boundary")
-    if " when " not in fm.lower() and "use this skill when" not in text.lower():
+    full_lower = (fm + "\n" + text).lower()
+    has_routing_cue = any(
+        phrase in full_lower
+        for phrase in ("use when", "when the user", "when someone")
+    )
+    if not has_routing_cue:
         problems.append("routing cues may be too weak")
 
     for section in REQUIRED_SECTIONS:
