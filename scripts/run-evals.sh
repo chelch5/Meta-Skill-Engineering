@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# run-evals.sh — Execute JSONL trigger test cases against skills
+# run-evals.sh — Execute JSONL trigger and behavior test cases against skills
 #
 # Usage:
 #   ./scripts/run-evals.sh [skill-name]       # Run evals for one skill
@@ -8,9 +8,10 @@
 #
 # Requires: copilot CLI, jq
 #
-# The script reads evals/trigger-positive.jsonl and evals/trigger-negative.jsonl,
-# sends each prompt to the copilot CLI, checks if the target skill was mentioned
-# in the response, and reports precision/recall.
+# The script reads evals/trigger-positive.jsonl, evals/trigger-negative.jsonl,
+# and evals/behavior.jsonl. Trigger tests check skill routing (precision/recall).
+# Behavior tests check output format compliance (required patterns, forbidden
+# patterns, minimum length).
 
 set -euo pipefail
 
@@ -170,6 +171,123 @@ run_trigger_tests() {
   } >> "${RESULTS_DIR}/${skill}-eval.md"
 }
 
+run_behavior_tests() {
+  local skill="$1"
+  local jsonl_file="$2"
+  local total=0
+  local pass=0
+  local fail=0
+  local errors=()
+
+  if [[ ! -f "$jsonl_file" ]]; then
+    echo "  ⏭  No behavior test file"
+    return
+  fi
+
+  local case_count
+  case_count=$(wc -l < "$jsonl_file")
+  echo "  Running ${case_count} behavior cases..."
+
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    total=$((total + 1))
+
+    local prompt
+    prompt=$(echo "$line" | jq -r '.prompt')
+    local min_lines
+    min_lines=$(echo "$line" | jq -r '.min_output_lines // 10')
+
+    if $DRY_RUN; then
+      local sections
+      sections=$(echo "$line" | jq -r '.expected_sections // [] | join(", ")')
+      echo "    [${total}] behavior: ${prompt:0:60}..."
+      echo "           expected: ${sections}"
+      continue
+    fi
+
+    # Run the prompt through copilot CLI
+    local response
+    response=$(timeout "$TIMEOUT" copilot -p "$prompt" \
+      --model "$MODEL" \
+      --reasoning-effort low \
+      --allow-all \
+      --autopilot 2>/dev/null || echo "ERROR: timeout or failure")
+
+    local response_lines
+    response_lines=$(echo "$response" | wc -l)
+    local section_pass=true
+    local pattern_pass=true
+    local forbidden_pass=true
+    local length_pass=true
+    local fail_reasons=()
+
+    # Check minimum output length
+    if [[ $response_lines -lt $min_lines ]]; then
+      length_pass=false
+      fail_reasons+=("too short (${response_lines} < ${min_lines} lines)")
+    fi
+
+    # Check required patterns
+    while IFS= read -r pattern; do
+      [[ -z "$pattern" ]] && continue
+      if ! echo "$response" | grep -qi "$pattern"; then
+        pattern_pass=false
+        fail_reasons+=("missing required: ${pattern}")
+      fi
+    done < <(echo "$line" | jq -r '.required_patterns // [] | .[]')
+
+    # Check forbidden patterns
+    while IFS= read -r pattern; do
+      [[ -z "$pattern" ]] && continue
+      if echo "$response" | grep -qi "$pattern"; then
+        forbidden_pass=false
+        fail_reasons+=("contains forbidden: ${pattern}")
+      fi
+    done < <(echo "$line" | jq -r '.forbidden_patterns // [] | .[]')
+
+    if $section_pass && $pattern_pass && $forbidden_pass && $length_pass; then
+      pass=$((pass + 1))
+      echo "    ✅ [${total}] PASS: ${prompt:0:60}..."
+    else
+      fail=$((fail + 1))
+      local reason_str
+      reason_str=$(printf '%s; ' "${fail_reasons[@]}")
+      errors+=("    ❌ [${total}] FAIL: ${prompt:0:60}... [${reason_str}]")
+      echo "${errors[-1]}"
+    fi
+  done < "$jsonl_file"
+
+  if $DRY_RUN; then
+    echo "    Total: ${total} cases (dry run)"
+    return
+  fi
+
+  echo ""
+  echo "  behavior results: ${pass}/${total} passed (${fail} failed)"
+
+  {
+    echo "## Behavior tests: ${skill}"
+    echo ""
+    echo "| Metric | Value |"
+    echo "|--------|-------|"
+    echo "| Total  | ${total} |"
+    echo "| Passed | ${pass} |"
+    echo "| Failed | ${fail} |"
+    if [[ $total -gt 0 ]]; then
+      local rate=$((pass * 100 / total))
+      echo "| Rate   | ${rate}% |"
+    fi
+    echo ""
+    if [[ ${#errors[@]} -gt 0 ]]; then
+      echo "### Failures"
+      for err in "${errors[@]}"; do
+        echo "$err"
+      done
+      echo ""
+    fi
+  } >> "${RESULTS_DIR}/${skill}-eval.md"
+}
+
 # Main loop
 echo "═══════════════════════════════════════════"
 echo "  Meta-Skill Eval Runner"
@@ -202,6 +320,7 @@ for skill in "${TARGETS[@]}"; do
 
   run_trigger_tests "$skill" "$skill_dir/evals/trigger-positive.jsonl" "positive"
   run_trigger_tests "$skill" "$skill_dir/evals/trigger-negative.jsonl" "negative"
+  run_behavior_tests "$skill" "$skill_dir/evals/behavior.jsonl"
 
   echo ""
   echo "  Results saved: eval-results/${skill}-eval.md"
