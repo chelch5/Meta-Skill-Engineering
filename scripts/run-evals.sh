@@ -13,11 +13,18 @@
 # Behavior tests check output format compliance (required patterns, forbidden
 # patterns, minimum length).
 #
-# KNOWN LIMITATION: Trigger tests check whether the skill name appears in the
-# copilot CLI response. This is a proxy for skill activation, not a direct
-# measurement. False positives occur when the model mentions the skill name
-# without actually activating it. False negatives occur when the skill
-# activates but the response doesn't include the skill name verbatim.
+# ROUTING DETECTION MODES:
+#
+# --fast (default): Checks whether the skill name appears in the copilot CLI
+#   response. This is a proxy for skill activation, not a direct measurement.
+#   False positives occur when the model mentions the skill name without
+#   actually activating it. False negatives occur when the skill activates
+#   but the response doesn't include the skill name verbatim.
+#
+# --strict: Differential testing — runs each prompt twice: once with the
+#   skill's SKILL.md present and once with it temporarily hidden. If outputs
+#   differ meaningfully, the skill was activated. Slower (2x prompts) but
+#   credible. Set EVAL_ROUTING=strict or pass --strict flag.
 
 set -euo pipefail
 
@@ -28,6 +35,8 @@ DRY_RUN=false
 TARGETS=()
 MODEL="${EVAL_MODEL:-claude-sonnet-4.5}"
 TIMEOUT="${EVAL_TIMEOUT:-60}"
+ROUTING_MODE="${EVAL_ROUTING:-fast}"
+JSON_OUTPUT=false
 
 # Gate tracking globals (set by test functions, read by run_gates)
 GATE_POS_PASS=0
@@ -40,11 +49,13 @@ CURRENT_REPORT=""
 OVERALL_FAIL=0
 
 usage() {
-  echo "Usage: $0 [--all | --dry-run] [skill-name ...]"
+  echo "Usage: $0 [--all | --dry-run | --strict | --json] [skill-name ...]"
   echo ""
   echo "Options:"
   echo "  --all       Run evals for all skills that have evals/ directories"
   echo "  --dry-run   List test cases without executing them"
+  echo "  --strict    Use differential routing (with/without skill); slower but credible"
+  echo "  --json      Emit machine-readable JSON summary to stdout after report"
   echo "  --model X   Override model (default: claude-sonnet-4.5)"
   echo "  --timeout N Seconds per prompt (default: 60)"
   exit 1
@@ -62,6 +73,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --dry-run)
       DRY_RUN=true
+      shift
+      ;;
+    --strict)
+      ROUTING_MODE="strict"
+      shift
+      ;;
+    --json)
+      JSON_OUTPUT=true
       shift
       ;;
     --model)
@@ -135,8 +154,42 @@ run_trigger_tests() {
 
     # Check if the target skill was activated
     local skill_mentioned=false
-    if echo "$response" | grep -qi "$skill"; then
-      skill_mentioned=true
+    if [[ "$ROUTING_MODE" == "strict" ]]; then
+      # Differential testing: run again with skill hidden, compare outputs
+      local skill_dir="${REPO_ROOT}/${skill}"
+      local skill_md="${skill_dir}/SKILL.md"
+      local hidden_md="${skill_dir}/.SKILL.md.hidden"
+      if [[ -f "$skill_md" ]]; then
+        mv "$skill_md" "$hidden_md"
+        local response_without
+        response_without=$(timeout "$TIMEOUT" copilot -p "$prompt" \
+          --model "$MODEL" \
+          --reasoning-effort low \
+          --allow-all \
+          --autopilot 2>/dev/null || echo "ERROR: timeout or failure")
+        mv "$hidden_md" "$skill_md"
+        # If outputs differ meaningfully (>20% character difference), skill was active
+        local len_with=${#response}
+        local len_without=${#response_without}
+        if [[ "$response" != "$response_without" ]]; then
+          local diff_chars
+          diff_chars=$(diff <(echo "$response") <(echo "$response_without") | wc -c)
+          local avg_len=$(( (len_with + len_without) / 2 ))
+          if [[ $avg_len -gt 0 ]] && [[ $((diff_chars * 100 / avg_len)) -gt 20 ]]; then
+            skill_mentioned=true
+          fi
+        fi
+      else
+        # Fallback to name-grep if SKILL.md not found
+        if echo "$response" | grep -qi "$skill"; then
+          skill_mentioned=true
+        fi
+      fi
+    else
+      # Fast mode: name-grep proxy
+      if echo "$response" | grep -qi "$skill"; then
+        skill_mentioned=true
+      fi
     fi
 
     local test_passed=false
@@ -247,29 +300,38 @@ run_behavior_tests() {
     local length_pass=true
     local fail_reasons=()
 
-    # Check minimum output length
+    # Check minimum output length (protocol compliance)
     if [[ $response_lines -lt $min_lines ]]; then
       length_pass=false
-      fail_reasons+=("too short (${response_lines} < ${min_lines} lines)")
+      fail_reasons+=("protocol: too short (${response_lines} < ${min_lines} lines)")
     fi
 
-    # Check required patterns
+    # Check required patterns (protocol compliance)
     while IFS= read -r pattern; do
       [[ -z "$pattern" ]] && continue
       if ! echo "$response" | grep -qi "$pattern"; then
         pattern_pass=false
-        fail_reasons+=("missing required: ${pattern}")
+        fail_reasons+=("protocol: missing required: ${pattern}")
       fi
     done < <(echo "$line" | jq -r '.required_patterns // [] | .[]')
 
-    # Check forbidden patterns
+    # Check forbidden patterns (protocol compliance)
     while IFS= read -r pattern; do
       [[ -z "$pattern" ]] && continue
       if echo "$response" | grep -qi "$pattern"; then
         forbidden_pass=false
-        fail_reasons+=("contains forbidden: ${pattern}")
+        fail_reasons+=("protocol: contains forbidden: ${pattern}")
       fi
     done < <(echo "$line" | jq -r '.forbidden_patterns // [] | .[]')
+
+    # Check expected sections (protocol compliance)
+    while IFS= read -r section; do
+      [[ -z "$section" ]] && continue
+      if ! echo "$response" | grep -qi "$section"; then
+        section_pass=false
+        fail_reasons+=("protocol: missing section: ${section}")
+      fi
+    done < <(echo "$line" | jq -r '.expected_sections // [] | .[]')
 
     if $section_pass && $pattern_pass && $forbidden_pass && $length_pass; then
       pass=$((pass + 1))
@@ -401,6 +463,7 @@ run_gates() {
 echo "═══════════════════════════════════════════"
 echo "  Meta-Skill Eval Runner"
 echo "  Model: ${MODEL}"
+echo "  Routing: ${ROUTING_MODE}"
 echo "  Mode: $(if $DRY_RUN; then echo 'DRY RUN'; else echo 'LIVE'; fi)"
 echo "═══════════════════════════════════════════"
 echo ""
@@ -456,5 +519,18 @@ else
   echo "  ✅ OVERALL: PASS"
 fi
 echo "═══════════════════════════════════════════"
+
+# JSON summary output (for run-baseline-comparison.sh and other tooling)
+if $JSON_OUTPUT; then
+  echo "{"
+  echo "  \"timestamp\": \"${TIMESTAMP}\","
+  echo "  \"model\": \"${MODEL}\","
+  echo "  \"routing_mode\": \"${ROUTING_MODE}\","
+  echo "  \"overall\": \"$(if [[ $OVERALL_FAIL -gt 0 ]]; then echo FAIL; else echo PASS; fi)\","
+  echo "  \"skills_failed\": ${OVERALL_FAIL},"
+  echo "  \"skills_tested\": ${#TARGETS[@]},"
+  echo "  \"results_dir\": \"${RESULTS_DIR}\""
+  echo "}"
+fi
 
 exit $(( OVERALL_FAIL > 0 ? 1 : 0 ))

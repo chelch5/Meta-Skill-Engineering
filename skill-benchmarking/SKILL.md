@@ -12,7 +12,7 @@ description: >-
 
 # Purpose
 
-Compare two or more skill variants (A vs B, before vs after, skill vs no-skill) on the same test cases. Produce a summary table with pass rate, token usage, and win rate, then recommend which variant to keep.
+Compare two or more skill variants (A vs B, before vs after) on the same test cases. Produce a summary table with pass rate, token usage, and win rate, then recommend which variant to keep.
 
 # When to use
 
@@ -32,7 +32,7 @@ Compare two or more skill variants (A vs B, before vs after, skill vs no-skill) 
 # Procedure
 
 1. **Define the comparison**
-   - Identify variants: A vs B, before vs after, skill vs no-skill baseline.
+   - Identify variants: A vs B, or before vs after. For skill vs no-skill baseline evaluation, use `skill-evaluation` instead.
    - Choose metrics: pass rate, token usage, win rate. Drop metrics irrelevant to the decision.
    - Set minimum sample size (N ≥ 10 per variant).
 

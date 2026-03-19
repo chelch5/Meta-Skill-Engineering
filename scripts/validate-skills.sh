@@ -53,6 +53,14 @@ for skill_dir in "${SKILL_DIRS[@]}"; do
     else
       log_error "Missing 'description' in frontmatter"
     fi
+
+    # Check for unexpected frontmatter fields (contract: name and description only)
+    unexpected_fields=$(sed -n '/^---$/,/^---$/p' "$skill_md" | grep -E '^[a-zA-Z_-]+:' | grep -v '^name:' | grep -v '^description:' | grep -v '^---$' | sed 's/:.*//' || true)
+    if [[ -n "$unexpected_fields" ]]; then
+      for field in $unexpected_fields; do
+        log_warn "Unexpected frontmatter field '$field' (contract allows only name, description)"
+      done
+    fi
   else
     log_error "Missing YAML frontmatter (no opening ---)"
   fi

@@ -1,7 +1,7 @@
 ---
 name: skill-testing-harness
 description: >-
-  Build trigger tests and output-format tests for a skill's evals/ directory.
+  Build trigger tests and behavior tests for a skill's evals/ directory.
   Use when "create tests for this skill", "set up evals", "build a test
   harness", a new skill needs test coverage, or a skill lacks an evals/
   directory. Do not use for running existing tests (use skill-evaluation),
@@ -93,9 +93,9 @@ Each line is a JSON object for a prompt that should NOT activate the skill. Incl
 | `better_skill` | Yes | Correct skill name, or `null` if none matches |
 | `notes` | No | Why this case should not trigger |
 
-## Step 4 — Create output tests
+## Step 4 — Create behavior tests
 
-File: `evals/output-tests.jsonl`
+File: `evals/behavior.jsonl`
 
 Each line defines a prompt with expected output characteristics.
 
@@ -107,7 +107,7 @@ Each line defines a prompt with expected output characteristics.
 
 ```jsonl
 {"prompt": "Create trigger tests for skill-authoring", "expected_files": ["evals/trigger-positive.jsonl", "evals/trigger-negative.jsonl"], "required_patterns": ["\"expected\": \"trigger\"", "\"expected\": \"no_trigger\""], "forbidden_patterns": ["TODO", "placeholder", "consider adding"], "min_cases": 5}
-{"prompt": "Build a full test harness for the pdf-extraction skill", "expected_files": ["evals/trigger-positive.jsonl", "evals/trigger-negative.jsonl", "evals/output-tests.jsonl", "evals/README.md"], "required_patterns": ["\"category\""], "forbidden_patterns": ["may want to", "could potentially"], "min_cases": 8}
+{"prompt": "Build a full test harness for the pdf-extraction skill", "expected_files": ["evals/trigger-positive.jsonl", "evals/trigger-negative.jsonl", "evals/behavior.jsonl", "evals/README.md"], "required_patterns": ["\"category\""], "forbidden_patterns": ["may want to", "could potentially"], "min_cases": 8}
 ```
 
 ## Step 5 — Create test fixtures (if needed)
@@ -128,7 +128,7 @@ File: `evals/README.md`
 |------|---------|------------|
 | trigger-positive.jsonl | Prompts that SHOULD trigger | N |
 | trigger-negative.jsonl | Prompts that should NOT trigger | N |
-| output-tests.jsonl | Output format/content validation | N |
+| behavior.jsonl | Output format/content validation | N |
 
 ## Running
 - Trigger tests: Feed each prompt to router, verify trigger/no_trigger matches expected
@@ -147,7 +147,7 @@ evals/
 ├── README.md              # How to run and extend tests
 ├── trigger-positive.jsonl # 8–15 should-trigger cases
 ├── trigger-negative.jsonl # 8–15 should-not-trigger cases
-├── output-tests.jsonl     # Output validation cases
+├── behavior.jsonl         # Output format/content validation
 └── fixtures/              # Optional test data
 ```
 

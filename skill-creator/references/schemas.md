@@ -4,35 +4,26 @@ This document defines the JSON schemas used by skill-creator.
 
 ---
 
-## evals.json
+## Eval Suite (JSONL format)
 
-Defines the evals for a skill. Located at `evals/evals.json` within the skill directory.
+Defines eval test cases for a skill. Located in the `evals/` directory using the canonical JSONL format (see AGENTS.md "Eval Suite Structure").
 
+**trigger-positive.jsonl** — one JSON object per line:
 ```json
-{
-  "skill_name": "example-skill",
-  "evals": [
-    {
-      "id": 1,
-      "prompt": "User's example prompt",
-      "expected_output": "Description of expected result",
-      "files": ["evals/files/sample1.pdf"],
-      "expectations": [
-        "The output includes X",
-        "The skill used script Y"
-      ]
-    }
-  ]
-}
+{"prompt": "User's realistic task prompt", "expected": "trigger", "category": "core", "notes": "Why this should trigger"}
 ```
 
-**Fields:**
-- `skill_name`: Name matching the skill's frontmatter
-- `evals[].id`: Unique integer identifier
-- `evals[].prompt`: The task to execute
-- `evals[].expected_output`: Human-readable description of success
-- `evals[].files`: Optional list of input file paths (relative to skill root)
-- `evals[].expectations`: List of verifiable statements
+**trigger-negative.jsonl** — one JSON object per line:
+```json
+{"prompt": "User's realistic task prompt", "expected": "no_trigger", "category": "anti-match", "notes": "Why this should NOT trigger"}
+```
+
+**behavior.jsonl** — one JSON object per line:
+```json
+{"prompt": "User's realistic task prompt", "expected_sections": ["Section A", "Section B"], "required_patterns": ["pattern"], "forbidden_patterns": ["TODO"], "min_output_lines": 15, "notes": "What to check"}
+```
+
+For full field schemas, see AGENTS.md or `skill-testing-harness`.
 
 ---
 

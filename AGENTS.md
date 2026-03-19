@@ -16,6 +16,35 @@ This repository is a meta-skill engineering workspace. Treat each top-level skil
 - When a package has evals or scripts, treat them as support layers for the skill rather than as the skill itself.
 - Skills are internal-only; do not add license, compatibility, or release metadata unless explicitly needed.
 
+## Eval Suite Structure
+
+Every skill package should include an `evals/` directory with these files:
+
+```
+evals/
+├── trigger-positive.jsonl   # Prompts that SHOULD activate the skill
+├── trigger-negative.jsonl   # Prompts that should NOT activate the skill
+├── behavior.jsonl           # Output quality checks
+└── README.md                # Optional: how to run and extend tests
+```
+
+**trigger-positive.jsonl** — one JSON object per line:
+```json
+{"prompt": "...", "expected": "trigger", "category": "core|indirect|paraphrase|edge", "notes": "..."}
+```
+
+**trigger-negative.jsonl** — one JSON object per line:
+```json
+{"prompt": "...", "expected": "no_trigger", "category": "anti-match|adjacent|out-of-scope", "notes": "..."}
+```
+
+**behavior.jsonl** — one JSON object per line:
+```json
+{"prompt": "...", "expected_sections": ["..."], "required_patterns": ["..."], "forbidden_patterns": ["..."], "min_output_lines": 15, "notes": "..."}
+```
+
+No other eval formats are active. Do not use `evals.json`, `output-tests.jsonl`, `triggers.yaml`, `outputs.yaml`, or `baselines.yaml`.
+
 ## SKILL.md Structure
 
 All skills should follow this section order:

@@ -185,21 +185,13 @@ Good test prompts are:
 - Include edge cases and near-miss scenarios
 - Include cases that should NOT trigger the skill
 
-Save test cases to `evals/evals.json`:
+Save test cases as JSONL files in `evals/` using the canonical format (see AGENTS.md "Eval Suite Structure"):
 
-```json
-{
-  "skill_name": "example-skill",
-  "evals": [
-    {
-      "id": 1,
-      "prompt": "User's realistic task prompt",
-      "should_trigger": true,
-      "expected_output": "Description of expected result"
-    }
-  ]
-}
-```
+- `evals/trigger-positive.jsonl` — prompts that SHOULD trigger the skill
+- `evals/trigger-negative.jsonl` — prompts that should NOT trigger the skill
+- `evals/behavior.jsonl` — output quality checks
+
+For details on field schemas, delegate to `skill-testing-harness` or refer to AGENTS.md.
 
 Share the test cases with the user: "Here are test cases I'd like to try.
 Do these look right, or do you want to add or change any?"

@@ -43,9 +43,7 @@ Check whether the skill has an existing eval suite:
 
 Locate test files in the skill directory. Supported formats:
 - `evals/trigger-positive.jsonl` and `evals/trigger-negative.jsonl`
-- `evals/triggers.yaml` (combined positive/negative)
-- `evals/behavior.jsonl` or `evals/outputs.yaml`
-- `evals/baselines.yaml`
+- `evals/behavior.jsonl`
 
 For each trigger test case, run the prompt and record whether the skill fired.
 For each behavior test case, run the skill and check against expected patterns.

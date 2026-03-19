@@ -49,6 +49,24 @@ if ! command -v jq &>/dev/null; then
   exit 1
 fi
 
+# Eval comparison state
+EVAL_SCRIPT="${REPO_ROOT}/scripts/run-evals.sh"
+EVAL_TMPBASE=""
+EVAL_AVAILABLE=false
+EVAL_ORIG_EXIT=""
+EVAL_MOD_EXIT=""
+
+cleanup() {
+  if [[ -n "$EVAL_TMPBASE" && -d "$EVAL_TMPBASE" ]]; then
+    local tmpname
+    tmpname="$(basename "$EVAL_TMPBASE")"
+    rm -rf "$EVAL_TMPBASE"
+    # Clean up any eval result files created for the temp skill
+    rm -f "${REPO_ROOT}/eval-results/${tmpname}"*.md 2>/dev/null || true
+  fi
+}
+trap cleanup EXIT
+
 # Run structural checks on both files
 ORIG_JSON="$(python3 "$CHECK_SCRIPT" "$ORIGINAL" 2>/dev/null || true)"
 MOD_JSON="$(python3 "$CHECK_SCRIPT" "$MODIFIED" 2>/dev/null || true)"
@@ -80,6 +98,37 @@ mod_name="$(echo "$MOD_JSON" | jq -r '.checks.frontmatter_fields.detail // ""' |
 
 # Collect all check keys from both reports
 all_checks="$(echo "$ORIG_JSON $MOD_JSON" | jq -rs '[.[].checks | keys[]] | unique | .[]')"
+
+# --- Eval Comparison ---
+skill_name="$orig_name"
+skill_dir="${REPO_ROOT}/${skill_name}"
+
+if [[ "$skill_name" != "unknown" && -d "${skill_dir}/evals" && -f "$EVAL_SCRIPT" ]]; then
+  EVAL_AVAILABLE=true
+
+  # Create a temporary skill directory inside the repo root
+  EVAL_TMPBASE="$(mktemp -d "${REPO_ROOT}/.baseline-eval-XXXXXX")"
+  eval_skill_basename="$(basename "$EVAL_TMPBASE")"
+
+  # Copy the evals/ directory from the original skill
+  cp -r "${skill_dir}/evals" "${EVAL_TMPBASE}/evals"
+
+  # Run evals with the original SKILL.md
+  cp "$ORIGINAL" "${EVAL_TMPBASE}/SKILL.md"
+  if EVAL_ORIG_OUTPUT="$("$EVAL_SCRIPT" --json "$eval_skill_basename" 2>&1)"; then
+    EVAL_ORIG_EXIT=0
+  else
+    EVAL_ORIG_EXIT=$?
+  fi
+
+  # Run evals with the modified SKILL.md
+  cp "$MODIFIED" "${EVAL_TMPBASE}/SKILL.md"
+  if EVAL_MOD_OUTPUT="$("$EVAL_SCRIPT" --json "$eval_skill_basename" 2>&1)"; then
+    EVAL_MOD_EXIT=0
+  else
+    EVAL_MOD_EXIT=$?
+  fi
+fi
 
 # --- Quality Gates ---
 GATE_PASS=0
@@ -133,6 +182,23 @@ if [[ "$orig_name" == "$mod_name" ]] || [[ "$orig_name" == "unknown" ]]; then
 else
   GATE_RESULTS+=("✗|Name preserved|${orig_name} → ${mod_name}|Name was changed")
   GATE_FAIL=$((GATE_FAIL + 1))
+fi
+
+# Gate 5: Eval regression — modified must not fail evals that original passed
+if $EVAL_AVAILABLE; then
+  if [[ "$EVAL_ORIG_EXIT" -eq 0 && "$EVAL_MOD_EXIT" -ne 0 ]]; then
+    GATE_RESULTS+=("✗|Eval regression|original=PASS modified=FAIL|Modified SKILL.md broke eval suite")
+    GATE_FAIL=$((GATE_FAIL + 1))
+  elif [[ "$EVAL_ORIG_EXIT" -ne 0 && "$EVAL_MOD_EXIT" -eq 0 ]]; then
+    GATE_RESULTS+=("✓|Eval regression|original=FAIL modified=PASS|Modified SKILL.md fixed eval suite")
+    GATE_PASS=$((GATE_PASS + 1))
+  elif [[ "$EVAL_ORIG_EXIT" -eq 0 && "$EVAL_MOD_EXIT" -eq 0 ]]; then
+    GATE_RESULTS+=("✓|Eval regression|original=PASS modified=PASS|Both versions pass eval suite")
+    GATE_PASS=$((GATE_PASS + 1))
+  else
+    GATE_RESULTS+=("✓|Eval regression|original=FAIL modified=FAIL|Both versions fail eval suite (no regression)")
+    GATE_PASS=$((GATE_PASS + 1))
+  fi
 fi
 
 # --- Score delta ---
@@ -190,6 +256,34 @@ while IFS= read -r check_key; do
   fi
   echo "| \`${check_key}\` | ${orig_pass} | ${mod_pass} | ${change} |"
 done <<< "$all_checks"
+
+if $EVAL_AVAILABLE; then
+  orig_eval_status="PASS"; [[ "$EVAL_ORIG_EXIT" -ne 0 ]] && orig_eval_status="FAIL"
+  mod_eval_status="PASS"; [[ "$EVAL_MOD_EXIT" -ne 0 ]] && mod_eval_status="FAIL"
+  cat <<EVALEOF
+
+## Eval Comparison
+
+| Version | Eval Result | Exit Code |
+|---------|-------------|-----------|
+| Original | ${orig_eval_status} | ${EVAL_ORIG_EXIT} |
+| Modified | ${mod_eval_status} | ${EVAL_MOD_EXIT} |
+EVALEOF
+  if [[ "$EVAL_ORIG_EXIT" -eq 0 && "$EVAL_MOD_EXIT" -ne 0 ]]; then
+    echo ""
+    echo "> ⚠ **Eval regression detected**: original SKILL.md passes the eval suite but modified version fails."
+  elif [[ "$EVAL_ORIG_EXIT" -ne 0 && "$EVAL_MOD_EXIT" -eq 0 ]]; then
+    echo ""
+    echo "> 🟢 **Eval improvement**: modified SKILL.md now passes the eval suite."
+  fi
+else
+  cat <<EVALEOF
+
+## Eval Comparison
+
+No eval suite available — structural comparison only.
+EVALEOF
+fi
 
 cat <<EOF
 

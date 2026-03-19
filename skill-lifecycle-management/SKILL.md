@@ -44,7 +44,7 @@ Manage skills through lifecycle states: draft → beta → stable → deprecated
 
 ## Operating procedure
 
-1. **Inventory current states**: List all skills with their `metadata.maturity` field. Flag anomalies — draft skills older than 2 cycles, stable skills with known bugs.
+1. **Inventory current states**: List all skills with their current lifecycle state. Flag anomalies — draft skills older than 2 cycles, stable skills with known bugs.
 2. **Apply promotion criteria**:
    - draft → beta: Tested with ≥3 **diverse** prompts — one core use case, one edge case, one negative case (should NOT trigger). All three produce expected output or correct non-trigger. Diversity matters more than count; three paraphrases of the same query do not qualify.
    - beta → stable: Formal evaluation (via `skill-evaluation`) returned a Pass verdict. At least 10 test cases with ≥90% pass rate. Used in at least 2 real projects or sessions without reported failure.
@@ -53,7 +53,7 @@ Manage skills through lifecycle states: draft → beta → stable → deprecated
    - A strictly better replacement exists and is stable
    - Unused for ≥3 cycles
    - Consistently fails evaluation
-4. **Execute transitions**: Update `metadata.maturity` in the skill's frontmatter.
+4. **Execute transitions**: Record the transition in the library's lifecycle index and add a status notice to the skill's SKILL.md body if needed (e.g., deprecation notice).
 5. **Check dependents**: If a deprecated skill is referenced in AGENTS.md, commands, or other skills, flag each reference for update.
 6. **Update library index**: Set each skill's catalog entry to its new state.
 
@@ -81,24 +81,17 @@ grep -r "Do NOT use" **/SKILL.md | grep -i "<skill-name>"
 
 Replace with replacement skill pointer, or note "no replacement available".
 
-### 4. Update frontmatter
+### 4. Add deprecation notice
 
-```yaml
-metadata:
-  maturity: deprecated
-  deprecated_by: replacement-skill  # or "none"
-  deprecated_reason: "Superseded by newer version"
-```
-
-### 5. Add deprecation notice
-
-At top of SKILL.md body:
+Add a notice at the top of the SKILL.md body (after frontmatter):
 ```markdown
 > ⚠️ DEPRECATED as of [date]. Use [replacement] instead.
 > Reason: [one sentence]. Kept for reference only.
 ```
 
-### 6. Move to archive (if applicable)
+Do NOT add lifecycle metadata to YAML frontmatter — the repo contract limits frontmatter to `name` and `description` only.
+
+### 5. Move to archive (if applicable)
 
 Confirm with user before moving:
 ```
@@ -111,9 +104,9 @@ mv skill-name/ ARCHIVE/skill-name/
 ```
 Do NOT delete — preserve for reference and provenance.
 
-### 7. Update catalog
+### 6. Update catalog
 
-- Mark `deprecated: true` in catalog metadata
+- Update lifecycle index to show deprecated status
 - Remove from active catalog section
 - Add to "Deprecated" section of index
 
@@ -173,7 +166,7 @@ If no transitions are warranted, state that explicitly — do not invent changes
 
 | Problem | Response |
 |---------|----------|
-| Skills missing `metadata.maturity` field | Infer and add the field (has evals → beta; no evals → draft) before proceeding |
+| Skills with unknown lifecycle state | Infer from evidence (has evals → beta; passes evaluation → stable; no evals → draft) and record in lifecycle index |
 | Deprecated skill has active dependents | Identify or create replacement first; do not deprecate until dependents have a migration path |
 | Disputed maturity (e.g. "stable" but failing evals) | Default to the more conservative state and note the discrepancy |
 | No evaluation data available for promotion | Block promotion; recommend running `skill-evaluation` first |

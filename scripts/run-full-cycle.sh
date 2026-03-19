@@ -6,6 +6,7 @@
 #   2. Trigger and behavior evals (run-evals.sh --all)
 #   3. Corpus evaluation (run-corpus-eval.sh)
 #   4. Regression suite (run-regression-suite.sh)
+#   4.5. Harvest failures into regression corpus (harvest_failures.py)
 #   5. Aggregate report
 #
 # Usage:
@@ -147,6 +148,31 @@ if $DRY_RUN; then
   skip_step 4 "Regression suite" "--dry-run not supported by run-regression-suite.sh"
 else
   run_step 4 "Regression suite" "run-regression-suite.sh"
+fi
+
+# --- Step 4.5: Harvest failures into regression corpus ---
+if ! $DRY_RUN; then
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "  Step 4.5: Failure harvesting"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  harvest_count=0
+  for report in "${RESULTS_DIR}"/*-"${TIMESTAMP}".md; do
+    [[ -f "$report" ]] || continue
+    [[ "$(basename "$report")" == summary-* ]] && continue
+    output=$(python3 "${REPO_ROOT}/scripts/harvest_failures.py" "$report" 2>&1) || true
+    if echo "$output" | grep -q "Harvested"; then
+      echo "  $output"
+      harvest_count=$((harvest_count + 1))
+    fi
+  done
+
+  if [[ $harvest_count -gt 0 ]]; then
+    echo "  Harvested failures from ${harvest_count} report(s) into corpus/regression/"
+  else
+    echo "  No failures to harvest"
+  fi
 fi
 
 # --- Step 5: Aggregate report ---

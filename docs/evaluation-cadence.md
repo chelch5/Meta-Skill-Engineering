@@ -26,7 +26,7 @@ Run the full evaluation cadence:
 ./scripts/run-full-cycle.sh
 ```
 
-This runs all five steps in sequence: structural validation, trigger/behavior evals, corpus evaluation, regression suite, and produces an aggregate report in `eval-results/summary-<timestamp>.md`.
+This runs all five steps in sequence: structural validation, trigger/behavior evals, corpus evaluation, regression suite, and produces an aggregate report in `eval-results/summary-<timestamp>.md`. After evals and regression checks, failures are automatically harvested into `corpus/regression/` for future regression testing.
 
 ## Dry Run (instant)
 

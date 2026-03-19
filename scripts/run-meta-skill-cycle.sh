@@ -1,9 +1,16 @@
 #!/usr/bin/env bash
-# run-meta-skill-cycle.sh
+# run-meta-skill-cycle.sh — OPTIONAL / EXPERIMENTAL
+#
 # Runs copilot in non-interactive mode with all permissions to execute
 # the meta-skill orchestrator against the repository's own skill packages.
 #
-# Requires: copilot CLI, meta-skill-orchestrator skill installed in ~/.copilot/skills/
+# ⚠️  This script is NOT part of the core evaluation path (run-full-cycle.sh).
+# It requires an external skill not included in this repository.
+#
+# Prerequisites:
+#   - copilot CLI installed and authenticated
+#   - meta-skill-orchestrator skill installed in ~/.copilot/skills/
+#     (this skill is NOT part of this repository — obtain it separately)
 #
 # Usage: ./scripts/run-meta-skill-cycle.sh [cycle_number]
 #   cycle_number: optional, defaults to 1. Used for labeling the output.

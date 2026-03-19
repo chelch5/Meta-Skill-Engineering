@@ -30,7 +30,7 @@ Detect duplicates, enforce category consistency, flag deprecation candidates, ve
 
 ## 1. Build inventory
 
-- List every skill: name, category, maturity, last-modified date
+- List every skill: name, category (inferred from pipeline membership), last-modified date (from `git log -1 --format=%cI -- <skill-dir>`)
 - Count skills per category; flag uncategorized or miscategorized entries
 
 ## 2. Detect duplicates and overlaps
