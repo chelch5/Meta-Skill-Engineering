@@ -23,7 +23,7 @@ Fix skill routing by rewriting the `description` field and "When to use" / "Do N
 - Eval shows poor routing precision or recall
 - Description is vague, generic, or reads like marketing copy
 
-# Do NOT use when
+# When NOT to use
 
 - Skill triggers correctly but produces wrong output → `skill-improver`
 - Skill has structural anti-patterns beyond just triggers → `skill-anti-patterns`
@@ -126,3 +126,7 @@ After trigger optimization:
 - Verify routing improved → `skill-evaluation`
 - Build trigger tests → `skill-testing-harness`
 - If routing problems persist → `skill-catalog-curation`
+
+## References
+
+- Agent Skills specification: https://agentskills.io/specification

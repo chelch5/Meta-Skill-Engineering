@@ -22,7 +22,7 @@ Compare two or more skill variants (A vs B, before vs after, skill vs no-skill) 
 - Periodic audit to cull underperforming variants
 - Justifying whether skill maintenance investment is paying off
 
-# Do NOT use when
+# When NOT to use
 
 - Only one skill, no variant to compare → `skill-evaluation`
 - Need to build test cases or harness → `skill-testing-harness`
@@ -107,3 +107,7 @@ After benchmarking:
 - Improve the weaker variant → `skill-improver`
 - Deprecate the losing variant → `skill-deprecation-manager`
 - Package the winner → `skill-packaging`
+
+## References
+
+- Agent Skills specification: https://agentskills.io/specification

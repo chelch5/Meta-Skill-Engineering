@@ -22,7 +22,7 @@ Improve an existing skill package. A skill is a reusable operating manual for an
 
 Preserve the skill's core purpose unless the user explicitly asks to reposition it.
 
-# When to use this skill
+# When to use
 
 Use when:
 
@@ -254,3 +254,7 @@ After improving a skill:
 - Verify the improvement → `skill-evaluation`
 - Build test infrastructure if none exists → `skill-testing-harness`
 - Optimize triggers if routing changed → `skill-trigger-optimization`
+
+## References
+
+- Agent Skills specification: https://agentskills.io/specification

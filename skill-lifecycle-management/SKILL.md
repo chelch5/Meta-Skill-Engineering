@@ -97,3 +97,7 @@ Before promoting a skill to stable:
 - Verify provenance is documented → `skill-provenance`
 - Run safety review → `skill-safety-review`
 - Run evaluation → `skill-evaluation`
+
+## References
+
+- Agent Skills specification: https://agentskills.io/specification

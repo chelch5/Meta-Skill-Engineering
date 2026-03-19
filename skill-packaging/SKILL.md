@@ -176,3 +176,7 @@ After packaging:
 - Install the package → `skill-installer`
 - Register in the catalog → `skill-registry-manager`
 - Manage lifecycle state → `skill-lifecycle-management`
+
+## References
+
+- Agent Skills specification: https://agentskills.io/specification

@@ -21,7 +21,7 @@ This repository is a meta-skill engineering workspace. Treat each top-level skil
 All skills should follow this section order:
 1. YAML frontmatter (name, description)
 2. Purpose
-3. When to use / When NOT to use
+3. When to use / When NOT to use (use these exact heading names)
 4. Procedure
 5. Output contract
 6. Failure handling

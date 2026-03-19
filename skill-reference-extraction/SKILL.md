@@ -117,3 +117,7 @@ Produce a summary in this format:
 After extracting references:
 - Verify the skill still works end-to-end → `skill-evaluation`
 - Further tighten the skill if needed → `skill-improver`
+
+## References
+
+- Agent Skills specification: https://agentskills.io/specification

@@ -119,7 +119,11 @@ When the audit identifies true duplicates (recommendation: "merge"), execute:
 3. **Merge content** — add unique elements from the absorbed skill into the survivor. Do not duplicate content that already exists.
 4. **Update routing** — rewrite the survivor's description to cover trigger phrases from both skills
 5. **Update cross-references** — find all skills that reference the absorbed skill name and update to point to the survivor
-6. **Remove the absorbed skill** — delete its directory
+6. **Remove the absorbed skill** — confirm with user before deleting:
+   ```
+   About to delete [absorbed-skill]/ directory. Proceed? [y/N]
+   ```
+   Do NOT delete without explicit user confirmation.
 7. **Update the catalog** — update README, CATALOG.md, or skills-lock.json to reflect the merge
 
 ## Next steps
@@ -128,3 +132,7 @@ After curation:
 - Execute merge recommendations → use the merge procedure above
 - Fix discoverability issues → `skill-trigger-optimization`
 - Deprecate identified candidates → `skill-deprecation-manager`
+
+## References
+
+- Agent Skills specification: https://agentskills.io/specification

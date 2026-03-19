@@ -22,7 +22,7 @@ Scan a SKILL.md against a concrete anti-pattern checklist (AP-1 through AP-16). 
 - Skill producing unexpected routing or output and root cause is unclear
 - Quick structural audit after editing a skill
 
-# Do NOT use when
+# When NOT to use
 
 - Full rewrite needed → `skill-creator`
 - Only trigger/description needs fixing → `skill-trigger-optimization`
@@ -163,3 +163,7 @@ After an anti-pattern audit:
 - Fix found issues → `skill-improver`
 - If AP-1, AP-11, or AP-12 fired → `skill-trigger-optimization`
 - If skill is too malformed for piecemeal fixes → `skill-creator`
+
+## References
+
+- Agent Skills specification: https://agentskills.io/specification

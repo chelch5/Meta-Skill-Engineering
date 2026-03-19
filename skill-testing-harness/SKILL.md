@@ -20,7 +20,7 @@ Build test infrastructure for a skill: trigger tests (positive and negative JSON
 - Skill lacks an evals/ directory or test fixtures
 - Skill refinement requires regression tests
 
-# Do NOT use when
+# When NOT to use
 
 - Running existing tests → `skill-evaluation`
 - Comparing skill variants → `skill-benchmarking`
@@ -166,3 +166,7 @@ All JSONL files use one JSON object per line, newline-delimited.
 After building the test harness:
 - Run the tests → `skill-evaluation`
 - Compare variants → `skill-benchmarking`
+
+## References
+
+- Agent Skills specification: https://agentskills.io/specification

@@ -1,6 +1,6 @@
 ---
 name: skill-packager
-description: "Build distributable bundles, manifests, and checksums for publishing or sharing one or more skills. Use when packaging skills for release, building a distribution bundle, creating CI/CD skill artifacts, or releasing a new library version. Do not use for packaging a single skill in isolation (just create its manifest directly) or when skills aren't ready for release."
+description: "Build distributable bundles, manifests, and checksums for publishing or sharing one or more skills. Use when packaging skills for release, building a distribution bundle, creating CI/CD skill artifacts, or releasing a new library version. Do not use for packaging a single skill in isolation (use skill-packaging) or when skills aren't ready for release."
 ---
 
 # Purpose

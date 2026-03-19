@@ -114,3 +114,7 @@ After deprecating a skill:
 - Update the catalog → `skill-catalog-curation`
 - Update the registry index → `skill-registry-manager`
 - Track the lifecycle transition → `skill-lifecycle-management`
+
+## References
+
+- Agent Skills specification: https://agentskills.io/specification

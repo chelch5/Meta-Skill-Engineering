@@ -138,3 +138,7 @@ After evaluation:
 - If comparing variants → `skill-benchmarking`
 - If ready for release → `skill-packaging`
 - Before promotion to stable → `skill-provenance`, `skill-safety-review`
+
+## References
+
+- Agent Skills specification: https://agentskills.io/specification

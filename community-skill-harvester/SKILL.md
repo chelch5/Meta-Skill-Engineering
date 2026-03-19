@@ -3,32 +3,30 @@ name: community-skill-harvester
 description: "Find external skills from public registries, GitHub repos, and official skill collections, then evaluate them for quality, licensing, and fitness for adoption. Use when looking for existing skills before building from scratch, evaluating external skill quality, or migrating community skills into a local library. Do not use when building a novel skill with no external precedent or for quick one-off evaluation (just read the skill directly)."
 ---
 
-# Community Skill Harvester
-
-## Purpose
+# Purpose
 
 Find external skills from public registries, GitHub repos, and skill collections, then evaluate them for quality, licensing, and fitness for adoption. Produces a harvest report with scored candidates and import proposals.
 
-## When to use
+# When to use
 
 - Looking for existing skills before building from scratch
 - Evaluating external skill quality for potential adoption
 - Migrating community skills into a local library
 - User says "find skills for X", "search for existing skills", "are there skills for this?"
 
-## When NOT to use
+# When NOT to use
 
 - Building a novel skill with no external precedent → `skill-creator`
 - Quick one-off evaluation of a skill already in hand (just read the SKILL.md directly)
 - Improving an already-adopted skill → `skill-improver`
 - Auditing internal library quality → `skill-catalog-curation`
 
-## Procedure
+# Procedure
 
 > **Dependency**: Steps 1 use the `gh` CLI. If `gh` is unavailable, fall back to
 > `curl` against the GitHub REST API or direct web search.
 
-### 1. Search for relevant skills
+## 1. Search for relevant skills
 
 Search these sources in order:
 
@@ -43,7 +41,7 @@ gh search code "name:" --filename SKILL.md --limit 20
 # Add repository URLs for any skill registries relevant to your ecosystem
 ```
 
-### 2. Evaluate skill quality
+## 2. Evaluate skill quality
 
 For each candidate, apply this checklist:
 
@@ -58,7 +56,7 @@ For each candidate, apply this checklist:
 
 **Scoring:** Required checks must pass or skill is rejected. Score 0-6 on remaining criteria. Score ≥4 = adopt candidate. Score 2-3 = adapt candidate. Score <2 = reject.
 
-### 3. License compatibility check
+## 3. License compatibility check
 
 Acceptable licenses for adoption: `Apache-2.0`, `MIT`, `BSD-2-Clause`, `BSD-3-Clause`, `ISC`, `CC0-1.0`, `Unlicense`.
 
@@ -66,14 +64,14 @@ Copyleft licenses (`GPL-*`, `AGPL-*`): flag for manual review before adoption.
 
 No license: do not import.
 
-### 4. Extract patterns
+## 4. Extract patterns
 
 Before importing, document:
 - Structure patterns worth adopting
 - Anti-patterns to avoid
 - Adaptations needed for local conventions
 
-### 5. Create import proposal
+## 5. Create import proposal
 
 ```markdown
 # Skill Import Proposal: [name]
@@ -94,7 +92,7 @@ Before importing, document:
 [ADOPT | ADAPT | REFERENCE_ONLY | REJECT]
 ```
 
-### 6. Execute import (if approved)
+## 6. Execute import (if approved)
 
 ```bash
 mkdir -p skills/[skill-name]
@@ -104,7 +102,7 @@ git add skills/[skill-name]
 git commit -m "feat: import [skill-name] from [source]"
 ```
 
-## Output contract
+# Output contract
 
 Produce exactly this structure:
 
@@ -129,7 +127,7 @@ Produce exactly this structure:
 - [Structural or procedural patterns worth adopting]
 ```
 
-## Failure handling
+# Failure handling
 
 - **Registry unavailable**: Fall back to direct GitHub search
 - **License unclear**: Do not import; flag for manual review

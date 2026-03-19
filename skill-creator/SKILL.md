@@ -13,12 +13,12 @@ description: >-
   intent (skill-evaluation).
 ---
 
-# Skill Creator
+# Purpose
 
 Create new agent skills and iteratively improve them through structured
 draft-test-review-improve cycles.
 
-## When to use
+# When to use
 
 - User says "create a skill for X", "write a skill that…", "I need a skill to handle…"
 - Repeated task pattern needs capturing as a reusable procedure
@@ -26,10 +26,9 @@ draft-test-review-improve cycles.
 - User has a draft skill and wants to iterate on it with test feedback
 - Capability should be packaged for reuse across projects
 
-## When NOT to use
+# When NOT to use
 
-- Skill exists and needs a one-off fix without testing iteration → `skill-improver`
-- Skill exists and needs improvement without full creation cycle → `skill-improver`
+- Skill exists and needs improvement without full creation iteration → `skill-improver`
 - Only the description/trigger needs fixing → `skill-trigger-optimization`
 - Skill needs porting to a different environment → `skill-adaptation`
 - User wants to install a packaged skill → `skill-installer`
@@ -37,11 +36,9 @@ draft-test-review-improve cycles.
 - User wants a standalone evaluation without creation → `skill-evaluation`
 - User wants to find external skills before building → `community-skill-harvester`
 
----
+# Procedure
 
-## Procedure
-
-### Phase 1 — Capture intent
+## Phase 1 — Capture intent
 
 Start by understanding what the user wants the skill to do. The current
 conversation may already contain a workflow the user wants to capture. If so,
@@ -59,21 +56,21 @@ Ask questions about edge cases, input/output formats, example files, success
 criteria, and dependencies. Research available documentation and similar
 skills if useful context exists.
 
-### Phase 2 — Write the SKILL.md
+## Phase 2 — Write the SKILL.md
 
-#### Step 1 — Define the skill's job in one sentence
+### Step 1 — Define the skill's job in one sentence
 
 Write: "This skill [verb] when [trigger] and produces [output]."
 
 If you cannot write this sentence, the scope is wrong — narrow until it works.
 
-#### Step 2 — Choose the name
+### Step 2 — Choose the name
 
 - Lowercase, hyphens, 2–4 words, under 64 characters
 - Describe what it does (verb-noun), not when it's used
 - Must match the parent directory name
 
-#### Step 3 — Write the YAML frontmatter
+### Step 3 — Write the YAML frontmatter
 
 ```yaml
 ---
@@ -99,7 +96,7 @@ Flag a description if it: is under 12 words, has no action verb first,
 has no condition, lacks trigger examples, could apply to multiple skills,
 or has no negative boundary.
 
-#### Step 4 — Write the body sections
+### Step 4 — Write the body sections
 
 Every SKILL.md body contains these sections in order:
 
@@ -126,7 +123,7 @@ user to confirm location."
 
 **References** (optional) — Real URLs to authoritative documentation.
 
-#### Step 5 — Calibrate instruction depth
+### Step 5 — Calibrate instruction depth
 
 Match instruction specificity to task fragility:
 
@@ -138,7 +135,7 @@ Explain the *why* behind important instructions. Agents follow reasoning-based
 instructions more reliably than rigid imperatives without context. If you find
 yourself writing ALWAYS or NEVER in all caps, reframe as reasoning.
 
-#### Step 6 — Manage skill size
+### Step 6 — Manage skill size
 
 Keep SKILL.md under 500 lines. Skills load at three levels:
 
@@ -160,7 +157,7 @@ skill-name/
     └── variant-c.md
 ```
 
-#### Step 7 — Validate against common authoring mistakes
+### Step 7 — Validate against common authoring mistakes
 
 Check the completed skill for:
 
@@ -180,7 +177,7 @@ Check the completed skill for:
    may not have. Declare dependencies explicitly.
 8. **No output example** — Format described in prose but not exemplified.
 
-### Phase 3 — Create test cases
+## Phase 3 — Create test cases
 
 After writing the skill draft, create 2–5 realistic test prompts — the kind
 of thing a real user would actually say when they need this skill.
@@ -210,7 +207,7 @@ Save test cases to `evals/evals.json`:
 Share the test cases with the user: "Here are test cases I'd like to try.
 Do these look right, or do you want to add or change any?"
 
-### Phase 4 — Test and review
+## Phase 4 — Test and review
 
 For each test case, execute the skill's procedure against the test prompt
 and capture the output.
@@ -239,7 +236,7 @@ Present results to the user for review. For each test case, show:
 
 Ask for specific feedback: "How does this look? What would you change?"
 
-### Phase 5 — Improve and iterate
+## Phase 5 — Improve and iterate
 
 Based on user feedback and test results:
 
@@ -261,7 +258,7 @@ Based on user feedback and test results:
    - Feedback is empty (everything looks good)
    - No meaningful progress is being made
 
-### Phase 6 — Finalize the skill folder
+## Phase 6 — Finalize the skill folder
 
 ```
 skill-name/
@@ -280,9 +277,7 @@ After finalization, recommend next steps:
 - Run `skill-evaluation` to validate routing accuracy and output quality
 - Run `skill-safety-review` if the skill executes code or writes files
 
----
-
-## Output contract
+# Output contract
 
 Deliver a complete skill folder containing:
 
@@ -294,7 +289,7 @@ Deliver a complete skill folder containing:
 
 The SKILL.md must pass all Phase 2 Step 7 validation checks before delivery.
 
-## Failure handling
+# Failure handling
 
 - **Scope too broad**: Skill handles multiple distinct tasks → split via
   `skill-variant-splitting` or narrow the scope
@@ -322,12 +317,7 @@ skill-name/
     └── assets/     - Files used in output (templates, icons, fonts)
 ```
 
-## References
-
-- Agent Skills specification: https://agentskills.io/specification
-- What are skills: https://agentskills.io/what-are-skills
-
-## Workflow — next steps after creating a skill
+## Next steps
 
 1. Build test infrastructure → `skill-testing-harness`
 2. Evaluate routing and output quality → `skill-evaluation`
@@ -336,3 +326,8 @@ skill-name/
 5. Review for safety hazards → `skill-safety-review`
 6. Record provenance → `skill-provenance`
 7. Package for distribution → `skill-packaging`
+
+## References
+
+- Agent Skills specification: https://agentskills.io/specification
+- What are skills: https://agentskills.io/what-are-skills
