@@ -24,12 +24,15 @@ Manage skills through lifecycle states: draft → beta → stable → deprecated
 - A catalog audit identifies a skill for retirement
 - A skill is causing harm and needs immediate pull
 
-Do NOT use when:
+# When NOT to use
+
 - Creating a new skill from scratch → `skill-creator`
 - Improving an existing skill's quality or output → `skill-improver`
 - Reorganizing the library catalog, deduplicating, or enforcing naming → `skill-catalog-curation`
 
-# Lifecycle states
+# Procedure
+
+## Lifecycle states
 
 | State | Meaning | Guidance |
 |-------|---------|----------|
@@ -39,7 +42,7 @@ Do NOT use when:
 | `deprecated` | Superseded or not recommended | Functional but avoid for new work |
 | `archived` | Removed from active use | Reference only, do not install |
 
-# Operating procedure
+## Operating procedure
 
 1. **Inventory current states**: List all skills with their `metadata.maturity` field. Flag anomalies — draft skills older than 2 cycles, stable skills with known bugs.
 2. **Apply promotion criteria**:
@@ -54,11 +57,11 @@ Do NOT use when:
 5. **Check dependents**: If a deprecated skill is referenced in AGENTS.md, commands, or other skills, flag each reference for update.
 6. **Update library index**: Set each skill's catalog entry to its new state.
 
-# Deprecation procedure
+## Deprecation procedure
 
 When deprecating or retiring a skill, follow this detailed procedure:
 
-## 1. Confirm deprecation decision
+### 1. Confirm deprecation decision
 
 Determine the reason:
 - **Superseded**: Replaced by a better skill
@@ -67,18 +70,18 @@ Determine the reason:
 - **Failing**: Consistently poor evaluation results
 - **Harmful**: Misfiring or producing wrong outputs — pull immediately
 
-## 2. Find all references
+### 2. Find all references
 
 ```bash
 grep -r "<skill-name>" AGENTS.md **/SKILL.md docs/ 2>/dev/null
 grep -r "Do NOT use" **/SKILL.md | grep -i "<skill-name>"
 ```
 
-## 3. Update each reference
+### 3. Update each reference
 
 Replace with replacement skill pointer, or note "no replacement available".
 
-## 4. Update frontmatter
+### 4. Update frontmatter
 
 ```yaml
 metadata:
@@ -87,7 +90,7 @@ metadata:
   deprecated_reason: "Superseded by newer version"
 ```
 
-## 5. Add deprecation notice
+### 5. Add deprecation notice
 
 At top of SKILL.md body:
 ```markdown
@@ -95,7 +98,7 @@ At top of SKILL.md body:
 > Reason: [one sentence]. Kept for reference only.
 ```
 
-## 6. Move to archive (if applicable)
+### 6. Move to archive (if applicable)
 
 Confirm with user before moving:
 ```
@@ -108,7 +111,7 @@ mv skill-name/ ARCHIVE/skill-name/
 ```
 Do NOT delete — preserve for reference and provenance.
 
-## 7. Update catalog
+### 7. Update catalog
 
 - Mark `deprecated: true` in catalog metadata
 - Remove from active catalog section
@@ -177,7 +180,7 @@ If no transitions are warranted, state that explicitly — do not invent changes
 | Replacement skill incomplete | Create migration path with limitations noted |
 | Urgent harm from a skill | Deprecate immediately, create follow-up ticket for replacement |
 
-## Next steps
+# Next steps
 
 Before promoting a skill to stable:
 - Verify provenance is documented → `skill-provenance`

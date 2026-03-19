@@ -112,7 +112,7 @@ Deliver exactly two artifacts:
 - **Adaptation would break core logic**: The skill may not be portable. Recommend `skill-creator` to build a purpose-built replacement instead.
 - **Source skill is ambiguous**: State each assumption you made and why. Flag any assumption the user should verify.
 
-## Next steps
+# Next steps
 
 After adapting a skill:
 - Verify the adapted skill works → `skill-evaluation`

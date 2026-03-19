@@ -24,7 +24,8 @@ Audit a skill for safety hazards before it is published, imported, or promoted. 
 - When a skill performs consequential operations (deletion, network calls, deployments)
 - When a skill was flagged during a `repo-process-doctor` or catalog audit
 
-Do NOT use when:
+# When NOT to use
+
 - Evaluating routing precision or output quality → `skill-evaluation`
 - Detecting structural anti-patterns → `skill-anti-patterns`
 - The skill is purely informational with no side effects
@@ -106,7 +107,7 @@ Always produce this structure. Omit table sections that have zero findings.
 - **Skill is intentionally destructive** (e.g., cleanup/teardown) — verify the description is explicit about destruction, confirmation gates exist, and scope is bounded. Safe if all three hold.
 - **External dependencies are unauditable** — note the trust assumption as a warning; do not mark Safe without disclosure.
 
-## Next steps
+# Next steps
 
 After safety review:
 - Record provenance and trust level → `skill-provenance`

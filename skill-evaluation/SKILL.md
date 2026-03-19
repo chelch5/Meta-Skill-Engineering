@@ -136,7 +136,7 @@ Next action: [specific remediation or "Ready for promotion"]
 | Routing passes but output quality fails | Stop evaluation. Route to `skill-improver` with the failing cases attached. |
 | Skill passes eval but fails in real usage | Eval set has coverage gaps. Add the failing real-world case and re-run. |
 
-## Next steps
+# Next steps
 
 After evaluation:
 - If routing fails → `skill-trigger-optimization`

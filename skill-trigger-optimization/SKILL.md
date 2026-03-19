@@ -120,7 +120,7 @@ Examples: [specific problematic inputs]
 - **No usage data available**: Write 5 synthetic positive and 5 negative trigger phrases, optimize against those.
 - **Genuine overlap with another skill**: Escalate to `skill-catalog-curation` to resolve the boundary at the library level.
 
-## Next steps
+# Next steps
 
 After trigger optimization:
 - Verify routing improved → `skill-evaluation`

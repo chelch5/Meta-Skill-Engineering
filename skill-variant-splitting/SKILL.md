@@ -22,7 +22,8 @@ Split a skill that has grown too broad into focused variants that route precisel
 - Procedure has conditional branches per input type
 - Description exceeds two sentences trying to cover all cases
 
-Do NOT use when:
+# When NOT to use
+
 - Skill is focused and working well
 - Variations are minor enough for overlays
 - Problem is trigger wording only → `skill-trigger-optimization`
@@ -115,7 +116,7 @@ Original skill: [deprecate | keep as router | keep for general cases]
 - **More than 5 variants**: Use a two-level hierarchy with an umbrella router skill instead of a flat split.
 - **Shared core larger than variant-specific content**: Splitting adds duplication without benefit. Recommend refining the original instead.
 
-## Next steps
+# Next steps
 
 After splitting:
 - Update the library index → `skill-catalog-curation`

@@ -161,7 +161,7 @@ All JSONL files use one JSON object per line, newline-delimited.
 - **Skill too complex for single harness**: Split into sub-capabilities with separate JSONL files per capability
 - **No comparable baseline**: Skip baseline comparison; focus on trigger accuracy and output format compliance
 
-## Next steps
+# Next steps
 
 After building the test harness:
 - Run the tests → `skill-evaluation`

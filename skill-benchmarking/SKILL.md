@@ -101,7 +101,7 @@ Rationale: [one sentence explaining the deciding factor]
 - **Variants serve different purposes**: Do not force a single winner. Document which contexts favor each variant and recommend keeping both with routing guidance.
 - **Missing acceptance criteria**: Ask the user to define pass/fail before running. Do not invent criteria.
 
-## Next steps
+# Next steps
 
 After benchmarking:
 - Improve the weaker variant → `skill-improver`

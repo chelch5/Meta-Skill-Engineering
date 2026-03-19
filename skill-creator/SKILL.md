@@ -304,6 +304,18 @@ The SKILL.md must pass all Phase 2 Step 7 validation checks before delivery.
 - **User wants to skip testing**: Proceed without iteration but note that
   untested skills have unknown quality
 
+# Next steps
+
+1. Build test infrastructure → `skill-testing-harness`
+2. Evaluate routing and output quality → `skill-evaluation`
+3. Compare variants if multiple drafts → `skill-benchmarking`
+4. Optimize trigger description → `skill-trigger-optimization`
+5. Review for safety hazards → `skill-safety-review`
+6. Record provenance → `skill-provenance`
+7. Package for distribution → `skill-packaging`
+
+# References
+
 ## Skill structure reference
 
 ```
@@ -316,18 +328,6 @@ skill-name/
     ├── references/ - Docs loaded into context as needed
     └── assets/     - Files used in output (templates, icons, fonts)
 ```
-
-## Next steps
-
-1. Build test infrastructure → `skill-testing-harness`
-2. Evaluate routing and output quality → `skill-evaluation`
-3. Compare variants if multiple drafts → `skill-benchmarking`
-4. Optimize trigger description → `skill-trigger-optimization`
-5. Review for safety hazards → `skill-safety-review`
-6. Record provenance → `skill-provenance`
-7. Package for distribution → `skill-packaging`
-
-## References
 
 - Agent Skills specification: https://agentskills.io/specification
 - What are skills: https://agentskills.io/what-are-skills

@@ -157,7 +157,7 @@ If all ABSENT: "**Clean Bill of Health** — no anti-patterns detected"
 - **Skill too malformed to audit** (e.g. no frontmatter, no procedure section): Report what is missing. Recommend full rewrite via `skill-creator` instead of piecemeal fixes.
 - **Ambiguous skill purpose**: If the purpose could be read two ways, audit against both interpretations and flag the ambiguity as an additional finding.
 
-## Next steps
+# Next steps
 
 After an anti-pattern audit:
 - Fix found issues → `skill-improver`

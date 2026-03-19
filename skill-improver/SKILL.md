@@ -32,19 +32,21 @@ Use when:
 - the user wants to know whether a skill needs references/, scripts/, evals/, or manifest,
 - the user wants a thin prompt upgraded into a durable skill package.
 
-Do not use when:
+# When NOT to use
 
-- creating a brand-new skill from scratch — use **skill-creator**,
-- the problem is only the description/trigger and the body is fine — use **skill-trigger-optimization**,
-- porting or adapting a skill to a different stack or context — use **skill-adaptation**,
-- running a quick structural audit with no rewrite planned — use **skill-anti-patterns**,
-- the task is a repo review, architecture review, or product planning exercise.
+- Creating a brand-new skill from scratch — use **skill-creator**
+- The problem is only the description/trigger and the body is fine — use **skill-trigger-optimization**
+- Porting or adapting a skill to a different stack or context — use **skill-adaptation**
+- Running a quick structural audit with no rewrite planned — use **skill-anti-patterns**
+- The task is a repo review, architecture review, or product planning exercise
 
-# Improvement modes
+# Procedure
+
+## Improvement modes
 
 Choose the lightest mode that solves the real problem.
 
-## Mode selection guide
+### Mode selection guide
 
 Choose Mode 1 (Surgical edit) when:
 - Specific failure report with reproduction steps
@@ -65,7 +67,7 @@ Choose Mode 3 (Package upgrade) when:
 
 When in doubt: Start with Mode 1. If Mode 1 changes touch >30% of the file, switch to Mode 2.
 
-## Mode 1 — Surgical edit
+### Mode 1 — Surgical edit
 
 Use when the skill is broadly sound and mainly needs better trigger wording, clearer steps, stronger output contract, or removal of fluff.
 
@@ -90,19 +92,17 @@ Change summary template:
 - [ ] Failure case now handled
 ```
 
-## Mode 2 — Structural refactor
+### Mode 2 — Structural refactor
 
 Use when the skill has the right goal but poor execution: vague description, no phases, no decision rules, no failure handling, too much in one file.
 
 Output: rewritten SKILL.md, new references/ if justified, eval stubs or updated evals.
 
-## Mode 3 — Package upgrade
+### Mode 3 — Package upgrade
 
 Use when the skill should become a first-class reusable package: shared across projects, needs baseline comparisons, needs scripts for repeated mechanics.
 
 Output: improved SKILL.md, manifest, evals, references, scripts only where deterministic, changelog.
-
-# Workflow
 
 Follow these phases in order unless the user clearly wants a lighter pass.
 
@@ -225,7 +225,9 @@ Every improvement produces:
 - Run `skill-testing-harness` if no evals/ directory exists
 ```
 
-# Anti-patterns
+# Failure handling
+
+## Anti-patterns
 
 Avoid these when improving a skill:
 
@@ -236,8 +238,6 @@ Avoid these when improving a skill:
 5. **Unverifiable improvement** — claiming the skill is better with no eval prompts or review path.
 
 For a full structural anti-pattern catalog, use **skill-anti-patterns**.
-
-# Failure handling
 
 ## Incomplete skill
 
@@ -285,7 +285,7 @@ If the skill's cross-references create loops (A→B→A) or point to skills that
 2. Remove circular links — keep only the outbound reference that adds value.
 3. Flag conflicting cross-references for manual review.
 
-## Next steps
+# Next steps
 
 After improving a skill:
 - Verify the improvement → `skill-evaluation`
