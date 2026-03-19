@@ -5,7 +5,7 @@ description: >-
   context while preserving the core pattern. Use when asked to "port this skill
   to Python/Vue/pnpm", "customize this library skill for our project", or
   "localize this skill for a different environment". Do not use for writing a
-  new skill from scratch (use skill-authoring), improving an existing
+  new skill from scratch (use skill-creator), improving an existing
   project-specific skill without changing context (use skill-improver), or
   splitting one skill into stack-specific variants (use skill-variant-splitting).
 ---
@@ -24,7 +24,7 @@ procedure and safety constraints intact.
 
 # When NOT to use
 
-- Creating a skill from scratch → `skill-authoring`
+- Creating a skill from scratch → `skill-creator`
 - Improving an already project-specific skill without changing context → `skill-improver`
 - Splitting a broad skill into focused per-stack variants → `skill-variant-splitting`
 - Only the trigger description needs fixing → `skill-trigger-optimization`
@@ -109,5 +109,5 @@ Deliver exactly two artifacts:
 
 - **Target context unclear**: Stop and ask — "What stack? What file structure? What tools are available?" Do not assume.
 - **No equivalent tool in target**: State the gap explicitly, suggest the closest alternative, and note any behavioral difference.
-- **Adaptation would break core logic**: The skill may not be portable. Recommend `skill-authoring` to build a purpose-built replacement instead.
+- **Adaptation would break core logic**: The skill may not be portable. Recommend `skill-creator` to build a purpose-built replacement instead.
 - **Source skill is ambiguous**: State each assumption you made and why. Flag any assumption the user should verify.

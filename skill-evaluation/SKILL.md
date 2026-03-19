@@ -83,14 +83,17 @@ ad-hoc mode for the missing test types.
    - Score against rubric: correct? complete? well-formatted? no hallucination?
 
 5. **Run baseline comparison**
-   - Run the same quality cases without the skill
-   - Blind-compare outputs where possible
+   - To create a baseline: temporarily remove or rename the skill's SKILL.md from the agent client's skill directory so it cannot be loaded
+   - Run the same quality cases without the skill active
+   - Restore the skill's SKILL.md after baseline runs complete
+   - Blind-compare outputs where possible (judge without knowing which is skill vs baseline)
    - Win rate = skill-wins / total-cases
 
 6. **Synthesize and verdict**
-   - Routing passes if precision ≥ 95% and recall ≥ 90%
-   - Quality passes if ≥ 80% of outputs meet the rubric
-   - Baseline passes if win rate ≥ 60%
+   - Routing target: precision ≥ 95% and recall ≥ 90%
+   - Quality target: ≥ 80% of outputs meet the rubric
+   - Baseline target: win rate ≥ 60%
+   - These are targets, not bright lines. Use judgment when results are near the boundary (e.g., 93% precision on 15 cases is one misrouted case — investigate whether it's a genuine routing failure or an ambiguous edge case).
    - Verdict: **Pass** / **Fail** / **Needs Work** with the specific failing metrics
 
 # Output format
@@ -126,3 +129,12 @@ Next action: [specific remediation or "Ready for promotion"]
 | Baseline comparison inconclusive (win rate 45–55%) | Double the sample size. If still inconclusive, report as "neutral — skill neither helps nor hurts." |
 | Routing passes but output quality fails | Stop evaluation. Route to `skill-improver` with the failing cases attached. |
 | Skill passes eval but fails in real usage | Eval set has coverage gaps. Add the failing real-world case and re-run. |
+
+## Next steps
+
+After evaluation:
+- If routing fails → `skill-trigger-optimization`
+- If output quality fails → `skill-improver`
+- If comparing variants → `skill-benchmarking`
+- If ready for release → `skill-packaging`
+- Before promotion to stable → `skill-provenance`, `skill-safety-review`

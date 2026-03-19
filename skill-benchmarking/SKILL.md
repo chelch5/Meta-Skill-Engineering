@@ -100,3 +100,10 @@ Rationale: [one sentence explaining the deciding factor]
 - **Metrics too close to call**: Recommend keeping the simpler or smaller variant as tiebreaker. Never force a winner when differences are within noise.
 - **Variants serve different purposes**: Do not force a single winner. Document which contexts favor each variant and recommend keeping both with routing guidance.
 - **Missing acceptance criteria**: Ask the user to define pass/fail before running. Do not invent criteria.
+
+## Next steps
+
+After benchmarking:
+- Improve the weaker variant → `skill-improver`
+- Deprecate the losing variant → `skill-deprecation-manager`
+- Package the winner → `skill-packaging`

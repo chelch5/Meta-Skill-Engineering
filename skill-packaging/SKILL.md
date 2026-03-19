@@ -24,7 +24,7 @@ Bundle a finished skill folder into a distributable archive (tar.gz or zip) cont
 
 - Skill is still being written or refined — finish authoring first
 - User wants to install a bundle — use **skill-installer**
-- User wants to create a skill from scratch — use **skill-authoring**
+- User wants to create a skill from scratch — use **skill-creator**
 - User wants to document origin or trust chain — use **skill-provenance**
 - Simple folder copy with no versioning or integrity needs
 
@@ -169,3 +169,10 @@ If verification fails, print the specific mismatches and do **not** declare succ
 | No `version` in frontmatter | Ask the user for a semver version. Do not guess. |
 | Checksum mismatch after extraction | Print the file(s) that differ and the expected vs actual hashes. Re-bundle. |
 | Overlay contradicts base manifest | Stop. Explain the conflict. Overlays may only add or narrow, not replace base values. |
+
+## Next steps
+
+After packaging:
+- Install the package → `skill-installer`
+- Register in the catalog → `skill-registry-manager`
+- Manage lifecycle state → `skill-lifecycle-management`

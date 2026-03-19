@@ -6,14 +6,14 @@ description: >-
   for anti-patterns", "what's wrong with this skill", or "audit this skill
   before promotion". Also use for post-failure diagnostics when a skill
   misbehaves but the root cause is unclear. Do not use for full skill rewrites
-  (use skill-authoring), trigger-only fixes (use skill-trigger-optimization),
+  (use skill-creator), trigger-only fixes (use skill-trigger-optimization),
   surgical fixes to known problems (use skill-improver), or measuring
   routing precision/recall (use skill-evaluation).
 ---
 
 # Purpose
 
-Scan a SKILL.md against a concrete anti-pattern checklist (AP-1 through AP-12). For each pattern found, report it with a specific fix including before/after examples.
+Scan a SKILL.md against a concrete anti-pattern checklist (AP-1 through AP-16). For each pattern found, report it with a specific fix including before/after examples.
 
 # When to use
 
@@ -24,7 +24,7 @@ Scan a SKILL.md against a concrete anti-pattern checklist (AP-1 through AP-12). 
 
 # Do NOT use when
 
-- Full rewrite needed → `skill-authoring`
+- Full rewrite needed → `skill-creator`
 - Only trigger/description needs fixing → `skill-trigger-optimization`
 - Specific known problem needs a surgical fix → `skill-improver`
 - Need to measure routing precision/recall quantitatively → `skill-evaluation`
@@ -106,6 +106,29 @@ Read the target SKILL.md. Check each anti-pattern below. For each PRESENT, write
 - Example: 12 skills all ending with "Use this when creating, adapting, refining, installing, testing, or packaging a skill..."
 - Fix: Remove category boilerplate; write skill-specific routing text
 
+**AP-13: Instruction overload** · `HIGH` — degrades instruction following
+- Pattern: SKILL.md exceeds 400 lines with critical steps buried in the middle or end
+- Detection: Count lines. If >400, check whether the most important procedure steps are in the first 40% of the file.
+- Fix: Extract reference material to `references/`. Front-load critical steps. Keep SKILL.md under 400 lines.
+
+**AP-14: Capability assumption** · `HIGH` — procedure fails on some clients
+- Pattern: Steps assume tools the agent may not have (subagents, browsers, specific CLIs, MCP servers) without declaring the dependency
+- Example before: `Spawn a subagent to run the eval suite in parallel`
+- Example after: `Run the eval suite. If subagents are available, spawn parallel runs; otherwise run sequentially.`
+- Fix: Declare tool dependencies in frontmatter. Add fallback paths for optional capabilities.
+
+**AP-15: Few-shot starvation** · `MEDIUM` — inconsistent output format
+- Pattern: Output format described in prose but no concrete filled example provided
+- Example before: `Produce a markdown table with columns for test name, result, and notes`
+- Example after: Shows the actual table with 2–3 filled rows demonstrating expected content
+- Fix: Add a concrete filled example next to every output format description
+
+**AP-16: Hallucination surface** · `MEDIUM` — agent invents success criteria
+- Pattern: Vague quality requirements like "ensure quality", "verify correctness", "make it good" with no measurable criteria
+- Example before: `Verify the output meets quality standards`
+- Example after: `Verify: (1) all required sections present, (2) no TODO/placeholder text, (3) code examples parse without syntax errors`
+- Fix: Replace subjective quality language with concrete, checkable criteria
+
 # Output defaults
 ```
 ## Anti-Pattern Audit: [skill-name]
@@ -131,5 +154,5 @@ If all ABSENT: "**Clean Bill of Health** — no anti-patterns detected"
 # Failure handling
 
 - **Target SKILL.md not found or empty**: Stop. Report the missing/empty path. Ask user to confirm the correct file location before retrying.
-- **Skill too malformed to audit** (e.g. no frontmatter, no procedure section): Report what is missing. Recommend full rewrite via `skill-authoring` instead of piecemeal fixes.
+- **Skill too malformed to audit** (e.g. no frontmatter, no procedure section): Report what is missing. Recommend full rewrite via `skill-creator` instead of piecemeal fixes.
 - **Ambiguous skill purpose**: If the purpose could be read two ways, audit against both interpretations and flag the ambiguity as an additional finding.

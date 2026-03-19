@@ -1,14 +1,14 @@
 ---
 name: skill-trigger-optimization
 description: >-
-  Rewrite a skill's description field and "When to use" triggers to fix routing
-  precision and recall. Use when a skill isn't firing when it should
-  ("fix the triggers", "why isn't this skill being used?"), fires on wrong
-  inputs ("wrong skill fired"), or the description reads as vague marketing copy
-  instead of routing logic. Do not use for fixing output quality when routing is
-  correct (use skill-improver), structural anti-pattern audits
-  (use skill-anti-patterns), creating new skills (use skill-authoring), or when
-  the problem is procedure not routing.
+  Fix skill routing by rewriting the description and trigger boundaries so the
+  right skill fires on the right inputs. Use when "this skill never fires",
+  "wrong skill fired", "fix the triggers", "why isn't this skill being used?",
+  or when a skill's description reads as vague marketing copy instead of routing
+  logic. Also use for batch-auditing descriptions before a library release.
+  Do not use for fixing output quality when routing is correct
+  (use skill-improver) or structural anti-pattern audits
+  (use skill-anti-patterns).
 ---
 
 # Purpose
@@ -27,8 +27,8 @@ Fix skill routing by rewriting the `description` field and "When to use" / "Do N
 
 - Skill triggers correctly but produces wrong output → `skill-improver`
 - Skill has structural anti-patterns beyond just triggers → `skill-anti-patterns`
-- Creating a new skill from scratch → `skill-authoring`
-- Entire skill needs rewrite → `skill-authoring`
+- Creating a new skill from scratch → `skill-creator`
+- Entire skill needs rewrite → `skill-creator`
 - Problem is procedure quality, not routing
 
 # Procedure
@@ -118,4 +118,4 @@ Examples: [specific problematic inputs]
 - **Can't identify discriminating signals**: Skill scope may be too broad — recommend `skill-variant-splitting` to split by axis.
 - **Every fix introduces new false positives**: Scopes overlap — redesign skill boundaries before optimizing triggers.
 - **No usage data available**: Write 5 synthetic positive and 5 negative trigger phrases, optimize against those.
-- **Genuine overlap with another skill**: Recommend merging or adding explicit routing rules to the host configuration.
+- **Genuine overlap with another skill**: Escalate to `skill-catalog-curation` to resolve the boundary at the library level.

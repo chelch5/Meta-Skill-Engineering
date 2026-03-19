@@ -2,11 +2,12 @@
 name: skill-variant-splitting
 description: >-
   Split a broad skill into focused variants along stack, platform, scope, or
-  domain axes. Use when a skill has disjoint "For X" / "For Y" sections,
-  triggers on unrelated inputs, or conditional-branch-heavy procedure. Do not
-  use for porting a skill to a different context (skill-adaptation),
-  trigger-only fixes (skill-trigger-optimization), or catalog-level
-  reorganization (skill-catalog-curation).
+  domain axes. Use when "this skill does too much", "split this skill",
+  "create variants for X and Y", a skill has disjoint "For X" / "For Y"
+  sections, triggers on unrelated inputs, or has a conditional-branch-heavy
+  procedure. Do not use for porting a skill to a different context
+  (skill-adaptation), trigger-only fixes (skill-trigger-optimization), or
+  catalog-level reorganization (skill-catalog-curation).
 ---
 
 # Purpose
@@ -56,7 +57,9 @@ Do NOT use when:
 
 4. **Extract shared core** (if any)
    - Identify logic common across all variants
-   - Decide: base skill with extensions, or fully independent variants
+   - If shared content exceeds 30% of each variant's total length, create a base skill with extensions
+   - If shared content is under 30%, create fully independent variants
+   - If creating a base skill: put shared procedure in the base, variant-specific steps in each variant's SKILL.md
 
 5. **Write each variant**
    - Name: `{original}-{variant}`
@@ -111,3 +114,10 @@ Original skill: [deprecate | keep as router | keep for general cases]
 - **Variants overlap on triggers**: Rethink the axis. If overlap persists, document the ambiguous boundary and escalate the decision to the user.
 - **More than 5 variants**: Use a two-level hierarchy with an umbrella router skill instead of a flat split.
 - **Shared core larger than variant-specific content**: Splitting adds duplication without benefit. Recommend refining the original instead.
+
+## Next steps
+
+After splitting:
+- Update the library index → `skill-catalog-curation`
+- Evaluate each variant → `skill-evaluation`
+- Deprecate the original if fully replaced → `skill-deprecation-manager`

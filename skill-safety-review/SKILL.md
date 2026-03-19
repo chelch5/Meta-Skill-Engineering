@@ -54,7 +54,11 @@ Do NOT use when:
    - Steps that reference tools or prerequisites not listed in the skill's setup or assumptions
    - Steps that modify files outside the skill's declared working scope
 
-4. **Prompt injection** — identify paths where untrusted external content (file contents, API responses, user-pasted text) flows into instruction context without sanitization. Flag unescaped interpolations and any external-content-to-instruction pipeline.
+4. **Prompt injection** — scan procedure steps for any that read external content (file contents, API responses, user-pasted text, environment variables). For each:
+   - Check whether that content is interpolated directly into an instruction, prompt, or command string.
+   - If the content is used in a shell command, check for unescaped variables (`$VAR` without quoting, string concatenation into commands).
+   - If the content is used in a template or prompt, check for delimiter confusion (user content that could contain YAML frontmatter markers, markdown headers, or instruction-like text).
+   - Flag each path as an injection vector with severity: High (content flows into shell execution), Medium (content flows into prompt/instruction context), Low (content flows into output only).
 
 5. **Description–behavior mismatch** — compare the `description` field and "When to use" section against actual procedure steps. Flag hidden behaviors, understated severity, or actions not disclosed in the description.
 
@@ -101,3 +105,10 @@ Always produce this structure. Omit table sections that have zero findings.
 - **Skill is too opaque to audit** — verdict is Unsafe; if the reviewer cannot trace behavior, neither can the user.
 - **Skill is intentionally destructive** (e.g., cleanup/teardown) — verify the description is explicit about destruction, confirmation gates exist, and scope is bounded. Safe if all three hold.
 - **External dependencies are unauditable** — note the trust assumption as a warning; do not mark Safe without disclosure.
+
+## Next steps
+
+After safety review:
+- Record provenance and trust level → `skill-provenance`
+- If ready for release → `skill-packaging`
+- If needs improvement → `skill-improver`

@@ -325,3 +325,13 @@ skill-name/
 
 - Agent Skills specification: https://agentskills.io/specification
 - What are skills: https://agentskills.io/what-are-skills
+
+## Workflow — next steps after creating a skill
+
+1. Build test infrastructure → `skill-testing-harness`
+2. Evaluate routing and output quality → `skill-evaluation`
+3. Compare variants if multiple drafts → `skill-benchmarking`
+4. Optimize trigger description → `skill-trigger-optimization`
+5. Review for safety hazards → `skill-safety-review`
+6. Record provenance → `skill-provenance`
+7. Package for distribution → `skill-packaging`
