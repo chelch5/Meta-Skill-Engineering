@@ -96,7 +96,7 @@ ad-hoc mode for the missing test types.
    - These are targets, not bright lines. Use judgment when results are near the boundary (e.g., 93% precision on 15 cases is one misrouted case — investigate whether it's a genuine routing failure or an ambiguous edge case).
    - Verdict: **Pass** / **Fail** / **Needs Work** with the specific failing metrics
 
-# Output format
+# Output contract
 
 ```
 ## Skill Evaluation: [skill-name]

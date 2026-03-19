@@ -72,7 +72,7 @@ Do NOT use when:
    - **Requires changes** — must fix before publishing or promotion.
    - **Unsafe** — fundamental problems; do not use until redesigned.
 
-# Output format
+# Output contract
 
 Always produce this structure. Omit table sections that have zero findings.
 

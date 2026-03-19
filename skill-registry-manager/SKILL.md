@@ -127,6 +127,12 @@ Produce a machine-readable index and a human-readable catalog:
 - **Orphaned lock entries**: Remove entries for skills that no longer exist on disk
 - **Name/directory mismatch**: Report as warning, recommend rename
 
+## Next steps
+
+After updating the registry:
+- Audit catalog consistency → `skill-catalog-curation`
+- Track lifecycle maturity → `skill-lifecycle-management`
+
 ## References
 
 - Agent Skills specification: https://agentskills.io/specification

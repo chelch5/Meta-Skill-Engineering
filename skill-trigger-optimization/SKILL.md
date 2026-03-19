@@ -119,3 +119,10 @@ Examples: [specific problematic inputs]
 - **Every fix introduces new false positives**: Scopes overlap — redesign skill boundaries before optimizing triggers.
 - **No usage data available**: Write 5 synthetic positive and 5 negative trigger phrases, optimize against those.
 - **Genuine overlap with another skill**: Escalate to `skill-catalog-curation` to resolve the boundary at the library level.
+
+## Next steps
+
+After trigger optimization:
+- Verify routing improved → `skill-evaluation`
+- Build trigger tests → `skill-testing-harness`
+- If routing problems persist → `skill-catalog-curation`

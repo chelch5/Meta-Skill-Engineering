@@ -129,7 +129,7 @@ Read the target SKILL.md. Check each anti-pattern below. For each PRESENT, write
 - Example after: `Verify: (1) all required sections present, (2) no TODO/placeholder text, (3) code examples parse without syntax errors`
 - Fix: Replace subjective quality language with concrete, checkable criteria
 
-# Output defaults
+# Output contract
 ```
 ## Anti-Pattern Audit: [skill-name]
 
@@ -156,3 +156,10 @@ If all ABSENT: "**Clean Bill of Health** — no anti-patterns detected"
 - **Target SKILL.md not found or empty**: Stop. Report the missing/empty path. Ask user to confirm the correct file location before retrying.
 - **Skill too malformed to audit** (e.g. no frontmatter, no procedure section): Report what is missing. Recommend full rewrite via `skill-creator` instead of piecemeal fixes.
 - **Ambiguous skill purpose**: If the purpose could be read two ways, audit against both interpretations and flag the ambiguity as an additional finding.
+
+## Next steps
+
+After an anti-pattern audit:
+- Fix found issues → `skill-improver`
+- If AP-1, AP-11, or AP-12 fired → `skill-trigger-optimization`
+- If skill is too malformed for piecemeal fixes → `skill-creator`

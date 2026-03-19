@@ -111,3 +111,10 @@ Deliver exactly two artifacts:
 - **No equivalent tool in target**: State the gap explicitly, suggest the closest alternative, and note any behavioral difference.
 - **Adaptation would break core logic**: The skill may not be portable. Recommend `skill-creator` to build a purpose-built replacement instead.
 - **Source skill is ambiguous**: State each assumption you made and why. Flag any assumption the user should verify.
+
+## Next steps
+
+After adapting a skill:
+- Verify the adapted skill works → `skill-evaluation`
+- Update routing for the new context → `skill-trigger-optimization`
+- Review safety if the adaptation changed tool usage → `skill-safety-review`

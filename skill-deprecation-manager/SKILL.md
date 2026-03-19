@@ -107,3 +107,10 @@ Do NOT delete — preserve for reference and provenance.
 - **Active dependencies, no replacement**: Don't deprecate — document gap, build replacement first
 - **Replacement incomplete**: Create migration path with limitations noted
 - **Urgent harm**: Deprecate immediately, create follow-up ticket for replacement
+
+## Next steps
+
+After deprecating a skill:
+- Update the catalog → `skill-catalog-curation`
+- Update the registry index → `skill-registry-manager`
+- Track the lifecycle transition → `skill-lifecycle-management`

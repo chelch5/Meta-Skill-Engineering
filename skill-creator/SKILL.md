@@ -5,11 +5,11 @@ description: >-
   test-review-improve cycles. Use this for "create a skill for X", "write a
   skill that handles Y", "I need a new skill to do Z", "turn this workflow
   into a skill", or when a repeated task pattern should become a reusable
-  agent procedure. Also use when improving or refining an existing skill
-  through evaluation-driven iteration. Do not use for installing packaged
+  agent procedure. Do not use for installing packaged
   skills (skill-installer), splitting a broad skill into variants
   (skill-variant-splitting), adapting a skill to a different environment
-  (skill-adaptation), or running standalone evaluations without creation
+  (skill-adaptation), improving an existing skill without full iteration
+  (skill-improver), or running standalone evaluations without creation
   intent (skill-evaluation).
 ---
 
@@ -29,6 +29,7 @@ draft-test-review-improve cycles.
 ## When NOT to use
 
 - Skill exists and needs a one-off fix without testing iteration → `skill-improver`
+- Skill exists and needs improvement without full creation cycle → `skill-improver`
 - Only the description/trigger needs fixing → `skill-trigger-optimization`
 - Skill needs porting to a different environment → `skill-adaptation`
 - User wants to install a packaged skill → `skill-installer`

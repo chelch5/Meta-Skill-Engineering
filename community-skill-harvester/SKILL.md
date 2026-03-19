@@ -136,6 +136,13 @@ Produce exactly this structure:
 - **Skill format incompatible**: Extract concepts, rewrite in local format
 - **Quality too low**: Document as "reference only", do not import
 
+## Next steps
+
+After harvesting skills:
+- Record provenance for adopted skills → `skill-provenance`
+- Safety review for untrusted sources → `skill-safety-review`
+- Adapt to local conventions → `skill-adaptation`
+
 ## References
 
 - Agent Skills specification: https://agentskills.io/specification

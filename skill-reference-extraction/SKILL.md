@@ -111,3 +111,9 @@ Produce a summary in this format:
 - **Extraction would fragment a coherent procedure section** → leave inline, note in summary
 - **Circular cross-references between extracted files** → flatten into a single reference file
 - **Two skills want the same reference** → create a skill-specific copy; shared references are fragile
+
+## Next steps
+
+After extracting references:
+- Verify the skill still works end-to-end → `skill-evaluation`
+- Further tighten the skill if needed → `skill-improver`

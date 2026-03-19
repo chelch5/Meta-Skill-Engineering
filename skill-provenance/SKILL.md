@@ -213,6 +213,12 @@ If the skill is too trivial for a full record, produce the frontmatter patch onl
 | License unclear | Flag for manual review, do not auto-adopt |
 | Skill has no frontmatter | Treat as unknown origin, untrusted |
 
+## Next steps
+
+After recording provenance:
+- Run safety review → `skill-safety-review`
+- Update lifecycle maturity based on trust level → `skill-lifecycle-management`
+
 ## References
 
 - SPDX license identifiers: https://spdx.org/licenses/

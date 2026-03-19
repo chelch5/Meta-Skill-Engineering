@@ -99,6 +99,12 @@ dist/
 - **Missing git tags**: Fall back to `0.0.0-dev`
 - **Overlay generation fails**: Package base without overlay, note limitation in manifest
 
+## Next steps
+
+After packaging a release:
+- Install the bundle → `skill-installer`
+- Track the release → `skill-lifecycle-management`
+
 ## References
 
 - Semver: https://semver.org/

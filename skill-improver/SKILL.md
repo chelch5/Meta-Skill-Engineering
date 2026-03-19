@@ -247,3 +247,10 @@ If the skill is too incomplete to improve cleanly:
 4. Mark assumptions explicitly.
 
 If the user wants a quick pass rather than a full package upgrade, do that. The point is to improve the skill, not force ceremony.
+
+## Next steps
+
+After improving a skill:
+- Verify the improvement → `skill-evaluation`
+- Build test infrastructure if none exists → `skill-testing-harness`
+- Optimize triggers if routing changed → `skill-trigger-optimization`
