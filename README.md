@@ -6,10 +6,10 @@ A meta-skill engineering workspace containing 12 skills that create, refine, tes
 
 - `./<skill-name>/` — repo-owned skill packages at the repository root. Each package has a `SKILL.md` baseline contract and may include `references/`, `scripts/`, `evals/`, or `assets/`.
 - `archive/` — skills removed from the active inventory (distribution-oriented skills).
-- `corpus/` — test skills for evaluating meta-skills (coming soon).
+- `corpus/` — test skills for evaluating meta-skills: 5 weak, 3 strong, 4 adversarial, plus a regression directory for harvested failures.
 - `skill creator/` — archived source material from the pre-consolidation state.
 - `tasks/` — task notes, worklogs, reviews, and maintenance instructions.
-- `scripts/` — automation scripts (eval runner, orchestration).
+- `scripts/` — automation scripts (eval runner, validation, corpus evaluation). `run-meta-skill-cycle.sh` is optional and requires an external orchestrator skill.
 
 ## Pipelines
 
@@ -48,7 +48,7 @@ skill-catalog-curation → skill-lifecycle-management
 | `skill-adaptation` | Rewrite a skill's context-dependent references for a new environment. |
 | `skill-anti-patterns` | Scan SKILL.md for concrete anti-patterns and report fixes. |
 | `skill-benchmarking` | Compare skill variants on the same test cases. |
-| `skill-catalog-curation` | Audit library for duplicates and gaps; maintain catalog index and registry. |
+| `skill-catalog-curation` | Audit library for duplicates and gaps; maintain catalog index. |
 | `skill-creator` | Create new agent skills from scratch and iterate through test-review-improve cycles. |
 | `skill-evaluation` | Evaluate a single skill's routing accuracy, output quality, and baseline value. |
 | `skill-improver` | Improve an existing skill package — routing, procedure, support layers. |
@@ -75,8 +75,8 @@ skill-catalog-curation → skill-lifecycle-management
 - `skill-safety-review` — audit for safety hazards
 
 **Library Management**
-- `skill-catalog-curation` — audit library, maintain catalog index and registry
-- `skill-lifecycle-management` — manage maturity states, deprecation, and retirement
+- `skill-catalog-curation` — audit library, maintain catalog index
+- `skill-lifecycle-management` — manage lifecycle states, deprecation, and retirement
 
 **Transformation**
 - `skill-adaptation` — port skills to new environments
