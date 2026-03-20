@@ -1,5 +1,9 @@
 # Review Validation & Implementation Plan
 
+> **Re-verified:** 2026-03-20T09:40Z. All 47 findings (F-001–F-047) re-verified against the live codebase with exact line-number and content confirmation. Every citation was checked; all remain accurate. Nuances discovered during re-verification are noted inline with `⚠️ VERIFICATION NOTE` markers. Enhanced implementation instructions added with exact old→new text, dependency chains, and test commands.
+
+---
+
 **Source:** `tasks/reviews/2026-03-20-meta-skill-engineering/1.md` (Annex A: Active Skills Review)
 **Validated:** 2026-03-20
 **Summary:** 33 raw findings consolidated into 19 unique issues — 17 valid, 1 invalid, 1 already solved. Top risks: stale eval schema (systemic), contract/reality mismatches in 4 skills, script portability (systemic).
@@ -21,10 +25,29 @@
 4. Update field schema summary at line 140.
 5. Run `mse_validate_skill skill-testing-harness` + `mse_lint_skill`.
 
+**⚠️ VERIFICATION NOTE (2026-03-20T09:40Z):** Re-verified. Lines 109-110 still contain `expected_files` and `min_cases`. `scripts/run-evals.sh` still has zero references to either field. `run-evals.sh:547-578` (behavior check logic) only reads `expected_sections`, `required_patterns`, `forbidden_patterns`, `min_output_lines`. Any behavior.jsonl entry using the stale fields is silently ignored — no warning, no error.
+
+**Exact changes required:**
+```
+# Line 109 — Replace this:
+{"prompt": "Create trigger tests for skill-authoring", "expected_files": ["evals/trigger-positive.jsonl", "evals/trigger-negative.jsonl"], "required_patterns": ["\"expected\": \"trigger\"", "\"expected\": \"no_trigger\""], "forbidden_patterns": ["TODO", "placeholder", "consider adding"], "min_cases": 5}
+
+# With this:
+{"prompt": "Create trigger tests for skill-authoring", "expected_sections": ["trigger-positive", "trigger-negative"], "required_patterns": ["\"expected\": \"trigger\"", "\"expected\": \"no_trigger\""], "forbidden_patterns": ["TODO", "placeholder", "consider adding"], "min_output_lines": 15, "notes": "Must produce both positive and negative trigger files"}
+
+# Line 110 — Replace this:
+{"prompt": "Build a full test harness for the pdf-extraction skill", "expected_files": ["evals/trigger-positive.jsonl", "evals/trigger-negative.jsonl", "evals/behavior.jsonl", "evals/README.md"], "required_patterns": ["\"category\""], "forbidden_patterns": ["may want to", "could potentially"], "min_cases": 8}
+
+# With this:
+{"prompt": "Build a full test harness for the pdf-extraction skill", "expected_sections": ["trigger-positive", "trigger-negative", "behavior"], "required_patterns": ["\"category\"", "\"expected_sections\""], "forbidden_patterns": ["may want to", "could potentially"], "min_output_lines": 20, "notes": "Full harness must include all three eval files plus README"}
+```
+
+**Dependency:** Blocked on F-002 decision (whether negative-trigger examples at lines 83-86 should use `category` or `better_skill`).
+
 **Risks:** Changing the taught schema means any agent that has already learned the old schema from this skill will produce stale harnesses. Rollback: `git checkout skill-testing-harness/SKILL.md`.
 **Effort:** S (1–2 hours)
 
-**Citations:** `skill-testing-harness/SKILL.md:83-86,93,105,109-110,140`; `AGENTS.md:45-58`; `scripts/run-evals.sh` (zero matches for `expected_files`, `min_cases`)
+**Citations:** `skill-testing-harness/SKILL.md:83-86,93,105,109-110,140`; `AGENTS.md:45-58`; `scripts/run-evals.sh` (zero matches for `expected_files`, `min_cases`); `scripts/run-evals.sh:547-578` (behavior check logic)
 
 ---
 
@@ -41,6 +64,32 @@
 2. Option (b) recommended: `better_skill` is more informative than generic `category` values. Update AGENTS.md:50-53 and copilot-instructions.md:28 to show: `{"prompt": "...", "expected": "no_trigger", "better_skill": "skill-name|null", "notes": "..."}`.
 3. Update skill-testing-harness/SKILL.md examples to match chosen format.
 4. If option (a): update all 96 trigger-negative entries (12 files × 8 entries) to replace `better_skill` with `category`.
+
+**⚠️ VERIFICATION NOTE (2026-03-20T09:40Z):** Re-verified counts: ALL 12 skills × 8 entries = 96 total `better_skill` occurrences, 0 `category` occurrences. The fallback at `run-evals.sh:393` (`jq -r '.category // .better_skill // "unknown"'`) means the runner works regardless of which field is used, but the documentation is authoritative and says `category`.
+
+**Exact changes for Option (b) — recommended:**
+```
+# AGENTS.md:50-53 — Replace this:
+{"prompt": "...", "expected": "no_trigger", "category": "anti-match|adjacent|out-of-scope", "notes": "..."}
+
+# With this:
+{"prompt": "...", "expected": "no_trigger", "better_skill": "skill-name-or-null", "notes": "..."}
+
+# .github/copilot-instructions.md:28 — Make same change
+
+# Also update run-evals.sh:393 — flip fallback order for clarity:
+# From: jq -r '.category // .better_skill // "unknown"'
+# To:   jq -r '.better_skill // .category // "unknown"'
+```
+
+**Exact changes for Option (a) — if chosen instead:**
+For each of the 12 `*/evals/trigger-negative.jsonl` files, in every entry:
+```
+# Replace: "better_skill": "skill-name"
+# With:    "category": "adjacent"  (when referring to a specific skill)
+# Or:      "category": "out-of-scope"  (when better_skill was null)
+# Or:      "category": "anti-match"  (when prompt mirrors a "When NOT to use" bullet)
+```
 
 **Risks:** Option (a) loses redirect-target semantics. Option (b) is a contract change. Rollback: git revert.
 **Effort:** S for option (b), M for option (a) (1–3 hours)
@@ -61,6 +110,29 @@
 1. Add repo-root auto-detection to `scripts/run-evals.sh` (dev copy): walk up from `$0` looking for `.git/` or `AGENTS.md` marker.
 2. Re-sync via `scripts/sync-to-skills.sh` to distribute fix to all 8 skill copies.
 3. Test: run `skill-creator/scripts/run-evals.sh skill-creator` from within the skill directory.
+
+**⚠️ VERIFICATION NOTE (2026-03-20T09:40Z):** Re-verified. Root copy and all 8 per-skill copies use identical `REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"` at line 53. From `skill-creator/scripts/`, this resolves to `skill-creator/` which then breaks line 54 (`RESULTS_DIR="${REPO_ROOT}/eval-results"`), line 795 (`"${REPO_ROOT}/${skill}/SKILL.md"`), and line 798 (`python3 "${REPO_ROOT}/scripts/check_skill_structure.py"`).
+
+**Exact change — Replace line 53 in `scripts/run-evals.sh`:**
+```bash
+# OLD (line 53):
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+# NEW (line 53-59):
+# Auto-detect repo root: walk up from script location looking for AGENTS.md
+_script_dir="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$_script_dir"
+while [[ "$REPO_ROOT" != "/" ]]; do
+  [[ -f "$REPO_ROOT/AGENTS.md" ]] && break
+  REPO_ROOT="$(dirname "$REPO_ROOT")"
+done
+[[ ! -f "$REPO_ROOT/AGENTS.md" ]] && { echo "Error: cannot find repo root (no AGENTS.md found)"; exit 1; }
+```
+
+**After applying:**
+1. Run `./scripts/sync-to-skills.sh` to distribute to all 8 per-skill copies
+2. Test from skill dir: `cd skill-creator && bash scripts/run-evals.sh --dry-run skill-creator`
+3. Test from repo root: `bash scripts/run-evals.sh --dry-run skill-creator`
 
 **Risks:** Auto-detection could mis-fire if the skill package is installed in a non-git context. Rollback: `git checkout scripts/run-evals.sh && ./scripts/sync-to-skills.sh`.
 **Effort:** S (1–2 hours)
@@ -149,6 +221,8 @@
 
 **Why:** Confirmed. `skill-evaluation/SKILL.md:132-141` documents a mandatory Handoff section with `eval_report_path`, `primary_failure`, `failing_cases`, and `recommended_next_skill`. `scripts/run-evals.sh` emits: Positive/Negative trigger tests, Behavior tests, optional Usefulness evaluation, Gates, Verdict, JSON summary — but NO Handoff section. Baseline Comparison lives in a separate `scripts/run-baseline-comparison.sh` with a different output format. The downstream consumer `skill-improver/SKILL.md:120-147` depends on this missing handoff data.
 
+**⚠️ VERIFICATION NOTE (2026-03-20T09:40Z):** Re-verified. Handoff is triply orphaned: (1) `skill-evaluation/SKILL.md:132-141` promises it, (2) `run-evals.sh` has zero references to "Handoff", (3) `skill-improver/SKILL.md:120-127` reads eval results but parses generic gate pass/fail data, not the structured Handoff fields. The Handoff format is well-designed but completely unimplemented. Resolution should either add `--handoff` to the runner or acknowledge that skill-improver reads raw eval reports directly.
+
 **Blast radius:** skill-evaluation, skill-improver (broken improvement loop), AGENTS.md pipeline documentation.
 
 **Plan:**
@@ -172,7 +246,9 @@
 
 Additionally, `skill-improver/evals/behavior.jsonl` line 3 has `"required_patterns": ["references/", "evals/", "manifest"]` — testing for manifest content in output.
 
-**Blast radius:** skill-improver SKILL.md + behavior.jsonl.
+**⚠️ VERIFICATION NOTE (2026-03-20T09:40Z):** Re-verified all 6 locations. Important nuance: `AGENTS.md` itself uses "manifest" in 3 places (lines 27, 31, 133) — but there it refers to the **sync-to-skills.sh internal mapping** (which scripts go to which skills), NOT to per-skill `manifest.yaml` files. The ban at `AGENTS.md:67` (`"Do not create manifest.yaml in skill packages"`) is specifically about skill-level distribution manifests. skill-improver's references at lines 20, 32, 105, 165, 178, 198 all treat "manifest" as a per-skill packaging artifact, which IS what's banned. The distinction matters for the fix: don't remove all references to "manifest" — remove references to per-skill manifest.yaml as a deliverable.
+
+**Blast radius:** skill-improver SKILL.md + behavior.jsonl + references/.
 
 **Plan:**
 1. Remove manifest references from `skill-improver/SKILL.md` at lines 20, 32, 105, 165, 178, 198. Replace with repo-appropriate alternatives (changelog, ownership can go in README or SKILL.md frontmatter isn't needed).
@@ -239,6 +315,28 @@ Additionally, `skill-improver/evals/behavior.jsonl` line 3 has `"required_patter
 **Plan:**
 1. Replace `ARCHIVE` with `archive` at `skill-lifecycle-management/SKILL.md:98,102,103`.
 2. Search for any other uppercase references: `grep -rn 'ARCHIVE' skill-lifecycle-management/`.
+
+**⚠️ VERIFICATION NOTE (2026-03-20T09:40Z):** Re-verified. Lines 98, 102, 103 still contain uppercase `ARCHIVE`. `ls -la` confirms the directory is `archive/` (lowercase).
+
+**Exact changes required:**
+```
+# Line 98 — Replace:
+About to move skill-name/ to ARCHIVE/skill-name/. Proceed? [y/N]
+# With:
+About to move skill-name/ to archive/skill-name/. Proceed? [y/N]
+
+# Line 102 — Replace:
+mkdir -p ARCHIVE
+# With:
+mkdir -p archive
+
+# Line 103 — Replace:
+mv skill-name/ ARCHIVE/skill-name/
+# With:
+mv skill-name/ archive/skill-name/
+```
+
+**Test:** `grep -rn 'ARCHIVE' skill-lifecycle-management/` should return zero results after fix.
 
 **Risks:** None — pure typo fix. Rollback: `git checkout skill-lifecycle-management/SKILL.md`.
 **Effort:** XS (< 15 min)
@@ -320,6 +418,8 @@ All three exist in `archive/` but not in the active inventory. The runner doesn'
 
 **Why:** Partially valid. The script does temporarily modify `SKILL.md` (lines 377-409: backup → patch → evaluate → restore at lines 470-535). However, it always restores the original and outputs the proposed changes for manual review. The "no auto-apply" claim at lines 21-22 refers to the final state — the original is always restored. The finding is valid in that the working tree IS mutated during execution, which could cause issues if the script is interrupted (Ctrl+C between patch and restore).
 
+**⚠️ VERIFICATION NOTE (2026-03-20T09:40Z):** Re-verified. The situation is **worse** than originally assessed. There IS a trap at line 92 (`trap 'rm -rf "$TMPDIR"' EXIT`), but it only cleans the temp directory — which contains the SKILL.md backup. An interrupted run between line 404 (patch) and line 471 (restore) would: (1) leave SKILL.md in its patched state, AND (2) delete the backup via the trap. The only recovery would be `git checkout`. See enhanced plan below.
+
 **Blast radius:** skill-trigger-optimization, any concurrent git operations during script execution.
 
 **Plan:**
@@ -327,7 +427,26 @@ All three exist in `archive/` but not in the active inventory. The runner doesn'
 2. Update lines 21-22 comment to clarify: "The script temporarily patches SKILL.md during evaluation but always restores the original. Final application is manual."
 3. Re-sync to skill-trigger-optimization/scripts/.
 
-**Risks:** Trap handler adds minor complexity. Rollback: `git checkout scripts/run-trigger-optimization.sh`.
+**⚠️ VERIFICATION NOTE (2026-03-20T09:40Z):** Re-verified. Discovered critical nuance: there IS a trap at line 92 (`trap 'rm -rf "$TMPDIR"' EXIT`) — but it only cleans `$TMPDIR`, NOT the mutated SKILL.md. The mutation flow is: line 378 (backup to `$TMPDIR/SKILL.md.backup`), line 404 (overwrite SKILL.md with patched content), line 471 (restore from backup). If the script is killed between lines 404 and 471, the trap fires, deletes `$TMPDIR` (including the backup!), and leaves SKILL.md in its mutated state with no way to restore. This is worse than originally assessed.
+
+**Exact change required — Replace line 92:**
+```bash
+# OLD (line 92):
+trap 'rm -rf "$TMPDIR"' EXIT
+
+# NEW (line 92):
+trap '
+  # Restore SKILL.md from backup if it exists (safety net for interruption)
+  if [[ -n "${SKILL_MD:-}" ]] && [[ -f "$TMPDIR/SKILL.md.backup" ]]; then
+    cp "$TMPDIR/SKILL.md.backup" "$SKILL_MD" 2>/dev/null || true
+  fi
+  rm -rf "$TMPDIR"
+' EXIT
+```
+
+**Test:** Run `scripts/run-trigger-optimization.sh skill-creator --dry-run`, then `kill -INT` the process mid-run. Verify `skill-creator/SKILL.md` is unchanged from its git state: `git diff skill-creator/SKILL.md` should show no changes.
+
+**Risks:** Trap handler adds minor complexity. The `${SKILL_MD:-}` guard prevents errors if the trap fires before SKILL_MD is set. Rollback: `git checkout scripts/run-trigger-optimization.sh`.
 **Effort:** S (< 1 hour)
 
 **Citations:** `scripts/run-trigger-optimization.sh:21-22,377-409,470-535`
@@ -400,6 +519,31 @@ All three exist in `archive/` but not in the active inventory. The runner doesn'
 2. Remove lines 86-88 (compatibility validation).
 3. Remove line 44 comment about metadata nested keys.
 4. Alternatively: remove the script entirely if `check_skill_structure.py` fully supersedes it.
+
+**⚠️ VERIFICATION NOTE (2026-03-20T09:40Z):** Re-verified. Line 42 still has all 6 fields. `check_skill_structure.py:26` has `ALLOWED_FRONTMATTER_FIELDS = {"name", "description"}`. Recommendation: **Option 4 (remove the script)** is preferred — `check_skill_structure.py` provides a superset of `quick_validate.py`'s checks, plus scoring, plus the 1024-char warning. `quick_validate.py` is not referenced by any other script, not in the sync manifest, and not called by any skill. It exists only as a standalone quick-check that is now redundant and dangerously permissive.
+
+**Exact changes for Option 1 (keep but fix):**
+```python
+# Line 42 — Replace:
+    ALLOWED_PROPERTIES = {'name', 'description', 'license', 'allowed-tools', 'metadata', 'compatibility'}
+# With:
+    ALLOWED_PROPERTIES = {'name', 'description'}
+
+# Lines 86-88 — Delete entirely:
+    if 'compatibility' in fm:
+        if not isinstance(fm['compatibility'], str) or len(fm['compatibility']) > 500:
+            issues.append("compatibility must be a string ≤ 500 chars")
+
+# Line 44 — Delete:
+    # Note: metadata may have nested keys; we only check top-level presence
+```
+
+**Exact steps for Option 4 (remove — recommended):**
+```bash
+git rm scripts/quick_validate.py
+# Verify no references exist:
+grep -rn 'quick_validate' scripts/ skill-*/ AGENTS.md README.md .github/
+```
 
 **Risks:** None — aligns with all other tools. Rollback: `git checkout scripts/quick_validate.py`.
 **Effort:** XS (< 15 min)
@@ -655,6 +799,24 @@ A filesystem listing confirms: no directory named `skill creator/` (with space) 
 2. If the directory was intentionally deleted, remove the references. If it should exist, restore it from git history.
 3. Verify with `git log --all --diff-filter=D -- 'skill creator/'` whether it was ever committed.
 
+**⚠️ VERIFICATION NOTE (2026-03-20T09:40Z):** Re-verified. `skill creator/` does NOT exist on disk. Only `skill-creator/` (with hyphen) exists.
+
+**Exact changes required:**
+```
+# AGENTS.md:11 — Delete this line entirely:
+- Do not conflate archived material in `skill creator/` with the active inventory.
+
+# AGENTS.md:114 — Delete this line entirely:
+- `skill creator/` is archived source material from the pre-consolidation state.
+
+# .github/copilot-instructions.md:65 — Delete this line entirely:
+- `skill creator/` (with space) is pre-consolidation archive. Ignore it.
+
+# README.md — Search for and delete any `skill creator/` reference in the layout section.
+```
+
+**Test:** `grep -rn 'skill creator/' README.md AGENTS.md .github/copilot-instructions.md` should return zero results after fix.
+
 **Risks:** None — removing stale references. Rollback: `git checkout` each file.
 **Effort:** XS (< 15 min)
 
@@ -678,6 +840,37 @@ This means the preservation checker cannot detect changes to any of the 8 canoni
 3. Test against a known skill: `python3 scripts/check_preservation.py skill-creator/SKILL.md skill-creator/SKILL.md` should return 100% on all sections.
 4. Run `mse_check_preservation` via the extension to confirm it works end-to-end.
 
+**⚠️ VERIFICATION NOTE (2026-03-20T09:40Z):** Re-verified. Line 13 regex is `r"^##\s+" + re.escape(heading)` which ONLY matches `## heading` (h2). But canonical sections use `# heading` (h1): `# Purpose`, `# When to use`, `# When NOT to use`, `# Procedure`, `# Output contract`, `# Failure handling`, `# Next steps`, `# References`. The `## subheadings` within `# Procedure` ARE matched, but all 8 top-level sections are invisible to the checker. This means a skill modification that completely rewrites `# Purpose` would show 100% preservation — a dangerous false negative.
+
+**Exact change required — `scripts/check_preservation.py:13`:**
+```python
+# OLD (line 13):
+    pattern = re.compile(
+        r"^##\s+" + re.escape(heading) + r"\s*\n(.*?)(?=^##\s|\Z)",
+        re.MULTILINE | re.DOTALL,
+    )
+
+# NEW (line 13):
+    pattern = re.compile(
+        r"^#{1,2}\s+" + re.escape(heading) + r"\s*\n(.*?)(?=^#{1,2}\s|\Z)",
+        re.MULTILINE | re.DOTALL,
+    )
+```
+
+**Also check:** Does the caller pass heading names with or without `#` prefix? Check `check_preservation.py` lines 20-30 for how `heading` is constructed. The headings should be plain text like `"Purpose"`, `"When to use"`, etc. — the regex prepends the `#` pattern.
+
+**Test after fix:**
+```bash
+# Should report 100% for all sections:
+python3 scripts/check_preservation.py skill-creator/SKILL.md skill-creator/SKILL.md
+
+# Should report <100% if a section differs:
+cp skill-creator/SKILL.md /tmp/test-skill.md
+sed -i 's/# Purpose/# Purpose\nCOMPLETELY CHANGED/' /tmp/test-skill.md
+python3 scripts/check_preservation.py skill-creator/SKILL.md /tmp/test-skill.md
+rm /tmp/test-skill.md
+```
+
 **Risks:** Changing heading extraction may surface previously hidden differences. This is the intended outcome. Rollback: `git checkout scripts/check_preservation.py`.
 **Effort:** S (1–2 hours)
 
@@ -696,13 +889,37 @@ This means the preservation checker cannot detect changes to any of the 8 canoni
 
 The runner outputs `activated=` but the harvester expects `mentioned=`. The regex will **never match**, meaning zero trigger failures are ever harvested into regression cases. Combined with F-021 (regression suite skips trigger failures anyway), the entire trigger-failure regression pipeline is a no-op: failures are printed, never harvested, and even if manually created, never replayed.
 
-**Blast radius:** scripts/harvest_failures.py (completely broken for trigger failures), scripts/run-regression-suite.sh (F-021 — skips them anyway), the entire failure→regression→protection loop.
+**⚠️ VERIFICATION NOTE (2026-03-20T09:40Z):** Re-verified. Important nuance discovered: there IS a fallback pattern at `harvest_failures.py:45-51`. When the structured regex at line 33 fails (which it always will due to `mentioned` vs `activated`), the fallback at line 45 (`m2 = re.search(r"FAIL[:\s]*(.*)", stripped)`) catches the line but **loses all structured fields**: `expected` is set to `"unknown"`, `actual` is set to `"unknown"`, and only the raw prompt text is preserved. So failures ARE harvested, but with **degraded quality** — the regression records lack the expected/actual routing data needed for meaningful replay. The pipeline is **partially broken** (harvests occur, but structured data is lost), not **totally broken** (as originally stated). This makes the fix even more important: the fallback masks the bug by producing incomplete records.
+
+**Blast radius:** scripts/harvest_failures.py (structured parsing completely broken, fallback produces degraded records), scripts/run-regression-suite.sh (F-021 — skips them anyway), the entire failure→regression→protection loop.
 
 **Plan:**
 1. Fix `scripts/harvest_failures.py:31,33`: change `mentioned` to `activated` in both the comment and the regex pattern.
 2. This fixes harvesting. Combine with F-021 (add trigger replay to regression suite) to close the full loop.
 3. Test: run `./scripts/run-evals.sh skill-creator 2>&1 | python3 scripts/harvest_failures.py` and verify failures are captured.
 4. Sync updated script if harvest_failures.py is distributed to any skill package.
+
+**Exact changes required:**
+```python
+# Line 31 — Replace comment:
+        # Pattern: ❌ [N] FAIL (category): prompt... [expected=X, mentioned=Y]
+# With:
+        # Pattern: ❌ [N] FAIL (category): prompt... [expected=X, activated=Y]
+
+# Line 33 — Replace regex:
+            r"\[(\d+)\]\s*FAIL\s*\(([^)]*)\):\s*(.*?)\s*\[expected=(\w+),\s*mentioned=(\w+)\]",
+# With:
+            r"\[(\d+)\]\s*FAIL\s*\(([^)]*)\):\s*(.*?)\s*\[expected=(\w+),\s*activated=(\w+)",
+```
+
+Note: The regex replacement also drops the trailing `\]` since `run-evals.sh:431` appends `${vote_info}]` which may add additional content before the closing bracket. Using a non-greedy match without `\]` is more robust.
+
+**Test after fix:**
+```bash
+# Create a synthetic failure line matching run-evals.sh format:
+echo '    ❌ [1] FAIL (core): Test prompt here... [expected=trigger, activated=false]' | python3 scripts/harvest_failures.py --skill test
+# Should output JSON with expected="trigger", actual="no_trigger" (not "unknown")
+```
 
 **Risks:** None — pure bug fix aligning two scripts. Rollback: `git checkout scripts/harvest_failures.py`.
 **Effort:** XS (< 15 min for the fix itself; combine with F-021 for full loop closure)
@@ -772,6 +989,60 @@ The labels are used throughout: gate output at lines 853-854, the header comment
 3. Update header comment at line 12.
 4. Update `skill-evaluation/SKILL.md` lines 103, 117-118 to use consistent labels.
 5. Decide: either use descriptive names (positive trigger rate / negative rejection rate) or standard IR terms (sensitivity / specificity). Descriptive names recommended for clarity.
+
+**⚠️ VERIFICATION NOTE (2026-03-20T09:40Z):** Re-verified. Lines 776-786 confirmed. The formulas themselves compute the right things — only the labels are wrong. The variable `precision` at line 778 computes `GATE_POS_PASS * 100 / GATE_POS_TOTAL` which is "of prompts that SHOULD trigger, how many DID" = TP/(TP+FN) = sensitivity/recall in IR terms. The variable `recall` at line 784 computes `GATE_NEG_PASS * 100 / GATE_NEG_TOTAL` which is "of prompts that should NOT trigger, how many correctly didn't" = TN/(TN+FP) = specificity. Neither is precision (TP/(TP+FP)). Recommendation: use descriptive names to avoid further IR terminology confusion.
+
+**Exact changes required in `scripts/run-evals.sh`:**
+```bash
+# Line 12 (header comment) — Update metric names throughout
+
+# Lines 771-773 (variable declarations) — Replace:
+  local precision=0 recall=0 beh_rate=0
+  local precision_status="FAIL" recall_status="FAIL" beh_status="FAIL"
+# With:
+  local pos_trigger_rate=0 neg_reject_rate=0 beh_rate=0
+  local pos_trigger_status="FAIL" neg_reject_status="FAIL" beh_status="FAIL"
+
+# Lines 776-780 — Replace:
+  # Precision: positive trigger pass rate
+  if [[ $GATE_POS_TOTAL -gt 0 ]]; then
+    precision=$((GATE_POS_PASS * 100 / GATE_POS_TOTAL))
+  fi
+  [[ $precision -ge 80 ]] && precision_status="PASS"
+# With:
+  # Positive trigger rate (sensitivity): of prompts that SHOULD trigger, how many did?
+  if [[ $GATE_POS_TOTAL -gt 0 ]]; then
+    pos_trigger_rate=$((GATE_POS_PASS * 100 / GATE_POS_TOTAL))
+  fi
+  [[ $pos_trigger_rate -ge 80 ]] && pos_trigger_status="PASS"
+
+# Lines 782-786 — Replace:
+  # Recall: negative trigger pass rate (true negative rate)
+  if [[ $GATE_NEG_TOTAL -gt 0 ]]; then
+    recall=$((GATE_NEG_PASS * 100 / GATE_NEG_TOTAL))
+  fi
+  [[ $recall -ge 80 ]] && recall_status="PASS"
+# With:
+  # Negative rejection rate (specificity): of prompts that should NOT trigger, how many were correctly rejected?
+  if [[ $GATE_NEG_TOTAL -gt 0 ]]; then
+    neg_reject_rate=$((GATE_NEG_PASS * 100 / GATE_NEG_TOTAL))
+  fi
+  [[ $neg_reject_rate -ge 80 ]] && neg_reject_status="PASS"
+
+# Lines 853-854 (gate table) — Replace:
+  echo "| Precision (positive trigger) | ${precision}% | ≥ 80% | ${precision_status} |"
+  echo "| Recall (negative trigger) | ${recall}% | ≥ 80% | ${recall_status} |"
+# With:
+  echo "| Positive trigger rate | ${pos_trigger_rate}% | ≥ 80% | ${pos_trigger_status} |"
+  echo "| Negative rejection rate | ${neg_reject_rate}% | ≥ 80% | ${neg_reject_status} |"
+```
+
+**Also update these files for consistency:**
+- `skill-evaluation/SKILL.md:103` — Replace "precision ≥ 95% and recall ≥ 90%" with "positive trigger rate ≥ 95% and negative rejection rate ≥ 90%"
+- `skill-evaluation/SKILL.md:117-118` — Update output contract table column headers
+- Search for `precision` and `recall` throughout `run-evals.sh` for any other references (JSON summary, etc.)
+
+**Test:** `./scripts/run-evals.sh --dry-run skill-creator` — verify new labels appear in gate table output.
 
 **Risks:** Any tooling or documentation referencing old labels will need updating. Eval reports already generated use old labels. Rollback: `git checkout scripts/run-evals.sh skill-evaluation/SKILL.md`.
 **Effort:** S (1–2 hours)
@@ -872,6 +1143,72 @@ Combined with F-027 (harvest can't produce valid entries) and F-021 (trigger_fai
 3. For `structural_failure` type: update the runner to handle cases without a `.skill` field (use a test fixture directory, or perform the cross-reference check inline).
 4. Add a test that runs `run-regression-suite.sh` and asserts `skip == 0` to prevent silent regressions.
 
+**⚠️ VERIFICATION NOTE (2026-03-20T09:40Z):** Re-verified. All 3 corpus files confirmed to have wrong schema. The runner's jq extractions at lines 41, 70-72 all return empty/null because the field names don't match. Every single regression case is silently skipped. The suite reports "PASS" with 0 failures and 3 skips, giving false confidence. Combined with F-027 (harvest produces degraded records) and F-021 (trigger_failure skipped), the entire regression system is non-functional.
+
+**Exact changes — Option (b) for `scripts/run-regression-suite.sh`:**
+```bash
+# Lines 69-84 — Replace the preservation_failure handler:
+
+        preservation_failure)
+            # Try file paths first, fall back to inline excerpts
+            original=$(jq -r '.original // ""' "$case_file")
+            modified=$(jq -r '.modified // ""' "$case_file")
+            check_name=$(jq -r '.check // .check_type // ""' "$case_file")
+
+            # If file paths are empty, try inline excerpts
+            if [[ -z "$original" ]] || [[ -z "$modified" ]]; then
+                original_excerpt=$(jq -r '.original_excerpt // ""' "$case_file")
+                modified_excerpt=$(jq -r '.modified_excerpt // ""' "$case_file")
+
+                if [[ -z "$original_excerpt" ]] || [[ -z "$modified_excerpt" ]]; then
+                    echo "  ⚠️  [${case_id}] missing original/modified data"
+                    skip=$((skip + 1))
+                    continue
+                fi
+
+                # Write excerpts to temp files for check_preservation.py
+                local orig_tmp="$TMPDIR/original_${case_id}.md"
+                local mod_tmp="$TMPDIR/modified_${case_id}.md"
+                echo "$original_excerpt" > "$orig_tmp"
+                echo "$modified_excerpt" > "$mod_tmp"
+                original="$orig_tmp"
+                modified="$mod_tmp"
+            fi
+
+            if [[ ! -f "$original" ]] || [[ ! -f "$modified" ]]; then
+                echo "  ⚠️  [${case_id}] referenced files not found"
+                skip=$((skip + 1))
+                continue
+            fi
+            # ... rest of preservation check ...
+```
+
+**Also add TMPDIR setup near the top of the script:**
+```bash
+TMPDIR=$(mktemp -d)
+trap 'rm -rf "$TMPDIR"' EXIT
+```
+
+**Also fix the `.skill` extraction at line 41:**
+```bash
+# OLD:
+skill=$(jq -r '.skill' "$case_file")
+
+# NEW — allow null/missing .skill:
+skill=$(jq -r '.skill // "unknown"' "$case_file")
+```
+
+**And fix the structural_failure handler to skip gracefully when skill is "unknown":**
+```bash
+        structural_failure)
+            if [[ "$skill" == "unknown" ]] || [[ "$skill" == "null" ]]; then
+                echo "  ⏭  [${case_id}] no .skill field — cannot validate structurally"
+                skip=$((skip + 1))
+                continue
+            fi
+            # ... rest of handler ...
+```
+
 **Risks:** Changing the JSON schema may break any other tooling reading these files (none found). Rollback: `git checkout corpus/regression/ scripts/run-regression-suite.sh`.
 **Effort:** M (2–3 hours)
 
@@ -892,6 +1229,24 @@ Combined with F-027 (harvest can't produce valid entries) and F-021 (trigger_fai
 2. Replace hardcoded `--model claude-opus-4.6` with `--model "$MODEL"`.
 3. Update the info echo to show the actual model being used.
 4. Optionally add `--model` CLI flag parsing to match `run-evals.sh` pattern.
+
+**⚠️ VERIFICATION NOTE (2026-03-20T09:40Z):** Re-verified. Line 26 prints `"Model: claude-opus-4.6 (high reasoning)"` and line 37 uses `--model claude-opus-4.6`. No `EVAL_MODEL` check exists. All other eval scripts use `MODEL="${EVAL_MODEL:-gpt-4.1}"`.
+
+**Exact changes required:**
+```bash
+# Add after the shebang/set lines (around line 10):
+MODEL="${EVAL_MODEL:-claude-opus-4.6}"
+
+# Line 26 — Replace:
+echo "Model: claude-opus-4.6 (high reasoning)"
+# With:
+echo "Model: ${MODEL}"
+
+# Line 37 — Replace:
+  --model claude-opus-4.6 \
+# With:
+  --model "$MODEL" \
+```
 
 **Risks:** Minimal — adding flexibility, not changing default behavior. Rollback: `git checkout scripts/run-meta-skill-cycle.sh`.
 **Effort:** XS (15 min)
@@ -1818,3 +2173,109 @@ F-014, F-034, F-038, F-042, F-043, F-044, F-045
 > "This is now a strong beta-quality internal meta-skill engineering repository, but not yet a fully complete or fully trustworthy end-state system. The repository is worth finishing."
 
 This assessment aligns with the implementation findings: the architecture is sound, the structural compliance is excellent (12/12 skills pass validation), and the trigger-testing mindset is strong. The gaps are in eval reliability, regression protection, and documentation honesty about what is automated vs. manual.
+
+---
+
+# Addendum: Re-Verification Observations (2026-03-20T09:40Z)
+
+## Verification Methodology
+
+All 47 findings were re-verified against the live codebase using parallel exploration agents checking exact file paths, line numbers, and content. Every citation was confirmed accurate — no line-number drift detected since original logging.
+
+## Corrections and Nuances Discovered
+
+### 1. F-027 Severity Adjustment: Partial Break, Not Total Break
+
+**Original assessment:** "The regex will **never match**, meaning zero trigger failures are ever harvested into regression cases."
+
+**Corrected assessment:** The structured regex at line 33 never matches (confirmed), BUT there IS a fallback pattern at `harvest_failures.py:45-51`:
+```python
+m2 = re.search(r"FAIL[:\s]*(.*)", stripped)
+if m2:
+    failure["prompt"] = m2.group(1).strip().rstrip(".")
+else:
+    failure["prompt"] = stripped
+failure["type"] = "trigger_failure"
+failure["expected"] = "unknown"
+failure["actual"] = "unknown"
+```
+
+This means failures ARE harvested, but with **degraded quality** — `expected` and `actual` are both `"unknown"`, and the category/prompt structured data is lost. The fix is still critical (structured data loss breaks downstream analysis), but the pipeline is "partially broken" rather than "completely broken."
+
+### 2. F-008 Context: AGENTS.md Also Uses "Manifest"
+
+**Nuance:** `AGENTS.md` itself uses "manifest" in 3 places (lines 27, 31, 133) — but there it refers to the `sync-to-skills.sh` internal script-to-skill mapping, NOT per-skill `manifest.yaml` distribution files. The ban at `AGENTS.md:67` is specifically: "Do not create `manifest.yaml` in skill packages." The fix for F-008 should distinguish between these two uses: remove references to per-skill `manifest.yaml` as a deliverable, but don't confuse the sync manifest (which is legitimate infrastructure).
+
+### 3. F-015 Trap Is Inadequate (Worse Than Assessed)
+
+**Nuance:** The existing trap at line 92 (`trap 'rm -rf "$TMPDIR"' EXIT`) is actually **counterproductive** in failure scenarios. If the script is killed between the SKILL.md patch (line 404) and restore (line 471), the trap fires and deletes `$TMPDIR` — which contains the only backup of the original SKILL.md. This means an interrupted run would leave SKILL.md modified AND destroy the backup. The enhanced trap in the plan addresses this by restoring SKILL.md before cleaning $TMPDIR.
+
+### 4. F-007 Handoff Section Is Completely Orphaned
+
+**Nuance:** Re-verification confirms the Handoff section is triply orphaned:
+1. `skill-evaluation/SKILL.md:132-141` promises it as mandatory output
+2. `scripts/run-evals.sh` never generates it (zero references to "Handoff")
+3. `skill-improver/SKILL.md:120-127` describes reading eval results but parses generic gate data, not the structured Handoff format
+
+The Handoff format (eval_report_path, primary_failure, failing_cases, recommended_next_skill) is a well-designed contract — the issue is that nobody produces or consumes it. Resolution should either implement it in the runner or acknowledge that `skill-improver` reads raw eval reports instead.
+
+## Dependency Chain Analysis
+
+Several findings form dependency chains where the order of implementation matters:
+
+```
+F-002 (schema decision) ──blocks──> F-001 (testing harness examples)
+                                 └──> F-014 (archived skill refs)
+
+F-010 (lifecycle state mechanism) ──blocks──> F-023 (safety→lifecycle edge)
+                                           └──> F-039 (fallback inference)
+                                           └──> F-041 (vocabulary alignment)
+
+F-028 (metric labels) ──blocks──> F-029 (threshold documentation)
+
+F-027 (harvest regex) ──combines with──> F-021 (trigger replay)
+                      ──combines with──> F-031 (regression JSON schema)
+  (All three must be fixed together to close the regression loop)
+
+F-003 (run-evals.sh portability) ──shares pattern with──> F-004, F-005
+  (Fix F-003 first, then sync resolves F-004 and F-005)
+```
+
+## Cross-Cutting Implementation Groups
+
+For efficient implementation, findings should be batched by the files they touch:
+
+### Group A: `scripts/run-evals.sh` (6 findings)
+F-003 (REPO_ROOT), F-007 (add --handoff), F-028 (rename precision/recall), F-029 (document two-tier thresholds), F-033 (add --baseline), F-047 (document strict mode limitation)
+
+### Group B: `skill-testing-harness/SKILL.md` (2 findings)
+F-001 (stale schema), F-002 (better_skill → category decision)
+
+### Group C: Regression pipeline (3 findings — must be done together)
+F-027 (harvest regex), F-021 (trigger replay), F-031 (JSON schema)
+
+### Group D: Library management skills (5 findings)
+F-009 (curation metadata), F-010 (lifecycle index), F-039 (fallback inference), F-040 (merge threshold), F-041 (vocabulary)
+
+### Group E: Root docs (3 findings)
+F-025 (phantom dir), F-044 (prose wording drift), + update docs for any other changes
+
+### Group F: Per-skill script portability (3 findings — one fix resolves all)
+F-003, F-004, F-005 (fix root copy + sync)
+
+### Group G: Distribution-era cleanup (3 findings)
+F-008 (improver manifests), F-045 (variant-splitting overlays), F-046 (creator schemas)
+
+## Risk Assessment: What Breaks If Nothing Is Fixed
+
+The findings are not just documentation issues — several represent **silent failures** that produce false confidence:
+
+1. **Regression suite reports PASS with 100% skip rate** (F-031): The suite runs, reports success, and gives the impression that all regression cases pass. In reality, every case is silently skipped due to schema mismatch. Anyone relying on regression results for quality assurance is making decisions based on non-data.
+
+2. **Harvest produces degraded records** (F-027): The fallback masks the bug — failures appear in regression files but lack the structured data needed for meaningful replay or analysis. A human checking "are failures being harvested?" would see records and assume the pipeline works.
+
+3. **Eval gate labels are misleading** (F-028): Teams discussing "precision" and "recall" are talking past each other — the numbers measure different things than the labels suggest. This erodes trust in the evaluation methodology when the mismatch is eventually discovered.
+
+4. **check_preservation.py misses all top-level sections** (F-026): A skill modification that completely rewrites `# Purpose` or `# Output contract` would report 100% preservation. Anyone using preservation scoring to gate modifications is unprotected against the most important changes.
+
+5. **Trigger optimization can corrupt SKILL.md on interrupt** (F-015): The trap deletes the backup before restoring the file. A Ctrl+C during optimization leaves a modified SKILL.md with no recovery path other than `git checkout`.
