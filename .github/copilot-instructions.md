@@ -48,6 +48,7 @@ No other eval formats are active. Do not use `evals.json`, `output-tests.jsonl`,
 | `scripts/skill_lint.py` | Lint a SKILL.md for format issues |
 | `scripts/harvest_failures.py` | Convert failures into regression cases |
 | `scripts/sync-to-skills.sh` | Sync root scripts to per-skill `scripts/` directories per manifest |
+| `scripts/run-meta-skill-cycle.sh` | **Optional/experimental** — orchestrate meta-skill cycle via non-interactive Copilot |
 
 After editing any SKILL.md, run `scripts/validate-skills.sh` to confirm compliance.
 
@@ -61,7 +62,9 @@ After editing any script in root `scripts/`, run `scripts/sync-to-skills.sh` to 
 - Do not create `manifest.yaml` in skill packages — it is a stale distribution artifact.
 - Do not add license, compatibility, or release metadata to skills.
 - `archive/` is read-only historical storage. Do not modify archived skills.
-- `corpus/` contains test skills for meta-skill evaluation. Treat as test fixtures.
+- `corpus/` contains test skills for meta-skill evaluation (5 weak, 5 strong, 5 adversarial, 3 regression). Treat as test fixtures.
+- `eval-results/` contains timestamped eval reports with `<skill>-eval.md` symlinks to latest. Handoff between `skill-evaluation` and `skill-improver`.
+- `docs/` contains operational documentation (evaluation cadence, workflows).
 - `tasks/` is documentation and worklogs, not a skill package.
 
 ## Pipelines

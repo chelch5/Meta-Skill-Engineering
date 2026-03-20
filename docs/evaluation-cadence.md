@@ -59,8 +59,8 @@ Run this after editing any SKILL.md to verify you haven't broken the required st
 ```
 
 Runs JSONL test cases from each skill's `evals/` directory:
-- **Trigger-positive tests** (`trigger-positive.jsonl`): Prompts that *should* activate the skill. Measures precision.
-- **Trigger-negative tests** (`trigger-negative.jsonl`): Prompts that should *not* activate the skill. Measures recall (true negative rate).
+- **Trigger-positive tests** (`trigger-positive.jsonl`): Prompts that *should* activate the skill. Measures pos_trigger_rate.
+- **Trigger-negative tests** (`trigger-negative.jsonl`): Prompts that should *not* activate the skill. Measures neg_reject_rate.
 - **Behavior tests** (`behavior.jsonl`): Prompts that test output format compliance — required patterns, forbidden patterns, minimum output length.
 - **Usefulness evaluation** (opt-in, `--usefulness`): LLM-as-Judge scoring of behavior test outputs across four dimensions (correctness, completeness, actionability, conciseness). Requires `usefulness_criteria` field in behavior.jsonl entries.
 
@@ -138,8 +138,8 @@ Each per-skill evaluation report includes a gates section with four checks:
 
 | Gate | Threshold | What it measures |
 |------|-----------|------------------|
-| Trigger precision | ≥ 80% | Positive trigger test pass rate — does the skill activate when it should? |
-| Trigger recall | ≥ 80% | Negative trigger test pass rate — does the skill stay quiet when it shouldn't activate? |
+| Positive trigger rate (pos_trigger_rate) | ≥ 80% | Positive trigger test pass rate — does the skill activate when it should? |
+| Negative rejection rate (neg_reject_rate) | ≥ 80% | Negative trigger test pass rate — does the skill stay quiet when it shouldn't activate? |
 | Behavior pass rate | ≥ 80% | Behavior test pass rate — does the output match expected patterns and length? |
 | Structural validity | valid = true | `check_skill_structure.py` result — does SKILL.md have frontmatter and all required sections? |
 | Usefulness (opt-in) | ≥ 3/5 | LLM-as-Judge average score across scored behavior cases. Only active with `--usefulness`. |

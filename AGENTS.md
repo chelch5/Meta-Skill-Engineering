@@ -128,7 +128,12 @@ The eval system uses Copilot CLI (`copilot -p`) with structured JSON output for 
 | `scripts/run-baseline-comparison.sh` | Before/after comparison with gates |
 | `scripts/run-corpus-eval.sh` | Two-layer meta-skill evaluation against corpus |
 | `scripts/run-regression-suite.sh` | Regression protection runner |
+| `scripts/check_skill_structure.py` | 10-point structural scoring for a skill |
+| `scripts/check_preservation.py` | Jaccard similarity for content preservation |
+| `scripts/skill_lint.py` | Lint a SKILL.md for format issues |
+| `scripts/harvest_failures.py` | Convert failures into regression cases |
 | `scripts/sync-to-skills.sh` | Sync root scripts to per-skill `scripts/` directories per manifest |
+| `scripts/run-meta-skill-cycle.sh` | **Optional/experimental** — orchestrate meta-skill cycle via non-interactive Copilot |
 
 **Default model:** `gpt-4.1`. Override with `EVAL_MODEL` env var.
 
