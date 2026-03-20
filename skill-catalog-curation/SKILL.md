@@ -2,7 +2,8 @@
 name: skill-catalog-curation
 description: >-
   Audit a skill library for duplicates, category drift, and discoverability gaps;
-  maintain catalog consistency, metadata, tags, and naming conventions.
+  verify naming conventions, cross-references between SKILL.md files, and
+  description quality across skill directories.
   Use when: "audit the skill library", "clean up overlapping skills",
   "organize the catalog", "find duplicate skills".
   Do not use for: improving a single skill (skill-improver), creating a new skill (skill-creator),
@@ -30,8 +31,10 @@ Detect duplicates, enforce category consistency, flag deprecation candidates, ve
 
 ## 1. Build inventory
 
-- List every skill: name, category (inferred from pipeline membership), last-modified date (from `git log -1 --format=%cI -- <skill-dir>`)
-- Count skills per category; flag uncategorized or miscategorized entries
+- List every skill directory at the repo root that contains a `SKILL.md`
+- For each skill record: name (directory name), category (inferred from pipeline position in `# Next steps` cross-references, e.g., creation-pipeline vs. improvement-pipeline), last-modified date (from `git log -1 --format=%cI -- <skill-dir>`)
+- Infer status from location: root directories → **active**, `archive/` → **archived**, `corpus/` → **test fixture**
+- Count skills per inferred category; flag uncategorized or miscategorized entries
 
 ## 2. Detect duplicates and overlaps
 
@@ -70,33 +73,46 @@ Output the curation report using the structure in **Output contract** below.
 
 # Output contract
 
-The report MUST contain all six sections. Omit rows only when a section has zero findings; keep the heading with "None found."
+The report MUST contain all eight sections. Omit rows only when a section has zero findings; keep the heading with "None found."
 
 ```markdown
 ## Catalog Curation Report
 
 ### Inventory
-- Total skills: <N>
-- By maturity: <draft: N, stable: N, deprecated: N>
-- Categories: <N>
+- Total active skills: <N> (root directories with SKILL.md)
+- Archived: <N> (in archive/)
+- Test fixtures: <N> (in corpus/)
+- Inferred categories: <list each category with skill count>
+
+### Description Quality
+| Skill | Word count | Starts with verb? | Has trigger phrases? | Issues |
+|-------|-----------|-------------------|---------------------|--------|
+| ...   | <N>       | yes/no            | yes/no              | <details> |
+
+### Cross-Reference Graph
+| Skill | References out (Next steps) | Referenced by | Boundary clarity |
+|-------|-----------------------------|---------------|-----------------|
+| ...   | <list>                      | <list>        | clear / ambiguous / missing |
 
 ### Duplicates / Overlaps
 | Skill A | Skill B | Overlap evidence | Recommendation |
 |---------|---------|-----------------|----------------|
 | ...     | ...     | <shared trigger phrases or purpose text> | merge / differentiate / keep |
 
-### Category Issues
-| Issue | Affected skills | Recommended action |
-|-------|----------------|--------------------|
+### Naming Convention Audit
+| Skill | Convention | Issue |
+|-------|-----------|-------|
+| ...   | kebab-case / other | <details if non-conforming> |
 
-### Discoverability Gaps
-| Skill | Problem | Fix |
-|-------|---------|-----|
-| ...   | description starts with noun, no negative boundaries | rewrite description |
+### Gap Analysis
+| Pipeline role | Expected skill | Status |
+|--------------|---------------|--------|
+| ...          | ...           | present / missing / weak coverage |
 
 ### Deprecation Candidates
 | Skill | Reason | Replacement |
 |-------|--------|-------------|
+| ...   | ...    | ...         |
 
 ### Prioritized Actions
 1. **[High]** <action> — <reason>
@@ -125,7 +141,7 @@ When the audit identifies true duplicates (recommendation: "merge"), execute:
    About to delete [absorbed-skill]/ directory. Proceed? [y/N]
    ```
    Do NOT delete without explicit user confirmation.
-7. **Update the catalog** — update the README inventory to reflect the merge
+7. **Update the inventory** — update the README skill inventory to reflect the merge
 
 # Next steps
 

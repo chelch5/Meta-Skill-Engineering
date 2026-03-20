@@ -184,14 +184,16 @@ for tier in "${TIERS[@]}"; do
     # Save detailed JSON for this skill
     echo "$PRE_JSON" | jq '.' > "${WORK_DIR}/pre-check.json"
 
-    # --- Harness preparation ---
-    # The actual meta-skill invocation requires copilot CLI (interactive).
-    # We prepare the harness: baseline is recorded, post-invocation comparison
-    # can be run via run-baseline-comparison.sh.
+    # --- Layer 2: Meta-skill invocation (requires copilot CLI) ---
+    # Layer 2 is not yet automated. It requires:
+    #   1. Running the meta-skill on the corpus fixture via `copilot -p`
+    #   2. Comparing original vs modified output with run-baseline-comparison.sh
     #
-    # To complete the eval loop manually:
-    #   1. Run the meta-skill on ${WORK_DIR}/working.md
-    #   2. Run: ./scripts/run-baseline-comparison.sh ${WORK_DIR}/original.md ${WORK_DIR}/working.md
+    # To complete Layer 2 manually for this fixture:
+    #   copilot -p "Run skill-improver on this skill" < ${WORK_DIR}/working.md > ${WORK_DIR}/improved.md
+    #   ./scripts/run-baseline-comparison.sh ${WORK_DIR}/original.md ${WORK_DIR}/improved.md
+    #
+    # TODO: Automate behind --layer2 flag when copilot CLI is available
 
     rm -rf "$WORK_DIR"
   done

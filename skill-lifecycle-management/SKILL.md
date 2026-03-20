@@ -44,7 +44,13 @@ Manage skills through lifecycle states: draft → beta → stable → deprecated
 
 ## Operating procedure
 
-1. **Inventory current states**: List all skills with their current lifecycle state. Flag anomalies — draft skills older than 2 cycles, stable skills with known bugs.
+1. **Assess current lifecycle stage for each skill** using these signals:
+   - **draft**: No `evals/` directory, or evals exist but fewer than 3 test cases. Passes `validate-skills.sh` with score < 8.
+   - **beta**: Has `evals/` with ≥3 cases. Passes structural validation (score ≥ 8). No formal evaluation Pass verdict yet.
+   - **stable**: Formal evaluation (via `skill-evaluation`) returned a Pass verdict. At least 10 test cases with ≥90% pass rate. Referenced by other skills or AGENTS.md as a recommended tool.
+   - **deprecated**: SKILL.md body contains a `⚠️ DEPRECATED` notice. Still in its root directory (not yet archived).
+   - **archived**: Directory exists under `archive/` rather than at the repository root.
+   Flag anomalies — skills whose signals contradict their apparent state (e.g., no evals but referenced as stable in AGENTS.md).
 2. **Apply promotion criteria**:
    - draft → beta: Tested with ≥3 **diverse** prompts — one core use case, one edge case, one negative case (should NOT trigger). All three produce expected output or correct non-trigger. Diversity matters more than count; three paraphrases of the same query do not qualify.
    - beta → stable: Formal evaluation (via `skill-evaluation`) returned a Pass verdict. At least 10 test cases with ≥90% pass rate. Used in at least 2 real projects or sessions without reported failure.
@@ -53,9 +59,9 @@ Manage skills through lifecycle states: draft → beta → stable → deprecated
    - A strictly better replacement exists and is stable
    - Unused for ≥3 cycles
    - Consistently fails evaluation
-4. **Execute transitions**: Record the transition in the library's lifecycle index and add a status notice to the skill's SKILL.md body if needed (e.g., deprecation notice).
+4. **Execute transitions**: Add a deprecation notice to the skill's SKILL.md body (see procedure below), update cross-references in AGENTS.md and other skills that mention it, and commit all changes together.
 5. **Check dependents**: If a deprecated skill is referenced in AGENTS.md, commands, or other skills, flag each reference for update.
-6. **Update library index**: Set each skill's catalog entry to its new state.
+6. **Update cross-references**: In AGENTS.md, README.md, and any other skills' "Next steps" or "When NOT to use" sections, replace references to the transitioned skill with its replacement (or note removal).
 
 ## Deprecation procedure
 
@@ -104,11 +110,12 @@ mv skill-name/ archive/skill-name/
 ```
 Do NOT delete — preserve for reference and provenance.
 
-### 6. Update catalog
+### 6. Update cross-references
 
-- Update lifecycle index to show deprecated status
-- Remove from active catalog section
-- Add to "Deprecated" section of index
+- Update AGENTS.md to remove or redirect references to the deprecated skill
+- Update README.md if the skill is listed in an active inventory
+- Update other skills' "Next steps" or "When NOT to use" sections that reference it
+- Commit all reference updates in the same commit as the deprecation notice or archive move
 
 # Output contract
 
@@ -157,7 +164,7 @@ When executing a deprecation specifically, also produce:
 - [x] All references updated
 - [x] Deprecation notice added
 - [x] Archived (if applicable)
-- [x] Catalog updated
+- [x] Cross-references updated (AGENTS.md, README.md, other skills)
 ```
 
 If no transitions are warranted, state that explicitly — do not invent changes.
@@ -166,7 +173,7 @@ If no transitions are warranted, state that explicitly — do not invent changes
 
 | Problem | Response |
 |---------|----------|
-| Skills with unknown lifecycle state | Infer from evidence (has evals → beta; passes evaluation → stable; no evals → draft) and record in lifecycle index |
+| Skills with unknown lifecycle state | Infer from evidence: has evals → beta; passes evaluation → stable; no evals → draft; has deprecation notice → deprecated; lives in `archive/` → archived |
 | Deprecated skill has active dependents | Identify or create replacement first; do not deprecate until dependents have a migration path |
 | Disputed maturity (e.g. "stable" but failing evals) | Default to the more conservative state and note the discrepancy |
 | No evaluation data available for promotion | Block promotion; recommend running `skill-evaluation` first |

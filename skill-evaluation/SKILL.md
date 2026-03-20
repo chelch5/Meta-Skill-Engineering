@@ -91,20 +91,25 @@ ad-hoc mode for the missing test types.
 - Run each quality case with the skill active
 - Score against rubric: correct? complete? well-formatted? no hallucination?
 
-## 5. **Run baseline comparison**
+## 5. **Run baseline comparison** (optional, manual)
 
-- To create a baseline: temporarily remove or rename the skill's SKILL.md from the agent client's skill directory so it cannot be loaded
-- Run the same quality cases without the skill active
+This step is manual and requires the `copilot` CLI. It measures whether the skill is actually better than no skill:
+
+- Temporarily remove or rename the skill's SKILL.md so it cannot be loaded
+- Re-run the same quality cases without the skill active
 - Restore the skill's SKILL.md after baseline runs complete
-- Blind-compare outputs where possible (judge without knowing which is skill vs baseline)
+- Blind-compare outputs (judge without knowing which is skill vs baseline)
 - Win rate = skill-wins / total-cases
+
+Note: `run-baseline-comparison.sh` compares two versions of a SKILL.md (before/after modification), not skill-vs-no-skill. Use it for modification quality checks, not for this baseline step.
 
 ## 6. **Synthesize and verdict**
 
 - Routing target: positive trigger rate ≥ 95% and negative rejection rate ≥ 90%
+- Minimum gate (automated): positive trigger rate ≥ 80% and negative rejection rate ≥ 80%. Skills below this threshold fail.
 - Quality target: ≥ 80% of outputs meet the rubric
 - Baseline target: win rate ≥ 60%
-- These are targets, not bright lines. Use judgment when results are near the boundary (e.g., 93% positive trigger rate on 15 cases is one misrouted case — investigate whether it's a genuine routing failure or an ambiguous edge case).
+- The 95%/90% targets are aspirational quality bars. The 80%/80% gates are the automated pass/fail thresholds in `run-evals.sh`. Skills between 80–95% pass the gate but should still be improved.
 - Verdict: **Pass** / **Fail** / **Needs Work** with the specific failing metrics
 
 # Output contract
@@ -113,24 +118,24 @@ ad-hoc mode for the missing test types.
 ## Skill Evaluation: [skill-name]
 
 ### Routing Accuracy
-| Metric                 | Value | Target | Pass? |
-|------------------------|-------|--------|-------|
-| Positive trigger rate  | X%    | ≥ 95%  | ✓/✗   |
-| Negative rejection rate| X%    | ≥ 90%  | ✓/✗   |
+| Metric                 | Value | Gate (≥80%) | Target | Pass? |
+|------------------------|-------|-------------|--------|-------|
+| Positive trigger rate  | X%    | ≥ 80%       | ≥ 95%  | ✓/✗   |
+| Negative rejection rate| X%    | ≥ 80%       | ≥ 90%  | ✓/✗   |
 
 Misrouted cases: [list or "None"]
 
 ### Output Quality (N cases)
 Score: X/N pass (Y%)
 
-### Baseline Comparison
+### Baseline Comparison (if run separately via run-baseline-comparison.sh)
 Win rate: X/N (Y%)
 
 ### Verdict: [Pass | Fail | Needs Work]
 Failing metrics: [list or "None"]
 Next action: [specific remediation or "Ready for promotion"]
 
-### Handoff
+### Handoff (for downstream skills)
 - **Eval report**: eval-results/[skill-name]-eval.md
 - **Primary failure**: [routing | output-quality | usefulness | none]
 - **Failing cases**:
@@ -139,7 +144,7 @@ Next action: [specific remediation or "Ready for promotion"]
 - **Recommended next skill**: [skill-trigger-optimization | skill-improver | skill-benchmarking | skill-safety-review | none]
 ```
 
-The Handoff section is consumed by downstream skills (especially `skill-improver`). Always include it — even when the verdict is Pass, set primary failure to "none" and recommended next skill to "skill-safety-review" or "none".
+The Handoff section is derived from the eval results above. When routing to downstream skills (especially `skill-improver`), include the eval report path and the specific failing prompts. The `run-evals.sh` script writes reports to `eval-results/` with a `-eval.md` symlink to the latest.
 
 # Failure handling
 
@@ -148,13 +153,13 @@ The Handoff section is consumed by downstream skills (especially `skill-improver
 | No eval cases exist | Create minimum set: 3 positive triggers, 3 negative triggers, 2 quality cases. Mark them as ad-hoc in the report. |
 | Cannot determine whether skill triggered | Inspect client routing logs. If unavailable, compare output structure with and without the skill description present. |
 | Baseline comparison inconclusive (win rate 45–55%) | Double the sample size. If still inconclusive, report as "neutral — skill neither helps nor hurts." |
-| Routing passes but output quality fails | Stop evaluation. Route to `skill-improver` with the eval report path (`eval-results/<skill>-eval.md`) and the specific failing prompts listed in the Handoff section. |
+| Routing passes but output quality fails | Stop evaluation. Route to `skill-improver` with the eval report path (`eval-results/<skill>-eval.md`) and the specific failing prompts. |
 | Skill passes eval but fails in real usage | Eval set has coverage gaps. Add the failing real-world case and re-run. |
 
 **Routing to downstream skills:** When handing off to another skill (trigger-optimization, improver, etc.), always include:
 1. The eval report path: `eval-results/<skill-name>-eval.md`
-2. The Handoff section from the output contract (primary failure, failing cases, recommendation)
-3. The specific failing prompts so the downstream skill can reproduce the issue
+2. The primary failure type and specific failing prompts from the evaluation
+3. The recommended next skill based on the failure type
 
 This enables `skill-improver` to use eval-driven diagnosis (reading the report) rather than relying on heuristic guesswork.
 
