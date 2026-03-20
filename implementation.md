@@ -602,3 +602,136 @@ These are reasonable manual handoffs for a meta-skill library where human judgme
 
 4. **F-020 decision:** Should Layer 2 corpus evaluation invoke `copilot -p` directly, or should it prepare artifacts and document a one-command manual step? Recommendation: direct invocation behind `--layer2` flag.
 5. **F-022 decision:** Which additional meta-skills should be included in full-cycle corpus eval? Recommendation: add `skill-evaluation` and `skill-safety-review` at minimum.
+
+---
+
+# Annex B: Shared Tooling And Documentation — Validation
+
+**Source:** `tasks/reviews/2026-03-20-meta-skill-engineering/3.md`
+**Validated:** 2026-03-20
+**Summary:** 14 raw findings — 3 new valid, 10 already logged, 1 valid-but-by-design. Top risks: harvest format mismatch (breaks regression pipeline), phantom directory in docs, preservation script heading-level bug.
+
+---
+
+### Already-Logged Findings (cross-reference to Tasks 1–2)
+
+| Review finding | Status | Prior ref | Rationale |
+|---|---|---|---|
+| Root docs eval-results handoff overstated | Already logged | **F-007** | Identical: runner doesn't emit Handoff section |
+| Stale contracts in helpers (quick_validate.py) | Already logged | **F-019** | Identical: 4 extra frontmatter fields |
+| Script portability (REPO_ROOT resolves wrong) | Already logged | **F-003, F-004, F-005** | Identical: all per-skill copies affected |
+| run-evals.sh doesn't implement baseline/handoff | Already logged | **F-007** | Same root finding, different angle |
+| Behavior suites don't map to output contracts | Already logged | **F-006** | Identical systemic issue |
+| run-baseline-comparison.sh not a benchmark engine | Already logged | **F-012** | skill-benchmarking promises metrics tooling can't deliver |
+| run-trigger-optimization.sh mutates SKILL.md | Already logged | **F-015** | Temporary mutation during scoring |
+| Layer 2 corpus eval manual-only | Already logged | **F-020** | Identical finding |
+| Corpus runner limited to 2 meta-skills | Already logged | **F-022** | Identical: hardcoded skill-improver + skill-anti-patterns |
+| copilot-instructions.md repeats broken handoff | Already logged | **F-007** | Same handoff story at line 71 |
+
+### By-Design Finding
+
+| Review finding | Status | Rationale |
+|---|---|---|
+| Extension hardcodes python3/bash, Ubuntu-specific | By-design | Review itself acknowledges "intentional rather than a defect". README:89 and docs/evaluation-cadence.md:9-11 explicitly state Ubuntu+Copilot CLI environment. |
+
+---
+
+## F-025 Phantom `skill creator/` Directory in Root Docs — **Valid (High)**
+
+**Review claims:** Root docs reference `skill creator/` (with space) as an archived directory, but it is absent from the current filesystem.
+
+**Why:** Confirmed. Three root documentation files reference `skill creator/` as if it exists on disk:
+- `AGENTS.md:11` — "Do not conflate archived material in `skill creator/` with the active inventory."
+- `AGENTS.md:114` — "`skill creator/` is archived source material from the pre-consolidation state."
+- `.github/copilot-instructions.md:65` — "`skill creator/` (with space) is pre-consolidation archive. Ignore it."
+- `README.md` also references it in the layout section.
+
+A filesystem listing confirms: no directory named `skill creator/` (with space) exists. Only `skill-creator/` (with hyphen) is present. The docs instruct readers to "ignore" a directory that doesn't exist, which undermines trust in the layout documentation.
+
+**Blast radius:** README.md, AGENTS.md, .github/copilot-instructions.md — all three root governance docs.
+
+**Plan:**
+1. Remove all references to `skill creator/` (with space) from `README.md`, `AGENTS.md:11,114`, and `.github/copilot-instructions.md:65`.
+2. If the directory was intentionally deleted, remove the references. If it should exist, restore it from git history.
+3. Verify with `git log --all --diff-filter=D -- 'skill creator/'` whether it was ever committed.
+
+**Risks:** None — removing stale references. Rollback: `git checkout` each file.
+**Effort:** XS (< 15 min)
+
+**Citations:** `AGENTS.md:11,114`; `.github/copilot-instructions.md:65`; `README.md` layout section; filesystem listing confirms absence
+
+---
+
+## F-026 check_preservation.py Extracts Wrong Heading Level — **Valid (Medium)**
+
+**Review claims:** `check_preservation.py` extracts `##` headings, but the active SKILL.md contract uses `#` headings for canonical sections.
+
+**Why:** Confirmed. `scripts/check_preservation.py:13` uses regex `r"^##\s+" + re.escape(heading)` — matching only second-level (`##`) headings. But the canonical SKILL.md format defined in `AGENTS.md:69-78` and `.github/copilot-instructions.md:13-21` uses first-level (`#`) headings for all required sections: `# Purpose`, `# When to use`, `# When NOT to use`, `# Procedure`, `# Output contract`, `# Failure handling`, `# Next steps`, `# References`.
+
+This means the preservation checker cannot detect changes to any of the 8 canonical sections. It would only catch changes to `## subsection` headings within `# Procedure`. A skill modification that rewrites `# Purpose` entirely would report 100% preservation — a false negative.
+
+**Blast radius:** scripts/check_preservation.py, .github/extensions/meta-skill-tools/extension.mjs (mse_check_preservation tool), any workflow that relies on preservation scoring.
+
+**Plan:**
+1. Change `scripts/check_preservation.py:13` regex from `r"^##\s+"` to `r"^#{1,2}\s+"` to match both `#` and `##` headings.
+2. Update the section list (if hardcoded) to include the 8 canonical `#`-level sections.
+3. Test against a known skill: `python3 scripts/check_preservation.py skill-creator/SKILL.md skill-creator/SKILL.md` should return 100% on all sections.
+4. Run `mse_check_preservation` via the extension to confirm it works end-to-end.
+
+**Risks:** Changing heading extraction may surface previously hidden differences. This is the intended outcome. Rollback: `git checkout scripts/check_preservation.py`.
+**Effort:** S (1–2 hours)
+
+**Citations:** `scripts/check_preservation.py:10-17,13`; `AGENTS.md:69-78`; `.github/copilot-instructions.md:13-21`
+
+---
+
+## F-027 Harvest Failures Format Mismatch — **Valid (Critical)**
+
+**Review claims:** run-evals.sh prints `activated=` in failure output, but harvest_failures.py regex looks for `mentioned=`. The trigger-failure regression loop never closes.
+
+**Why:** Confirmed. This is a **silent pipeline break**:
+- `scripts/run-evals.sh:431` prints: `[expected=${expected}, activated=${skill_activated}...]`
+- `scripts/harvest_failures.py:31` comment says: `# Pattern: ❌ [N] FAIL (category): prompt... [expected=X, mentioned=Y]`
+- `scripts/harvest_failures.py:33` regex matches: `\[expected=(\w+),\s*mentioned=(\w+)\]`
+
+The runner outputs `activated=` but the harvester expects `mentioned=`. The regex will **never match**, meaning zero trigger failures are ever harvested into regression cases. Combined with F-021 (regression suite skips trigger failures anyway), the entire trigger-failure regression pipeline is a no-op: failures are printed, never harvested, and even if manually created, never replayed.
+
+**Blast radius:** scripts/harvest_failures.py (completely broken for trigger failures), scripts/run-regression-suite.sh (F-021 — skips them anyway), the entire failure→regression→protection loop.
+
+**Plan:**
+1. Fix `scripts/harvest_failures.py:31,33`: change `mentioned` to `activated` in both the comment and the regex pattern.
+2. This fixes harvesting. Combine with F-021 (add trigger replay to regression suite) to close the full loop.
+3. Test: run `./scripts/run-evals.sh skill-creator 2>&1 | python3 scripts/harvest_failures.py` and verify failures are captured.
+4. Sync updated script if harvest_failures.py is distributed to any skill package.
+
+**Risks:** None — pure bug fix aligning two scripts. Rollback: `git checkout scripts/harvest_failures.py`.
+**Effort:** XS (< 15 min for the fix itself; combine with F-021 for full loop closure)
+
+**Citations:** `scripts/run-evals.sh:431` (prints `activated=`); `scripts/harvest_failures.py:31,33` (expects `mentioned=`)
+
+---
+
+## Annex B Priority Summary
+
+| Priority | ID | Title | Effort | Dependency |
+|----------|----|-------|--------|------------|
+| P0 Critical | F-027 | Harvest format mismatch (pipeline broken) | XS | None |
+| P1 High | F-025 | Phantom `skill creator/` in docs | XS | None |
+| P2 Medium | F-026 | check_preservation.py wrong heading level | S | None |
+
+**Recommended execution order:**
+1. F-027 first — critical bug fix, XS effort, closes a broken pipeline
+2. F-025 — doc cleanup, XS effort
+3. F-026 — functional fix for preservation checker
+
+---
+
+## Cumulative Finding Count (Tasks 1–3)
+
+| Task | Source | New | Already Logged | By-Design/Invalid | Running Total |
+|------|--------|-----|----------------|-------------------|---------------|
+| 1 | Annex A | 19 | — | 1 invalid (F-016) | 19 |
+| 2 | Annex C | 5 | 6 | 1 by-design (F-024) | 24 |
+| 3 | Annex B | 3 | 10 | 1 by-design | 27 |
+
+**Total unique findings: 27** (F-001 through F-027). 23 valid actionable, 2 by-design, 1 invalid, 1 low/optional.
