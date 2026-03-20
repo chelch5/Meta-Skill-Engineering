@@ -928,3 +928,164 @@ Combined with F-027 (harvest can't produce valid entries) and F-021 (trigger_fai
 | 4 | Annex D | 5 | 3 | — | 32 |
 
 **Total unique findings: 32** (F-001 through F-032). 28 valid actionable, 2 by-design, 1 invalid, 1 low/optional.
+
+---
+
+# Task 5/9 — Annex E: Executive Summary Review (Full Repo Assessment)
+
+**Source:** `tasks/reviews/2026-03-20-meta-skill-engineering/5.md`
+**Validated:** 2026-03-20
+**Summary:** 11 numbered findings + pipeline assessment + evaluation-system assessment — 11 already logged, 3 new. Top risks: baseline comparison gap, missing pipeline edge, scope overlap.
+
+### Cross-references to already-logged findings
+
+| Review Finding # | Topic | Existing Finding(s) |
+|-----------------|-------|-------------------|
+| 1 | eval→improver handoff (Handoff section) | F-007 |
+| 2 | Dead eval schema in testing-harness | F-001 |
+| 3 | Per-skill scripts not self-contained | F-003, F-004, F-005 |
+| 4 | skill-improver manifest assumptions | F-008 |
+| 5 | catalog/lifecycle artifacts + ARCHIVE bug | F-009, F-010, F-011 |
+| 6 | behavior.jsonl misaligned with output contracts | F-006 |
+| 7 | Corpus Layer 2 manual-only | F-020 |
+| 8 | harvest_failures.py + regression loop broken | F-021, F-027, F-031 |
+| 9 | run-trigger-optimization.sh mutates SKILL.md | F-015 |
+| 10 | Root docs mention nonexistent `skill creator/` | F-025 |
+| 11 | Stale manifest refs + archived skill refs | F-008, F-014 |
+
+The review's overall score of **3/5** and evaluation-system score of **2.1/5** are consistent with the pattern of findings in F-001 through F-032. The strongest areas are structural discipline (4/5) and routing measurement; the weakest are baseline/benchmark methodology (1/5) and regression protection (1/5).
+
+---
+
+## F-033 Baseline Comparison Output Contract Not Implemented — **Valid (High)**
+
+**Review claims:** `skill-evaluation/SKILL.md` promises a "Baseline Comparison" section with win rate in its output contract, and a Step 5 procedure for running baseline comparison. Neither `run-evals.sh` nor `run-baseline-comparison.sh` actually computes win rates.
+
+**Why:** Confirmed. Three pieces form the gap:
+
+1. **Output contract** (`skill-evaluation/SKILL.md:125-126`): Promises `### Baseline Comparison\nWin rate: X/N (Y%)` as a required section in the eval report.
+2. **Procedure Step 5** (`skill-evaluation/SKILL.md:93-99`): Describes a manual baseline comparison workflow — remove SKILL.md, re-run cases without skill, blind-compare, compute win rate. This is a documented procedure, not an automated one.
+3. **run-evals.sh** (`scripts/run-evals.sh:938-949`): JSON summary contains only timestamp, model, routing_mode, runs_per_prompt, overall verdict, skills_failed, skills_tested, results_dir. No baseline data, no win rate.
+4. **run-baseline-comparison.sh** (`scripts/run-baseline-comparison.sh:128-228`): Despite the name, this script compares two SKILL.md versions (original vs modified) structurally. It runs 5 quality gates: section count preservation, no section deletions, line count < 500, name preserved, eval regression (pass/fail exit code only). It does NOT compute win rate, token accounting, or skill-vs-no-skill quality comparison.
+
+This is distinct from F-007 (which covers the missing Handoff section). The Baseline Comparison is a separate output contract section that requires different tooling — comparing skill-active vs skill-absent output quality.
+
+**Blast radius:** `skill-evaluation/SKILL.md` (output contract + procedure), `scripts/run-baseline-comparison.sh` (misleading name), evaluation credibility (no way to answer "is this skill actually better than no skill?").
+
+**Plan:**
+1. Option A (recommended): Implement baseline comparison in `run-evals.sh` behind a `--baseline` flag:
+   - Temporarily rename the target SKILL.md to disable the skill
+   - Re-run behavior test cases without the skill active
+   - Compare outputs pairwise (LLM judge: "Which response is better?")
+   - Compute win rate = skill-wins / total-cases
+   - Emit the `### Baseline Comparison` section in the eval report
+2. Option B: Remove the Baseline Comparison section from the output contract and Step 5 from the procedure. Mark as future enhancement.
+3. Rename `run-baseline-comparison.sh` to `run-skill-diff.sh` or `run-modification-comparison.sh` to accurately reflect what it does (compares two versions of a SKILL.md, not skill-vs-baseline).
+4. Update `skill-evaluation/SKILL.md` to clarify what's automated vs manual.
+
+**Risks:** Option A requires LLM calls (cost/time). Option B reduces contract scope. Rollback: `git revert`.
+**Effort:** L for Option A (4–6 hours), XS for Option B (30 min)
+
+**Citations:** `skill-evaluation/SKILL.md:93-99,125-126`; `scripts/run-evals.sh:938-949`; `scripts/run-baseline-comparison.sh:128-228,249-337`
+
+---
+
+## F-034 skill-creator and skill-testing-harness Overlapping Eval-Creation Scope — **Valid (Low)**
+
+**Review claims:** skill-creator already creates eval files in Phase 3, but also delegates to skill-testing-harness. The pipeline edge is partial because ownership is blurry.
+
+**Why:** Confirmed. `skill-creator/SKILL.md:177-200` (Phase 3) instructs the agent to create all three eval files (`trigger-positive.jsonl`, `trigger-negative.jsonl`, `behavior.jsonl`) directly, with 2–5 test prompts each. Line 194 then says "For details on field schemas, delegate to `skill-testing-harness` or refer to AGENTS.md." Meanwhile, `skill-testing-harness/SKILL.md` describes itself as "Build test infrastructure for a skill" and its entire purpose is creating these same files.
+
+The implicit delineation is: skill-creator produces seed/initial eval files (2–5 cases), skill-testing-harness produces comprehensive formal suites (8+ cases per file, adversarial edges, etc.). But this is never stated explicitly. An agent using skill-creator already gets eval files, so routing to skill-testing-harness afterward may produce confusion about whether to extend or replace them.
+
+**Blast radius:** Pipeline clarity between skill-creator and skill-testing-harness. Low severity — the current behavior works, but the boundary is implicit.
+
+**Plan:**
+1. Add a note to `skill-creator/SKILL.md:194` clarifying: "Phase 3 creates seed eval files (2–5 cases). For comprehensive test suites (8+ cases, adversarial scenarios, edge coverage), route to `skill-testing-harness` afterward."
+2. Add a note to `skill-testing-harness/SKILL.md` in the "When to use" section: "When a skill already has seed eval files (from skill-creator) and needs comprehensive test coverage."
+3. Clarify in both: testing-harness extends seed evals, it does not replace them.
+
+**Risks:** None — clarification only. Rollback: `git revert`.
+**Effort:** XS (30 min)
+
+**Citations:** `skill-creator/SKILL.md:177-200,194`; `skill-testing-harness/SKILL.md:4-6`; `AGENTS.md:82-86`
+
+---
+
+## F-035 skill-evaluation Missing Route to skill-anti-patterns — **Valid (Medium)**
+
+**Review claims:** The canonical improvement pipeline in AGENTS.md includes `skill-evaluation → skill-anti-patterns → skill-improver`, but `skill-evaluation/SKILL.md` itself does not route to skill-anti-patterns.
+
+**Why:** Confirmed. `skill-evaluation/SKILL.md:160-166` (Next steps section) lists four downstream routes:
+```
+- If routing fails → skill-trigger-optimization
+- If output quality fails → skill-improver
+- If comparing variants → skill-benchmarking
+- Before promotion to stable → skill-safety-review
+```
+
+`skill-anti-patterns` is not mentioned anywhere in skill-evaluation's Next steps. However, the canonical improvement pipeline in `AGENTS.md:89-91` specifies: `skill-evaluation → skill-anti-patterns → skill-improver → skill-trigger-optimization`. The anti-patterns step is supposed to diagnose pattern violations before routing to skill-improver for the actual fix.
+
+The failure handling table at `skill-evaluation/SKILL.md:145-151` also routes output quality failures directly to `skill-improver` without an intermediate anti-patterns diagnosis step.
+
+This is analogous to F-023 (safety→lifecycle edge missing from skill-safety-review) — a documented pipeline edge that the originating skill doesn't actually reference.
+
+**Blast radius:** skill-evaluation (Next steps), improvement pipeline flow. When output quality fails, the agent goes directly to skill-improver without first diagnosing which anti-pattern caused the failure, reducing fix accuracy.
+
+**Plan:**
+1. Add a routing entry to `skill-evaluation/SKILL.md:160-166`:
+   ```
+   - If output quality fails with pattern issues → `skill-anti-patterns` (diagnose) then `skill-improver` (fix)
+   ```
+2. Update the failure handling table at lines 145-151 to include an anti-patterns diagnosis step before routing to skill-improver.
+3. Alternatively: decide that the direct route to skill-improver is intentional (skill-improver already has its own eval-driven diagnosis table). In that case, update AGENTS.md to remove skill-anti-patterns from the improvement pipeline.
+4. Option 1 recommended: anti-patterns diagnosis before improvement produces better-targeted fixes.
+
+**Risks:** Adding a step to the pipeline increases complexity. Rollback: `git revert`.
+**Effort:** XS (30 min)
+
+**Citations:** `skill-evaluation/SKILL.md:145-151,160-166`; `AGENTS.md:89-91`; `skill-anti-patterns/SKILL.md:169-174`
+
+---
+
+## Task 5 Priority Summary
+
+| Priority | ID | Title | Effort | Blocked By |
+|----------|----|-------|--------|------------|
+| P1 High | F-033 | Baseline comparison output not implemented | L (full) or XS (descope) | None |
+| P2 Medium | F-035 | skill-evaluation missing route to skill-anti-patterns | XS | None |
+| P3 Low | F-034 | skill-creator / testing-harness scope overlap | XS | None |
+
+**Recommended execution order:**
+1. F-033 Option B first (descope output contract) — quick fix to close documentation/reality gap
+2. F-035 — add anti-patterns route to skill-evaluation's Next steps
+3. F-034 — clarify scope boundaries (low priority)
+4. F-033 Option A later (implement baseline comparison) — larger enhancement
+
+### Review Meta-Assessment
+
+The review's evaluation-system scores confirm the pattern across prior annexes:
+
+| Area | Score | Key Existing Findings |
+|------|-------|-----------------------|
+| Routing measurement | 3/5 | F-028 (mislabeled metrics) |
+| Behavior/protocol checks | 2/5 | F-006 (misaligned behavior.jsonl) |
+| Usefulness assessment | 3/5 | Working (implemented in run-evals.sh) |
+| Baseline/benchmark | 1/5 | F-033 (new), F-012 |
+| Corpus design | 3/5 | F-020 (Layer 2 manual) |
+| Regression protection | 1/5 | F-021, F-027, F-031 |
+| Operational reliability | 2/5 | F-003, F-004, F-005 |
+
+---
+
+## Cumulative Finding Count (Tasks 1–5)
+
+| Task | Source | New | Already Logged | By-Design/Invalid | Running Total |
+|------|--------|-----|----------------|-------------------|---------------|
+| 1 | Annex A | 19 | — | 1 invalid (F-016) | 19 |
+| 2 | Annex C | 5 | 6 | 1 by-design (F-024) | 24 |
+| 3 | Annex B | 3 | 10 | 1 by-design | 27 |
+| 4 | Annex D | 5 | 3 | — | 32 |
+| 5 | Annex E | 3 | 11 | — | 35 |
+
+**Total unique findings: 35** (F-001 through F-035). 31 valid actionable, 2 by-design, 1 invalid, 1 low/optional.
