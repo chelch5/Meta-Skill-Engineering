@@ -11,15 +11,28 @@ This repository is a meta-skill engineering workspace. Treat each top-level skil
 
 ## Implementation Integrity Rules
 
-These rules exist because prior work substituted documentation rewording for planned code changes, marked TODO comments as completed work, and falsely claimed files were "already clean" without reading them. Do not repeat these failures.
+These rules exist because an agent previously substituted documentation edits for planned code changes, wrote TODO comments and marked them as completed, claimed files were clean without reading them, and hid incomplete work inside large batched commits. Every rule below addresses a specific observed failure.
 
-- **Do what the plan says.** If a plan specifies adding a CLI flag, writing a function, or changing code — do that. Do not substitute a documentation edit or a comment for a code change.
-- **Never mark a TODO comment as completed work.** Writing `# TODO: implement X` is not implementing X. If you cannot implement something, say so explicitly and leave the item as incomplete.
-- **Verify before claiming "already done" or "already clean."** Read the actual file content. Grep for the specific patterns. Do not assume a finding is resolved without evidence.
-- **Do not silently downgrade scope.** If a plan says "implement Option A (M effort)" and you choose to do something smaller, you must explicitly flag the deviation and get approval. Do not reframe a shortcut as the intended approach.
-- **Do not batch shortcuts into large commits.** Each finding's implementation must match its plan. Burying an unimplemented item alongside 6 genuinely completed items in one commit is deceptive.
-- **If a task is too complex, say so.** Report it as blocked or deferred with a clear reason. Do not pretend documentation changes satisfy a code change requirement.
-- **Validate your own work against the plan.** After implementing a finding, re-read the plan's "exact changes required" section and confirm your diff matches. If it doesn't, you're not done.
+### No doc-for-code substitution
+When a plan specifies code changes (new CLI flags, functions, scripts, logic), the implementation must modify the code files specified. A documentation-only edit does not satisfy a code change requirement. If you cannot implement the code change, explicitly report it as deferred with a reason — never silently reframe the plan as a documentation task.
+
+### No TODO-as-done
+Writing `# TODO: implement X` is not implementing X. A TODO comment is an admission of incomplete work. Never mark an item as done if the implementation contains TODO/FIXME/HACK comments for the core functionality that item requires.
+
+### Verify before claiming resolved
+Before marking any finding as "already done," "already clean," or "not applicable," read the relevant file and quote the specific content that proves it. State the file path and line numbers. If you cannot produce a citation, the finding is not resolved.
+
+### No silent scope downgrades
+If you choose a simpler approach than what the plan specifies, flag the deviation explicitly and get approval before marking it done. Do not reframe a shortcut as the intended approach.
+
+### Verify sub-agent output against the plan
+After a sub-agent completes work, verify its changes against the original plan requirements before committing. For code changes: confirm the planned files were modified and the planned functionality exists (grep for new flags, function names, etc.). Do not commit sub-agent output without this check.
+
+### Small commits per finding
+When implementing a plan with numbered findings, commit each finding individually or in small thematic groups (≤3 findings). Each commit message must name the finding IDs it addresses. Do not batch more than 3 findings per commit.
+
+### Doc drift check on every commit
+After every commit that changes scripts, skill contracts, or repo structure, diff the script tables in README.md, AGENTS.md, and copilot-instructions.md against `ls scripts/` and flag any mismatch before pushing.
 
 ## Skill Package Shape
 
