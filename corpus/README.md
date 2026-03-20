@@ -29,6 +29,8 @@ without crashing or silently corrupting content.
 
 ### regression/
 
-Initially empty. Populated over time by harvesting real failures from
-meta-skill runs. When a meta-skill mishandles a skill in production,
-a reduced reproduction case is added here so the failure stays covered.
+Initially seeded with 3 known-failure cases (purpose-lost, boundaries-deleted,
+references-broken). Populated over time by harvesting real failures from
+meta-skill runs via `scripts/harvest_failures.py`. When a meta-skill
+mishandles a skill in production, a reduced reproduction case is added here
+so the failure stays covered.

@@ -6,10 +6,11 @@ A meta-skill engineering workspace containing 12 skills that create, refine, tes
 
 - `./<skill-name>/` — repo-owned skill packages at the repository root. Each package has a `SKILL.md` baseline contract and may include `references/`, `scripts/`, `evals/`, or `assets/`.
 - `archive/` — skills removed from the active inventory (distribution-oriented skills).
-- `corpus/` — test skills for evaluating meta-skills: 5 weak, 3 strong, 4 adversarial, plus a regression directory for harvested failures.
+- `corpus/` — test skills for evaluating meta-skills: 5 weak, 5 strong, 5 adversarial, plus a regression directory for harvested failures.
 - `skill creator/` — archived source material from the pre-consolidation state.
 - `tasks/` — task notes, worklogs, reviews, and maintenance instructions.
-- `scripts/` — automation scripts (eval runner, validation, optimization, corpus evaluation).
+- `scripts/` — automation scripts (eval runner, validation, optimization, corpus evaluation). Root scripts are source-of-truth copies; per-skill `scripts/` directories contain deployed copies via `sync-to-skills.sh`.
+- `eval-results/` — timestamped eval reports; `<skill>-eval.md` symlinks to latest. Handoff mechanism between `skill-evaluation` and `skill-improver`.
 - `docs/` — operational documentation including `evaluation-cadence.md`.
 
 ## Pipelines
@@ -26,7 +27,7 @@ skill-creator → skill-testing-harness → skill-evaluation
 ```
 skill-evaluation → skill-anti-patterns → skill-improver → skill-trigger-optimization
 ```
-Evaluation first (establish baseline), anti-patterns second (diagnose), improver third (fix), trigger-optimization fourth (polish routing).
+Evaluation first (establish baseline), anti-patterns second (diagnose), improver third (fix), trigger-optimization fourth (polish routing). Eval results in `eval-results/` serve as the data handoff between steps.
 
 ### Library Management Pipeline
 ```
@@ -96,6 +97,7 @@ The eval system uses Copilot CLI (`copilot -p`) to test skills with real model r
 | `scripts/run-baseline-comparison.sh` | Before/after comparison with gates |
 | `scripts/run-corpus-eval.sh` | Two-layer meta-skill evaluation against corpus |
 | `scripts/run-regression-suite.sh` | Regression protection runner |
+| `scripts/sync-to-skills.sh` | Sync root scripts to per-skill `scripts/` directories |
 
 **Key capabilities:**
 - **Observe routing** (default): parses JSON output to detect whether the model actually read a SKILL.md

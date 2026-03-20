@@ -110,7 +110,7 @@ skill-catalog-curation → skill-lifecycle-management
 
 - Root inventory includes only the 12 skill packages at the repository root.
 - `archive/` contains skills removed from the active inventory (distribution-oriented skills).
-- `corpus/` contains test skills for evaluating meta-skills (5 weak, 3 strong, 4 adversarial, 3 regression).
+- `corpus/` contains test skills for evaluating meta-skills (5 weak, 5 strong, 5 adversarial, 3 regression).
 - `skill creator/` is archived source material from the pre-consolidation state.
 - `tasks/` is documentation, worklogs, and reviews — not a skill package.
 - `scripts/` contains automation scripts for running evals, validation, and optimization.

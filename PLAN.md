@@ -280,21 +280,30 @@ Workstream D (Operational completeness) ← depends on A, B, C
 
 ## Round 2 Todo Summary
 
-| ID | Title | Depends On |
-|----|-------|------------|
-| r2-eval-contract-agents | Add canonical eval contract to AGENTS.md | — |
-| r2-fix-skill-creator-evals | Remove old evals.json format from skill-creator | r2-eval-contract-agents |
-| r2-fix-skill-harness-evals | Rename output-tests.jsonl → behavior.jsonl in skill-testing-harness | r2-eval-contract-agents |
-| r2-fix-skill-evaluation-evals | Remove unsupported YAML formats from skill-evaluation | r2-eval-contract-agents |
-| r2-lifecycle-descope | De-scope metadata.maturity from skill-lifecycle-management | — |
-| r2-catalog-data-model | Align skill-catalog-curation data expectations | r2-lifecycle-descope |
-| r2-eval-bench-overlap | Narrow skill-benchmarking scope, remove overlap with skill-evaluation | — |
-| r2-strict-frontmatter | Add strict frontmatter enforcement to validate-skills.sh | r2-lifecycle-descope |
-| r2-routing-improve | Improve routing measurement in run-evals.sh | r2-eval-contract-agents |
-| r2-baseline-real-evals | Make run-baseline-comparison.sh run actual evals | r2-routing-improve |
-| r2-behavior-split | Split behavior eval into protocol vs usefulness | r2-eval-contract-agents |
-| r2-readme-corpus | Fix README.md "coming soon" and corpus description | — |
-| r2-seed-regression | Seed 3 regression cases in corpus/regression/ | r2-eval-contract-agents |
-| r2-orchestration-optional | Mark run-meta-skill-cycle.sh as optional | — |
-| r2-harvest-integrate | Integrate harvest_failures.py into run-full-cycle.sh | r2-seed-regression |
-| r2-final-docs | Final README/AGENTS.md refresh | r2-fix-skill-creator-evals, r2-fix-skill-harness-evals, r2-fix-skill-evaluation-evals, r2-lifecycle-descope, r2-eval-bench-overlap |
+| ID | Title | Status | Depends On |
+|----|-------|--------|------------|
+| r2-eval-contract-agents | Add canonical eval contract to AGENTS.md | ✅ Done | — |
+| r2-fix-skill-creator-evals | Remove old evals.json format from skill-creator | ✅ Done | r2-eval-contract-agents |
+| r2-fix-skill-harness-evals | Rename output-tests.jsonl → behavior.jsonl in skill-testing-harness | ✅ Done | r2-eval-contract-agents |
+| r2-fix-skill-evaluation-evals | Remove unsupported YAML formats from skill-evaluation | ✅ Done | r2-eval-contract-agents |
+| r2-lifecycle-descope | De-scope metadata.maturity from skill-lifecycle-management | ✅ Done | — |
+| r2-catalog-data-model | Align skill-catalog-curation data expectations | ✅ Done | r2-lifecycle-descope |
+| r2-eval-bench-overlap | Narrow skill-benchmarking scope, remove overlap with skill-evaluation | ✅ Done | — |
+| r2-strict-frontmatter | Add strict frontmatter enforcement to validate-skills.sh | ✅ Done | r2-lifecycle-descope |
+| r2-routing-improve | Improve routing measurement in run-evals.sh | ✅ Done | r2-eval-contract-agents |
+| r2-baseline-real-evals | Make run-baseline-comparison.sh run actual evals | ✅ Done | r2-routing-improve |
+| r2-behavior-split | Split behavior eval into protocol vs usefulness | ✅ Done | r2-eval-contract-agents |
+| r2-readme-corpus | Fix README.md "coming soon" and corpus description | ✅ Done | — |
+| r2-seed-regression | Seed 3 regression cases in corpus/regression/ | ✅ Done | r2-eval-contract-agents |
+| r2-orchestration-optional | Mark run-meta-skill-cycle.sh as optional | ✅ Done | — |
+| r2-harvest-integrate | Integrate harvest_failures.py into run-full-cycle.sh | ✅ Done | r2-seed-regression |
+| r2-final-docs | Final README/AGENTS.md refresh | ✅ Done | r2-fix-skill-creator-evals, r2-fix-skill-harness-evals, r2-fix-skill-evaluation-evals, r2-lifecycle-descope, r2-eval-bench-overlap |
+
+## Post-Round 2 Additions
+
+Work done after Round 2 completion:
+
+- **LLM-as-Judge usefulness evaluation** (`3d090bc`): Added `--usefulness` flag to `run-evals.sh` with judge function, 4-dimension scoring, per-case rubrics via `usefulness_criteria`, multi-run median voting, 5th gate, seeded criteria in 4 skills.
+- **Script distribution model** (`e924c5d`): Created `sync-to-skills.sh` with manifest. Root `scripts/` = source-of-truth dev copies, per-skill `scripts/` = deployed copies. 19 scripts distributed to 8 skills. All 7 relevant SKILL.md procedures updated with concrete script references.
+- **Eval-results loop** (`7718929`): Closed the write-only gap. `skill-evaluation` now produces structured Handoff blocks. `skill-improver` reads `eval-results/` in Phase 1 and uses eval-driven diagnosis in Phase 2.
+- **Corpus expansion**: Added 2 strong skills (comprehensive-failure-handling, branching-procedure) and 1 adversarial skill (scope-explosion) to reach 5/5/5 parity.
