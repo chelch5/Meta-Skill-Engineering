@@ -102,7 +102,7 @@ Every SKILL.md body contains these sections in order:
 What output does it produce?
 
 **When to use** (required) — 4–6 specific trigger phrases or observable
-conditions as "Use when:" plus 3–4 confusion cases as "Do NOT use when:"
+conditions as "Use when:" plus 3–4 confusion cases as "When NOT to use:"
 with named alternatives.
 
 **Procedure** (required) — Numbered steps. Each starts with a verb. Each

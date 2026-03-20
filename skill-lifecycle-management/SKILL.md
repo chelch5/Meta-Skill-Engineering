@@ -17,6 +17,7 @@ Manage skills through lifecycle states: draft → beta → stable → deprecated
 # When to use
 
 - Auditing which skills are production-ready vs still draft
+- Promoting a skill after evaluation and safety review confirm it is ready
 - Promoting a skill after evaluation confirms it works
 - Deprecating a skill that has been superseded or consistently fails
 - Tracking lifecycle transitions across a skill library
@@ -173,7 +174,7 @@ If no transitions are warranted, state that explicitly — do not invent changes
 
 | Problem | Response |
 |---------|----------|
-| Skills with unknown lifecycle state | Infer from evidence: has evals → beta; passes evaluation → stable; no evals → draft; has deprecation notice → deprecated; lives in `archive/` → archived |
+| Skills with unknown lifecycle state | Infer from evidence: has eval results in eval-results/ with gate PASS → stable; has evals/ but no results yet → beta; no eval results and no eval files → draft; has deprecation notice in SKILL.md → deprecated; lives in `archive/` → archived |
 | Deprecated skill has active dependents | Identify or create replacement first; do not deprecate until dependents have a migration path |
 | Disputed maturity (e.g. "stable" but failing evals) | Default to the more conservative state and note the discrepancy |
 | No evaluation data available for promotion | Block promotion; recommend running `skill-evaluation` first |

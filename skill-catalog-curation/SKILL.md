@@ -25,6 +25,7 @@ Detect duplicates, enforce category consistency, flag deprecation candidates, ve
 
 - Improving or refining a single skill → `skill-improver`
 - Creating a new skill from scratch → `skill-creator`
+- Splitting a single skill into focused variants → `skill-variant-splitting`
 - Promoting, deprecating, or archiving individual skills through lifecycle gates → `skill-lifecycle-management`
 
 # Procedure
@@ -47,7 +48,7 @@ Detect duplicates, enforce category consistency, flag deprecation candidates, ve
 ## 3. Audit categories
 
 - Verify each skill's category matches its actual function (read the procedure, not just the name)
-- Categories with ≤ 2 skills → propose merge into a neighbor
+- Singleton categories (1 skill) → review whether the skill fits naturally in an existing category. Do not merge categories that represent distinct capability areas solely based on count
 - Categories with > 15 skills → propose a split axis
 
 ## 4. Check discoverability

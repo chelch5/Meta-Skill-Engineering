@@ -33,7 +33,7 @@ Build test infrastructure for a skill: trigger tests (positive and negative JSON
 Read the target SKILL.md and extract:
 - Trigger signals from the `description` field
 - Positive cases from "When to use" section
-- Negative cases from "Do NOT use when" section
+- Negative cases from "When NOT to use" section
 - Expected output format from output contract
 - Quality criteria from procedure steps
 
@@ -72,7 +72,7 @@ File: `evals/trigger-negative.jsonl`
 Each line is a JSON object for a prompt that should NOT activate the skill. Include 8–15 cases covering adjacent skills, out-of-scope tasks, and common confusion.
 
 **Negative cases must cover these categories:**
-- **(a) Anti-match:** Prompts that directly mirror a "Do NOT use when" bullet
+- **(a) Anti-match:** Prompts that directly mirror a "When NOT to use" bullet
 - **(b) Near-miss:** Tasks from adjacent skills that share vocabulary (e.g., "evaluate" vs "build evaluation for")
 - **(c) Similar vocabulary, different intent:** Requests using words like "test" or "eval" that mean something else in context
 - **(d) Overly broad:** Vague requests that superficially match but shouldn't trigger (e.g., "improve this skill" — too broad for a test harness)

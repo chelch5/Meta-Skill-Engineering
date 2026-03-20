@@ -121,3 +121,4 @@ Always produce this structure. Omit table sections that have zero findings.
 
 After safety review:
 - If needs improvement → `skill-improver`
+- If safe, manage lifecycle state → `skill-lifecycle-management`

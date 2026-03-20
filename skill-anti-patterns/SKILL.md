@@ -84,7 +84,7 @@ Check each anti-pattern below. For each PRESENT, write the specific fix with bef
 - Example after: `Output passes if: (1) all required sections present, (2) no placeholder text remains, (3) every code example is syntactically valid`
 - Fix: Replace with observable, countable criteria
 
-**AP-7: Missing "Do NOT use when" section** · `HIGH` — causes overtriggering
+**AP-7: Missing "When NOT to use" section** · `HIGH` — causes overtriggering
 - Pattern: No negative routing at all, or empty section
 - Fix: Add 2-4 confusion cases naming the alternative skill. Format: "Do NOT use when [scenario] (use `skill-name` instead)"
 

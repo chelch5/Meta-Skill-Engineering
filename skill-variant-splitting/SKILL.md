@@ -25,7 +25,7 @@ Split a skill that has grown too broad into focused variants that route precisel
 # When NOT to use
 
 - Skill is focused and working well
-- Variations are minor enough for overlays
+- Variations are minor enough to handle with conditional logic in one skill
 - Problem is trigger wording only → `skill-trigger-optimization`
 - Porting a working skill to a different context → `skill-adaptation`
 - Reorganizing skills at catalog level → `skill-catalog-curation`
@@ -69,7 +69,7 @@ Split a skill that has grown too broad into focused variants that route precisel
    - Variant-specific examples
 
 6. **Update routing**
-   - Each variant's "Do NOT use when" references siblings by name
+   - Each variant's "When NOT to use" references siblings by name
    - Example: "Do NOT use for GraphQL APIs → `api-testing-graphql`"
 
 7. **Verify coverage**
@@ -82,6 +82,8 @@ Split a skill that has grown too broad into focused variants that route precisel
    - Some general cases remain → keep as lightweight router
 
 # Output contract
+
+This skill produces a **splitting plan** — analysis, axis selection, variant definitions, and migration recommendations. It does **not** create the actual variant skill packages. Hand off the plan to `skill-creator` to build each variant's SKILL.md and support files.
 
 Produce a markdown document with this structure:
 
