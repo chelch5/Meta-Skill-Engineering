@@ -735,3 +735,196 @@ The runner outputs `activated=` but the harvester expects `mentioned=`. The rege
 | 3 | Annex B | 3 | 10 | 1 by-design | 27 |
 
 **Total unique findings: 27** (F-001 through F-027). 23 valid actionable, 2 by-design, 1 invalid, 1 low/optional.
+
+---
+
+# Task 4/9 — Annex D: Key Findings Summary (Deep Read)
+
+**Source:** `tasks/reviews/2026-03-20-meta-skill-engineering/4.md`
+**Validated:** 2026-03-20
+**Summary:** 7 top-level findings (with 3 sub-findings under "Regression Suite") — 3 already logged, 5 new. Top risks: mislabeled metrics, threshold drift, broken regression schema.
+
+### Cross-references to already-logged findings
+
+| Review Finding | Existing | Status |
+|---------------|----------|--------|
+| Stale archived skill references in eval files | F-014 | Already logged (Low) |
+| Layer 2 of run-corpus-eval.sh manual-only | F-020 | Already logged (High) |
+| harvest_failures.py regex mismatch (Break 1) | F-027 | Already logged (Critical) |
+
+---
+
+## F-028 Precision/Recall Labels Mislabeled in Eval Gates — **Valid (High)**
+
+**Review claims:** Lines 778-784 of run-evals.sh label the positive trigger pass rate as "precision" and the negative trigger pass rate as "recall." Both are wrong by standard IR definitions.
+
+**Why:** Confirmed. The script computes two metrics:
+- Line 776-780: "Precision: positive trigger pass rate" = `GATE_POS_PASS / GATE_POS_TOTAL`. This measures: "Of all prompts that SHOULD trigger the skill, how many actually did?" = TP/(TP+FN) = **Recall** (sensitivity) in IR terms.
+- Line 782-786: "Recall: negative trigger pass rate" = `GATE_NEG_PASS / GATE_NEG_TOTAL`. This measures: "Of all prompts that should NOT trigger, how many correctly stayed silent?" = TN/(TN+FP) = **Specificity** (true negative rate) in IR terms. This is neither precision nor recall.
+
+The labels are used throughout: gate output at lines 853-854, the header comment at line 12, and propagate to skill-evaluation/SKILL.md lines 103, 117-118. The gates themselves test the right things (pass rates ≥ 80%) — only the labels are wrong.
+
+**Blast radius:** `scripts/run-evals.sh` (variable names, comments, gate table), `skill-evaluation/SKILL.md` (description, output contract table), eval-results reports, any documentation referencing these metrics.
+
+**Plan:**
+1. Rename variables in `run-evals.sh`: `precision` → `pos_trigger_rate` (or `sensitivity`), `recall` → `neg_reject_rate` (or `specificity`).
+2. Update gate table labels at lines 853-854 to: "Positive trigger rate ≥ 80%" and "Negative rejection rate ≥ 80%".
+3. Update header comment at line 12.
+4. Update `skill-evaluation/SKILL.md` lines 103, 117-118 to use consistent labels.
+5. Decide: either use descriptive names (positive trigger rate / negative rejection rate) or standard IR terms (sensitivity / specificity). Descriptive names recommended for clarity.
+
+**Risks:** Any tooling or documentation referencing old labels will need updating. Eval reports already generated use old labels. Rollback: `git checkout scripts/run-evals.sh skill-evaluation/SKILL.md`.
+**Effort:** S (1–2 hours)
+
+**Citations:** `scripts/run-evals.sh:12,776-786,853-854`; `skill-evaluation/SKILL.md:5,56,58,80,103,106,117-118`
+
+---
+
+## F-029 Threshold Inconsistency Between Skill Documentation and Gate Implementation — **Valid (Medium)**
+
+**Review claims:** skill-evaluation/SKILL.md documents precision ≥ 95% / recall ≥ 90% as the quality bar, but run-evals.sh enforces 80%/80%.
+
+**Why:** Confirmed. `skill-evaluation/SKILL.md:103` states: "Routing target: precision ≥ 95% and recall ≥ 90%". The output contract table at lines 117-118 repeats these thresholds. However, `run-evals.sh` enforces 80% for all three gates (lines 780, 786, 792). Line 106 of the SKILL.md does caveat: "These are targets, not bright lines" — so there's an argument for two tiers (aspirational targets vs minimum gates). But the 15-percentage-point gap on "precision" (which is actually sensitivity — see F-028) and 10-point gap on "recall" creates confusion about the actual quality bar. A skill scoring 85% would PASS the gate but FAIL the documented target with no clear guidance on which governs.
+
+**Blast radius:** `skill-evaluation/SKILL.md` (quality bar documentation), `scripts/run-evals.sh` (gate thresholds), any skill team using the evaluation to judge quality.
+
+**Plan:**
+1. Option A (recommended): Make the two-tier system explicit. In `skill-evaluation/SKILL.md`, clearly separate "minimum gate" (80%) from "quality target" (95%/90%). Add a note that the script enforces the minimum gate and reports distance to target.
+2. Option B: Raise script thresholds to match documentation (95%/90%). Risk: many skills may currently fail.
+3. Option C: Lower documentation targets to match script (80%). Risk: lowers quality bar.
+4. Whichever option: update gate table labels in `run-evals.sh:853-854` to show which tier is being enforced.
+5. Consider adding `--strict-gates` flag that enforces the higher targets.
+
+**Risks:** Option B may break existing passing skills. Option A is safest. Rollback: `git revert`.
+**Effort:** S (1 hour)
+
+**Citations:** `skill-evaluation/SKILL.md:103,106,117-118`; `scripts/run-evals.sh:780,786,792,853-855`
+
+---
+
+## F-030 Next-Steps Ordering Conflict in skill-creator — **Valid (Medium)**
+
+**Review claims:** The finalization prose lists trigger-optimization before testing-harness, which is backwards relative to the canonical pipeline.
+
+**Why:** Confirmed — two issues found:
+
+1. **Procedure section (lines 270-274):** The "After finalization, recommend next steps" list puts `skill-trigger-optimization` BEFORE `skill-testing-harness`:
+   ```
+   - Run skill-trigger-optimization to optimize the description for routing
+   - Run skill-testing-harness to build a formal eval suite
+   ```
+   This is backwards — you cannot meaningfully optimize triggers without empirical test data from the harness.
+
+2. **Next steps section (lines 305-310):** The formal Next steps list has the correct order (testing-harness first at position 1, trigger-optimization at position 4) but inserts `skill-benchmarking` at position 3, which is not in the canonical creation pipeline per `AGENTS.md:82-86`.
+
+The canonical pipeline from AGENTS.md is: `skill-creator → skill-testing-harness → skill-evaluation → skill-trigger-optimization → skill-safety-review → skill-lifecycle-management`. No benchmarking step.
+
+**Blast radius:** `skill-creator/SKILL.md` — agents following the finalization prose will optimize triggers without test data.
+
+**Plan:**
+1. In the Procedure section (lines 270-274), reorder to match canonical pipeline: testing-harness → evaluation → trigger-optimization → safety-review.
+2. In the Next steps section (lines 305-310), either remove benchmarking or add a note: "Optional: compare variants if multiple drafts → skill-benchmarking (not part of the standard creation pipeline)."
+3. Validate both lists match the canonical pipeline in AGENTS.md.
+
+**Risks:** Minimal — ordering change only. Rollback: `git checkout skill-creator/SKILL.md`.
+**Effort:** XS (30 min)
+
+**Citations:** `skill-creator/SKILL.md:270-274,305-310`; `AGENTS.md:82-86`
+
+---
+
+## F-031 Regression Corpus JSON Schema Mismatch — **Valid (Critical)**
+
+**Review claims:** The regression JSON files use `original_excerpt` and `modified_excerpt` (text strings), but `run-regression-suite.sh` reads `.original` and `.modified` (as file paths). Also, `references-broken-001.json` has no `.skill` field.
+
+**Why:** Confirmed in full. All three regression files in `corpus/regression/` have the same schema problem:
+
+**Corpus files use:**
+- `original_excerpt` (inline text string, e.g., `"# When NOT to use\n..."`)
+- `modified_excerpt` (inline text string)
+- `check_type` (e.g., `"boundary_preservation"`)
+- `type` (e.g., `"preservation_failure"`, `"structural_failure"`)
+- NO `.skill` field in any of the three files
+- NO `.original` or `.modified` fields (as file paths)
+
+**Script reads (`run-regression-suite.sh`):**
+- Line 41: `skill=$(jq -r '.skill' "$case_file")` → returns `null` for all 3 files
+- Line 52: `skill_dir="${REPO_ROOT}/${skill}"` → resolves to `REPO_ROOT/null/`
+- Line 70: `original=$(jq -r '.original // ""' "$case_file")` → returns `""` (field doesn't exist)
+- Line 71: `modified=$(jq -r '.modified // ""' "$case_file")` → returns `""` (field doesn't exist)
+- Line 72: `check_name=$(jq -r '.check // ""' "$case_file")` → returns `""` (field is `check_type`, not `check`)
+
+**Result:** For `boundaries-deleted-001` and `purpose-lost-001` (type: `preservation_failure`): lines 74-77 print "⚠️ missing original/modified paths" and skip. For `references-broken-001` (type: `structural_failure`): line 41 reads null skill, line 53 checks `REPO_ROOT/null/` which doesn't exist, line 54 prints "⚠️ skill directory not found: null" and skips.
+
+Combined with F-027 (harvest can't produce valid entries) and F-021 (trigger_failure cases skipped), the entire regression suite is non-functional: **100% of cases are silently skipped, the suite reports PASS, and gives false confidence**.
+
+**Blast radius:** `scripts/run-regression-suite.sh`, `scripts/run-full-cycle.sh` (step 5), all 3 regression corpus files, any quality assurance relying on regression protection.
+
+**Plan:**
+1. Fix regression JSON files to include fields the runner expects:
+   - Add `.skill` field to all 3 files (even if set to a representative skill like `skill-catalog-curation`)
+   - For preservation_failure type: Either (a) add `.original` and `.modified` as file paths pointing to fixture SKILL.md files, or (b) update the runner to accept inline `_excerpt` fields
+   - Add `.check` field (or rename `check_type` → `check`)
+2. Option (b) recommended: update `run-regression-suite.sh` to handle inline excerpt comparison:
+   - Read `original_excerpt` and `modified_excerpt` from JSON
+   - Write to temp files, pass to `check_preservation.py`
+   - Clean up temp files
+3. For `structural_failure` type: update the runner to handle cases without a `.skill` field (use a test fixture directory, or perform the cross-reference check inline).
+4. Add a test that runs `run-regression-suite.sh` and asserts `skip == 0` to prevent silent regressions.
+
+**Risks:** Changing the JSON schema may break any other tooling reading these files (none found). Rollback: `git checkout corpus/regression/ scripts/run-regression-suite.sh`.
+**Effort:** M (2–3 hours)
+
+**Citations:** `corpus/regression/boundaries-deleted-001.json` (full file); `corpus/regression/purpose-lost-001.json` (full file); `corpus/regression/references-broken-001.json` (full file); `scripts/run-regression-suite.sh:41,52-57,69-84`
+
+---
+
+## F-032 run-meta-skill-cycle.sh Hardcodes Model Without Override — **Valid (Medium)**
+
+**Review claims:** `run-meta-skill-cycle.sh` hardcodes `--model claude-opus-4.6` with no `EVAL_MODEL` environment variable override, inconsistent with all other eval scripts.
+
+**Why:** Confirmed. `scripts/run-meta-skill-cycle.sh:37` hardcodes `--model claude-opus-4.6` and line 26 prints `"Model: claude-opus-4.6 (high reasoning)"`. There is no `EVAL_MODEL` environment variable check or `--model` CLI override. Every other eval script uses `MODEL="${EVAL_MODEL:-gpt-4.1}"` (e.g., `run-evals.sh:58`, `run-trigger-optimization.sh`, `run-corpus-eval.sh`). This means: (1) users can't switch models for cost or availability reasons, (2) the script silently uses a different (premium) model than all other tooling which defaults to gpt-4.1, (3) if claude-opus-4.6 becomes unavailable, the script hard-fails.
+
+**Blast radius:** `scripts/run-meta-skill-cycle.sh`, any automation invoking it.
+
+**Plan:**
+1. Add `MODEL="${EVAL_MODEL:-claude-opus-4.6}"` at the top of the script (keep claude-opus-4.6 as default since orchestration benefits from stronger reasoning).
+2. Replace hardcoded `--model claude-opus-4.6` with `--model "$MODEL"`.
+3. Update the info echo to show the actual model being used.
+4. Optionally add `--model` CLI flag parsing to match `run-evals.sh` pattern.
+
+**Risks:** Minimal — adding flexibility, not changing default behavior. Rollback: `git checkout scripts/run-meta-skill-cycle.sh`.
+**Effort:** XS (15 min)
+
+**Citations:** `scripts/run-meta-skill-cycle.sh:26,37`; `scripts/run-evals.sh:58,92,97,143-144`
+
+---
+
+## Task 4 Priority Summary
+
+| Priority | ID | Title | Effort | Blocked By |
+|----------|----|-------|--------|------------|
+| P0 Critical | F-031 | Regression JSON schema mismatch (all cases skip) | M | None |
+| P1 High | F-028 | Precision/Recall labels mislabeled in eval gates | S | None |
+| P2 Medium | F-029 | Threshold inconsistency (95/90 vs 80) | S | F-028 (labels) |
+| P2 Medium | F-030 | Next-steps ordering conflict in skill-creator | XS | None |
+| P2 Medium | F-032 | run-meta-skill-cycle.sh hardcodes model | XS | None |
+
+**Recommended execution order:**
+1. F-031 first — critical, completes the regression pipeline repair (with F-027 and F-021)
+2. F-028 — high, fixes misleading metrics throughout the eval system
+3. F-029 — medium, depends on F-028 label fix for clarity
+4. F-030, F-032 — quick fixes, no dependencies
+
+---
+
+## Cumulative Finding Count (Tasks 1–4)
+
+| Task | Source | New | Already Logged | By-Design/Invalid | Running Total |
+|------|--------|-----|----------------|-------------------|---------------|
+| 1 | Annex A | 19 | — | 1 invalid (F-016) | 19 |
+| 2 | Annex C | 5 | 6 | 1 by-design (F-024) | 24 |
+| 3 | Annex B | 3 | 10 | 1 by-design | 27 |
+| 4 | Annex D | 5 | 3 | — | 32 |
+
+**Total unique findings: 32** (F-001 through F-032). 28 valid actionable, 2 by-design, 1 invalid, 1 low/optional.
