@@ -126,3 +126,5 @@ After trigger optimization:
 - Verify routing improved → `skill-evaluation`
 - Build trigger tests → `skill-testing-harness`
 - If routing problems persist → `skill-catalog-curation`
+
+**Automated optimization:** Use `scripts/run-trigger-optimization.sh <skill>` to automate the optimization loop with proper train/test split, multi-run variance reduction, and held-out validation. Run with `--dry-run` to preview the data split first.

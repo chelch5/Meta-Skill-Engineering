@@ -54,8 +54,8 @@ Run this after editing any SKILL.md to verify you haven't broken the required st
 ./scripts/run-evals.sh --all              # All skills with evals/
 ./scripts/run-evals.sh skill-improver     # Single skill
 ./scripts/run-evals.sh --dry-run --all    # List cases without running
-./scripts/run-evals.sh --observe --all    # Use JSON-based routing detection
 ./scripts/run-evals.sh --strict --all     # Differential testing (2x slower)
+./scripts/run-evals.sh --runs 3 --all     # 3 runs per prompt, majority vote
 ```
 
 Runs JSONL test cases from each skill's `evals/` directory:
@@ -72,9 +72,28 @@ Runs JSONL test cases from each skill's `evals/` directory:
 
 The default **observe** mode detects whether the model actually opened the skill's SKILL.md via the view tool.
 
-**Environment variables:** `EVAL_MODEL` (model), `EVAL_TIMEOUT` (seconds), `EVAL_ROUTING` (fast|observe|strict), `EVAL_REASONING_EFFORT` (low|medium|high, omit for model default).
+**Multi-run variance reduction:** Use `--runs N` to run each prompt N times and decide pass/fail by majority vote. Recommended: `--runs 3` for reliable results. Multiplies API calls by N.
+
+**Environment variables:** `EVAL_MODEL` (model, default gpt-4.1), `EVAL_TIMEOUT` (seconds), `EVAL_ROUTING` (observe|strict), `EVAL_RUNS` (runs per prompt), `EVAL_REASONING_EFFORT` (low|medium|high, omit for model default).
 
 After running all tests for a skill, the script evaluates pass/fail gates and appends a verdict to the report.
+
+### 2b. Trigger Optimization
+
+```bash
+./scripts/run-trigger-optimization.sh skill-creator         # Optimize one skill
+./scripts/run-trigger-optimization.sh --dry-run skill-creator  # Preview the train/test split
+```
+
+Automated trigger optimization with proper ML evaluation methodology:
+1. **Split** eval cases 60/40 into train and test sets
+2. **Baseline** the current description on the train set (3 runs per prompt)
+3. **Analyze** failures and **propose** an improved description via LLM
+4. **Re-evaluate** improved description on the train set
+5. **Validate** on the held-out test set to catch overfitting
+6. **Report** before/after comparison with ACCEPT/REJECT verdict
+
+Does NOT auto-apply changes — outputs a proposed description for human review.
 
 ### 3. Corpus Evaluation
 

@@ -35,7 +35,8 @@ No other eval formats are active. Do not use `evals.json`, `output-tests.jsonl`,
 | Script | Purpose |
 |--------|---------|
 | `scripts/validate-skills.sh` | Validate all 12 skills for structural compliance |
-| `scripts/run-evals.sh` | Run trigger and behavior tests; supports `--observe` (default) and `--strict` routing modes (requires `copilot` CLI + `jq`) |
+| `scripts/run-evals.sh` | Run trigger and behavior tests; `--observe`/`--strict` routing, `--runs N` for majority voting (requires `copilot` CLI + `jq`) |
+| `scripts/run-trigger-optimization.sh` | Automated trigger optimization with 60/40 train/test split and held-out validation |
 | `scripts/run-full-cycle.sh` | Full 5-step evaluation cadence |
 | `scripts/run-baseline-comparison.sh` | Before/after comparison with gates |
 | `scripts/run-corpus-eval.sh` | Two-layer meta-skill evaluation against corpus |
