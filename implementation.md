@@ -1258,3 +1258,158 @@ The following review observations are legitimate gaps relative to agentskills.io
 | 6 | Annex F | 3 | 6 | 1 by-design (D-1) | 38 |
 
 **Total unique findings: 38** (F-001 through F-038). 34 valid actionable, 2 by-design, 1 invalid, 1 low/optional.
+
+---
+
+# Task 7/9 — Annex G: Library Management Skill Review
+
+**Source:** `tasks/reviews/2026-03-20-meta-skill-engineering/7.md` (502 lines)
+**Validated:** 2026-03-20
+**Summary:** 7 findings focused on skill-catalog-curation and skill-lifecycle-management — 4 already logged, 3 new. Top risks: lifecycle vocabulary mismatch, over-aggressive category merge heuristic, fallback inference incompatible with repo rules.
+
+### Cross-references to already-logged findings
+
+| Review Finding # | Topic | Existing Finding |
+|-----------------|-------|-----------------|
+| 1 | Missing lifecycle index and catalog-state artifact | F-010 |
+| 2 | Wrong archive path (ARCHIVE/ vs archive/) | F-011 |
+| 3 | Behavior evals don't match output contracts | F-006 (additional evidence below) |
+| 4 | Catalog-curation claims unsupported metadata/tag/index | F-009 |
+
+### Additional evidence for F-006 (behavior eval misalignment)
+
+The review provides concrete section-level mismatches for both library-management skills that strengthen F-006:
+
+**skill-catalog-curation:**
+- Output contract (`SKILL.md:71-105`) requires: `Inventory`, `Duplicates / Overlaps`, `Category Issues`, `Discoverability Gaps`, `Deprecation Candidates`, `Prioritized Actions`
+- Behavior evals check for: `Scan results`, `Duplicates`, `Recommendations`, `Index`, `Categories`, `Naming audit`
+- Mismatch: 4 of 6 contract sections have no eval coverage. Eval checks for `Naming audit` and `Index` which are not in the contract at all.
+
+**skill-lifecycle-management:**
+- Output contract (`SKILL.md:113-163`) requires: `State Summary`, `Recommended Transitions`, `Dependency Impact`, `Actions`
+- Behavior evals check for: `Current state`, `Promotion criteria`, `Decision`, `Updated metadata`, `Deprecation notice`, `Migration`, `Updated state`, `Maturity audit`, `Summary`
+- Mismatch: `Updated metadata` is explicitly banned by the repo's two-field frontmatter rule (`AGENTS.md:69-78`). 3 of 4 contract sections use different names in evals.
+
+---
+
+## F-039 Lifecycle Fallback Inference Incompatible With Repo Rules — **Valid (Medium)**
+
+**Review claims (Finding 5):** The lifecycle skill's fallback logic — "has evals → beta; passes evaluation → stable; no evals → draft" — conflicts with the repo rule that every skill package must include an evals/ directory.
+
+**Why:** Confirmed. `skill-lifecycle-management/SKILL.md:169` defines fallback inference:
+```
+| Skills with unknown lifecycle state | Infer from evidence (has evals → beta; passes evaluation → stable; no evals → draft) and record in lifecycle index |
+```
+
+But `AGENTS.md:35-42` mandates: "Every skill package should include an `evals/` directory with these files: trigger-positive.jsonl, trigger-negative.jsonl, behavior.jsonl". `.github/copilot-instructions.md:25-29` reiterates: "Each skill has an `evals/` directory with exactly these JSONL files."
+
+Since every active skill in the repo is required to have evals/, the "no evals → draft" branch is unreachable — all 12 skills have evals. The discriminator reduces to "has evals" (always true, → beta) and "passes evaluation" (→ stable). This means the fallback logic either classifies everything as beta or stable, never draft. The heuristic is not grounded in repo reality.
+
+**Blast radius:** `skill-lifecycle-management/SKILL.md` (failure handling), lifecycle inference accuracy.
+
+**Plan:**
+1. Replace the eval-presence heuristic with a more meaningful fallback. Options:
+   - Use eval pass rates: "eval gate pass rate ≥ 80% → stable; eval gate pass rate < 80% → beta; no eval results yet → draft"
+   - Use repo signals: "has been reviewed by skill-safety-review → stable; has eval results → beta; no eval results → draft"
+2. Update `skill-lifecycle-management/SKILL.md:169` with the chosen heuristic.
+3. Ensure the fallback references artifacts that actually exist (eval-results/ reports, not evals/ directory presence).
+
+**Risks:** Changing the heuristic alters lifecycle classification. Rollback: `git checkout skill-lifecycle-management/SKILL.md`.
+**Effort:** XS (30 min)
+
+**Citations:** `skill-lifecycle-management/SKILL.md:169`; `AGENTS.md:35-42`; `.github/copilot-instructions.md:25-29`
+
+---
+
+## F-040 Catalog-Curation Category Merge Threshold Too Aggressive — **Valid (Medium)**
+
+**Review claims (Finding 6):** The category merge rule "categories with ≤ 2 skills → propose merge into a neighbor" would pressure the repo to collapse intentionally distinct groups.
+
+**Why:** Confirmed. `skill-catalog-curation/SKILL.md:47` instructs: "Categories with ≤ 2 skills → propose merge into a neighbor."
+
+The repo's own category taxonomy (`README.md:63-85`) defines 5 categories. Four of them meet or violate this threshold:
+- **Safety**: 1 skill (skill-safety-review) — below threshold
+- **Creation & Improvement**: 2 skills — at threshold
+- **Library Management**: 2 skills — at threshold
+- **Transformation**: 2 skills — at threshold
+
+Only **Quality & Testing** (5 skills) is safely above. Applying this rule would recommend merging 4 of 5 categories, collapsing the taxonomy from 5 categories to ~2. These categories represent genuinely distinct capability areas (safety auditing is not the same as library management), so merging them would harm discoverability rather than improve it.
+
+Per agentskills.io best practices: skills should represent coherent task boundaries, not arbitrary size targets.
+
+**Blast radius:** `skill-catalog-curation/SKILL.md` (procedure), catalog audit recommendations.
+
+**Plan:**
+1. Remove or soften the ≤ 2 merge threshold at `skill-catalog-curation/SKILL.md:47`.
+2. Replace with a qualitative criterion: "Flag categories with only 1 skill for review — consider whether the skill truly needs its own category or whether it fits naturally in an existing one. Do not merge categories that represent distinct capability areas solely based on count."
+3. Alternatively, lower the threshold to ≤ 1 (only flag singleton categories).
+
+**Risks:** Relaxing the threshold may allow category proliferation. Rollback: `git checkout skill-catalog-curation/SKILL.md`.
+**Effort:** XS (15 min)
+
+**Citations:** `skill-catalog-curation/SKILL.md:47`; `README.md:63-85` (4 of 5 categories at or below threshold)
+
+---
+
+## F-041 Incompatible Lifecycle Vocabularies Between Curation and Lifecycle Skills — **Valid (Medium)**
+
+**Review claims (Finding 7):** The two library-management skills use different lifecycle state vocabularies, making the pipeline handoff lossy.
+
+**Why:** Confirmed. `skill-lifecycle-management/SKILL.md:37-43` defines 5 lifecycle states: `draft`, `beta`, `stable`, `deprecated`, `archived`.
+
+`skill-catalog-curation/SKILL.md:78-80` (output contract, Inventory section) only uses 3 states: `<draft: N, stable: N, deprecated: N>`.
+
+Missing from curation output: `beta` and `archived`. This means:
+1. A curation report cannot represent beta-state skills — they would be classified as either draft or stable.
+2. Archived skills are invisible in curation reports, despite being relevant for the deprecation → archival flow.
+3. When curation hands off to lifecycle management, the lifecycle skill receives an incomplete picture of current states.
+
+The two skills are the only members of the library-management pipeline. Their data models should be compatible.
+
+**Blast radius:** `skill-catalog-curation/SKILL.md` (output contract), library-management pipeline handoff.
+
+**Plan:**
+1. Update `skill-catalog-curation/SKILL.md:80` to include all 5 lifecycle states:
+   ```
+   - By maturity: <draft: N, beta: N, stable: N, deprecated: N, archived: N>
+   ```
+2. Update the corresponding behavior.jsonl to include `beta` and `archived` in required_patterns for the inventory case.
+3. Verify the handoff: curation output should use the same 5-state vocabulary that lifecycle management expects.
+
+**Risks:** Minimal — additive change to output contract. Rollback: `git checkout skill-catalog-curation/SKILL.md`.
+**Effort:** XS (15 min)
+
+**Citations:** `skill-lifecycle-management/SKILL.md:37-43` (5 states); `skill-catalog-curation/SKILL.md:78-80` (3 states)
+
+---
+
+## Task 7 Priority Summary
+
+| Priority | ID | Title | Effort | Blocked By |
+|----------|----|-------|--------|------------|
+| P2 Medium | F-041 | Incompatible lifecycle vocabularies | XS | None |
+| P2 Medium | F-040 | Category merge threshold too aggressive | XS | None |
+| P2 Medium | F-039 | Lifecycle fallback inference incompatible with repo rules | XS | None |
+
+**Recommended execution order:**
+1. F-041 first — vocabulary alignment is prerequisite for a working pipeline handoff
+2. F-040 — fix the merge heuristic to avoid destructive category merges
+3. F-039 — fix fallback inference to use meaningful signals
+
+All three are quick fixes that collectively close the library-management pipeline gaps identified alongside F-009, F-010, and F-011 from Task 1.
+
+---
+
+## Cumulative Finding Count (Tasks 1–7)
+
+| Task | Source | New | Already Logged | By-Design/Invalid | Running Total |
+|------|--------|-----|----------------|-------------------|---------------|
+| 1 | Annex A | 19 | — | 1 invalid (F-016) | 19 |
+| 2 | Annex C | 5 | 6 | 1 by-design (F-024) | 24 |
+| 3 | Annex B | 3 | 10 | 1 by-design | 27 |
+| 4 | Annex D | 5 | 3 | — | 32 |
+| 5 | Annex E | 3 | 11 | — | 35 |
+| 6 | Annex F | 3 | 6 | 1 by-design (D-1) | 38 |
+| 7 | Annex G | 3 | 4 | — | 41 |
+
+**Total unique findings: 41** (F-001 through F-041). 37 valid actionable, 2 by-design, 1 invalid, 1 low/optional.
