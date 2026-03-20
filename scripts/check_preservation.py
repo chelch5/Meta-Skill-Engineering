@@ -8,9 +8,9 @@ from pathlib import Path
 
 
 def extract_section(text, heading):
-    """Extract the content under a markdown ## heading."""
+    """Extract the content under a markdown heading (# or ##)."""
     pattern = re.compile(
-        r"^##\s+" + re.escape(heading) + r"\s*\n(.*?)(?=^##\s|\Z)",
+        r"^#{1,2}\s+" + re.escape(heading) + r"\s*\n(.*?)(?=^#{1,2}\s|\Z)",
         re.MULTILINE | re.DOTALL,
     )
     match = pattern.search(text)

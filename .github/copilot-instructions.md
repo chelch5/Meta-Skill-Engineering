@@ -25,7 +25,7 @@ Every SKILL.md must follow this structure exactly:
 Each skill has an `evals/` directory with exactly these JSONL files:
 
 - `trigger-positive.jsonl` — `{"prompt": "...", "expected": "trigger", "category": "core|indirect|paraphrase|edge", "notes": "..."}`
-- `trigger-negative.jsonl` — `{"prompt": "...", "expected": "no_trigger", "category": "anti-match|adjacent|out-of-scope", "notes": "..."}`
+- `trigger-negative.jsonl` — `{"prompt": "...", "expected": "no_trigger", "better_skill": "skill-name-or-null", "notes": "..."}`
 - `behavior.jsonl` — `{"prompt": "...", "expected_sections": [...], "required_patterns": [...], "forbidden_patterns": [...], "min_output_lines": 15, "notes": "..."}`
 
 Optional usefulness fields for `--usefulness` mode: `"usefulness_criteria": "...", "usefulness_dimensions": [...], "usefulness_threshold": N`
@@ -62,7 +62,6 @@ After editing any script in root `scripts/`, run `scripts/sync-to-skills.sh` to 
 - Do not add license, compatibility, or release metadata to skills.
 - `archive/` is read-only historical storage. Do not modify archived skills.
 - `corpus/` contains test skills for meta-skill evaluation. Treat as test fixtures.
-- `skill creator/` (with space) is pre-consolidation archive. Ignore it.
 - `tasks/` is documentation and worklogs, not a skill package.
 
 ## Pipelines

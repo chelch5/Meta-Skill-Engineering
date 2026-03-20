@@ -102,12 +102,12 @@ Each line defines a prompt with expected output characteristics.
 **Output quality assertions should check:**
 - **(a) Required sections present:** Every section named in the skill's output contract must appear
 - **(b) No hallucinated sections:** Flag any output section not specified in the output contract
-- **(c) Output length within range:** Set `min_cases` / expected line counts based on the skill's complexity. A skill with 3 procedure steps shouldn't produce 200-line output.
+- **(c) Output length within range:** Set `min_output_lines` based on the skill's complexity. A skill with 3 procedure steps shouldn't produce 200-line output.
 - **(d) Concrete vs vague language:** Flag if >30% of output sentences use hedge words ("consider", "may want to", "could potentially", "it might be useful to"). Skills should produce decisions, not suggestions.
 
 ```jsonl
-{"prompt": "Create trigger tests for skill-authoring", "expected_files": ["evals/trigger-positive.jsonl", "evals/trigger-negative.jsonl"], "required_patterns": ["\"expected\": \"trigger\"", "\"expected\": \"no_trigger\""], "forbidden_patterns": ["TODO", "placeholder", "consider adding"], "min_cases": 5}
-{"prompt": "Build a full test harness for the pdf-extraction skill", "expected_files": ["evals/trigger-positive.jsonl", "evals/trigger-negative.jsonl", "evals/behavior.jsonl", "evals/README.md"], "required_patterns": ["\"category\""], "forbidden_patterns": ["may want to", "could potentially"], "min_cases": 8}
+{"prompt": "Create trigger tests for skill-authoring", "expected_sections": ["trigger-positive", "trigger-negative"], "required_patterns": ["\"expected\": \"trigger\"", "\"expected\": \"no_trigger\""], "forbidden_patterns": ["TODO", "placeholder", "consider adding"], "min_output_lines": 15, "notes": "Must produce both positive and negative trigger files"}
+{"prompt": "Build a full test harness for the pdf-extraction skill", "expected_sections": ["trigger-positive", "trigger-negative", "behavior"], "required_patterns": ["\"better_skill\"", "\"expected_sections\""], "forbidden_patterns": ["may want to", "could potentially"], "min_output_lines": 20, "notes": "Full harness must include all three eval files plus README"}
 ```
 
 ## Step 5 — Create test fixtures (if needed)

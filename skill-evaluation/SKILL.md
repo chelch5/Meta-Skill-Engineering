@@ -2,8 +2,8 @@
 name: skill-evaluation
 description: >-
   Evaluate whether a single skill routes correctly and produces better output
-  than a no-skill baseline — measuring trigger precision/recall and output win
-  rate. Use when someone says "is this skill working?", "validate before
+  than a no-skill baseline — measuring positive trigger rate, negative rejection
+  rate, and output win rate. Use when someone says "is this skill working?", "validate before
   promoting", "does this skill still add value?", "run the eval suite", or
   "regression test this skill". Supports both ad-hoc evaluation and running
   existing eval suites. Do not use for comparing multiple variants head-to-head
@@ -53,9 +53,9 @@ Run the eval suite using `scripts/run-evals.sh`:
 ./scripts/run-evals.sh --runs 3 <skill-name>         # Multi-run with majority voting
 ```
 
-This runs trigger tests (routing precision/recall), behavior tests (output format compliance), and optionally usefulness tests (LLM-judged output quality). Results are saved to `eval-results/`.
+This runs trigger tests (positive trigger rate and negative rejection rate), behavior tests (output format compliance), and optionally usefulness tests (LLM-judged output quality). Results are saved to `eval-results/`.
 
-Calculate precision, recall, output pass rate, and baseline win rate.
+Calculate positive trigger rate, negative rejection rate, output pass rate, and baseline win rate.
 Then skip to Step 6 to synthesize the verdict.
 
 If some eval files are missing, note incomplete coverage and fall through to
@@ -83,7 +83,8 @@ ad-hoc mode for the missing test types.
 
 - Run each positive case — did the skill trigger? (target: 100%)
 - Run each negative case — did the skill stay silent? (target: 100%)
-- Precision = TP / (TP + FP), Recall = TP / (TP + FN)
+- Positive trigger rate = TP / (TP + FN) — how often the skill fires on positive cases
+- Negative rejection rate = TN / (TN + FP) — how often the skill stays silent on negative cases
 
 ## 4. **Evaluate output quality**
 
@@ -100,10 +101,10 @@ ad-hoc mode for the missing test types.
 
 ## 6. **Synthesize and verdict**
 
-- Routing target: precision ≥ 95% and recall ≥ 90%
+- Routing target: positive trigger rate ≥ 95% and negative rejection rate ≥ 90%
 - Quality target: ≥ 80% of outputs meet the rubric
 - Baseline target: win rate ≥ 60%
-- These are targets, not bright lines. Use judgment when results are near the boundary (e.g., 93% precision on 15 cases is one misrouted case — investigate whether it's a genuine routing failure or an ambiguous edge case).
+- These are targets, not bright lines. Use judgment when results are near the boundary (e.g., 93% positive trigger rate on 15 cases is one misrouted case — investigate whether it's a genuine routing failure or an ambiguous edge case).
 - Verdict: **Pass** / **Fail** / **Needs Work** with the specific failing metrics
 
 # Output contract
@@ -112,10 +113,10 @@ ad-hoc mode for the missing test types.
 ## Skill Evaluation: [skill-name]
 
 ### Routing Accuracy
-| Metric    | Value | Target | Pass? |
-|-----------|-------|--------|-------|
-| Precision | X%    | ≥ 95%  | ✓/✗   |
-| Recall    | X%    | ≥ 90%  | ✓/✗   |
+| Metric                 | Value | Target | Pass? |
+|------------------------|-------|--------|-------|
+| Positive trigger rate  | X%    | ≥ 95%  | ✓/✗   |
+| Negative rejection rate| X%    | ≥ 90%  | ✓/✗   |
 
 Misrouted cases: [list or "None"]
 

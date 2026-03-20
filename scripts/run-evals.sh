@@ -9,7 +9,8 @@
 # Requires: copilot CLI, jq
 #
 # The script reads evals/trigger-positive.jsonl, evals/trigger-negative.jsonl,
-# and evals/behavior.jsonl. Trigger tests check skill routing (precision/recall).
+# and evals/behavior.jsonl. Trigger tests check skill routing (positive trigger
+# rate = TP/(TP+FN), negative rejection rate = TN/(TN+FP)).
 # Behavior tests check output format compliance (required patterns, forbidden
 # patterns, minimum length).
 #
@@ -390,7 +391,7 @@ run_trigger_tests() {
     prompt=$(echo "$line" | jq -r '.prompt')
     expected=$(echo "$line" | jq -r '.expected')
     local category
-    category=$(echo "$line" | jq -r '.category // .better_skill // "unknown"')
+    category=$(echo "$line" | jq -r '.better_skill // .category // "unknown"')
 
     if $DRY_RUN; then
       echo "    [${total}] ${expected}: ${prompt}"
@@ -764,26 +765,26 @@ run_gates() {
     return
   fi
 
-  local precision=0
-  local recall=0
+  local pos_trigger_rate=0
+  local neg_reject_rate=0
   local beh_rate=0
-  local precision_status="FAIL"
-  local recall_status="FAIL"
+  local pos_trigger_status="FAIL"
+  local neg_reject_status="FAIL"
   local beh_status="FAIL"
   local struct_status="FAIL"
   local struct_detail="not checked"
 
-  # Precision: positive trigger pass rate
+  # Positive trigger rate: how often the skill triggers on positive cases (TP / (TP+FN))
   if [[ $GATE_POS_TOTAL -gt 0 ]]; then
-    precision=$((GATE_POS_PASS * 100 / GATE_POS_TOTAL))
+    pos_trigger_rate=$((GATE_POS_PASS * 100 / GATE_POS_TOTAL))
   fi
-  [[ $precision -ge 80 ]] && precision_status="PASS"
+  [[ $pos_trigger_rate -ge 80 ]] && pos_trigger_status="PASS"
 
-  # Recall: negative trigger pass rate (true negative rate)
+  # Negative rejection rate: how often the skill stays silent on negative cases (TN / (TN+FP))
   if [[ $GATE_NEG_TOTAL -gt 0 ]]; then
-    recall=$((GATE_NEG_PASS * 100 / GATE_NEG_TOTAL))
+    neg_reject_rate=$((GATE_NEG_PASS * 100 / GATE_NEG_TOTAL))
   fi
-  [[ $recall -ge 80 ]] && recall_status="PASS"
+  [[ $neg_reject_rate -ge 80 ]] && neg_reject_status="PASS"
 
   # Behavior pass rate
   if [[ $GATE_BEH_TOTAL -gt 0 ]]; then
@@ -812,7 +813,7 @@ run_gates() {
 
   # Overall verdict
   local verdict="PASS"
-  if [[ "$precision_status" == "FAIL" ]] || [[ "$recall_status" == "FAIL" ]] || \
+  if [[ "$pos_trigger_status" == "FAIL" ]] || [[ "$neg_reject_status" == "FAIL" ]] || \
      [[ "$beh_status" == "FAIL" ]] || [[ "$struct_status" == "FAIL" ]]; then
     verdict="FAIL"
     OVERALL_FAIL=$((OVERALL_FAIL + 1))
@@ -834,7 +835,7 @@ run_gates() {
         use_status="FAIL"
         verdict="FAIL"
         # Only increment if not already failed
-        if [[ "$precision_status" != "FAIL" ]] && [[ "$recall_status" != "FAIL" ]] && \
+        if [[ "$pos_trigger_status" != "FAIL" ]] && [[ "$neg_reject_status" != "FAIL" ]] && \
            [[ "$beh_status" != "FAIL" ]] && [[ "$struct_status" != "FAIL" ]]; then
           OVERALL_FAIL=$((OVERALL_FAIL + 1))
         fi
@@ -850,8 +851,8 @@ run_gates() {
     echo ""
     echo "| Gate | Status | Detail |"
     echo "|------|--------|--------|"
-    echo "| Trigger precision ≥ 80% | ${precision_status} | ${precision}% |"
-    echo "| Trigger recall ≥ 80% | ${recall_status} | ${recall}% |"
+    echo "| Positive trigger rate ≥ 80% | ${pos_trigger_status} | ${pos_trigger_rate}% |"
+    echo "| Negative rejection rate ≥ 80% | ${neg_reject_status} | ${neg_reject_rate}% |"
     echo "| Behavior pass rate ≥ 80% | ${beh_status} | ${beh_rate}% |"
     echo "| Structural validity | ${struct_status} | ${struct_detail} |"
     if $USEFULNESS; then

@@ -8,7 +8,6 @@ This repository is a meta-skill engineering workspace. Treat each top-level skil
 - Keep the root skill inventory limited to the 12 repo-owned top-level skill packages.
 - **Keep root docs current with every commit.** When a commit changes scripts, eval capabilities, skill contracts, or repo structure, update `AGENTS.md`, `README.md`, and `.github/copilot-instructions.md` in the same commit so they never drift from the implemented system.
 - Update root docs when repo-owned skill packages are added, removed, renamed, or materially re-scoped.
-- Do not conflate archived material in `skill creator/` with the active inventory.
 
 ## Skill Package Shape
 
@@ -49,7 +48,7 @@ evals/
 
 **trigger-negative.jsonl** — one JSON object per line:
 ```json
-{"prompt": "...", "expected": "no_trigger", "category": "anti-match|adjacent|out-of-scope", "notes": "..."}
+{"prompt": "...", "expected": "no_trigger", "better_skill": "skill-name-or-null", "notes": "..."}
 ```
 
 **behavior.jsonl** — one JSON object per line:
@@ -111,7 +110,6 @@ skill-catalog-curation → skill-lifecycle-management
 - Root inventory includes only the 12 skill packages at the repository root.
 - `archive/` contains skills removed from the active inventory (distribution-oriented skills).
 - `corpus/` contains test skills for evaluating meta-skills (5 weak, 5 strong, 5 adversarial, 3 regression).
-- `skill creator/` is archived source material from the pre-consolidation state.
 - `tasks/` is documentation, worklogs, and reviews — not a skill package.
 - `scripts/` contains automation scripts for running evals, validation, and optimization.
 - `eval-results/` contains timestamped eval reports (markdown) with a `<skill>-eval.md` symlink to the latest. These are the handoff mechanism between `skill-evaluation` and `skill-improver`.

@@ -7,7 +7,6 @@ A meta-skill engineering workspace containing 12 skills that create, refine, tes
 - `./<skill-name>/` — repo-owned skill packages at the repository root. Each package has a `SKILL.md` baseline contract and may include `references/`, `scripts/`, `evals/`, or `assets/`.
 - `archive/` — skills removed from the active inventory (distribution-oriented skills).
 - `corpus/` — test skills for evaluating meta-skills: 5 weak, 5 strong, 5 adversarial, plus a regression directory for harvested failures.
-- `skill creator/` — archived source material from the pre-consolidation state.
 - `tasks/` — task notes, worklogs, reviews, and maintenance instructions.
 - `scripts/` — automation scripts (eval runner, validation, optimization, corpus evaluation). Root scripts are source-of-truth copies; per-skill `scripts/` directories contain deployed copies via `sync-to-skills.sh`.
 - `eval-results/` — timestamped eval reports; `<skill>-eval.md` symlinks to latest. Handoff mechanism between `skill-evaluation` and `skill-improver`.

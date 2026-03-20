@@ -17,7 +17,7 @@ Improve an existing skill package. A skill is a reusable operating manual for an
 
 1. **Routing** — whether the right tasks activate it.
 2. **Execution** — whether the body gives concrete, repeatable procedure.
-3. **Support layers** — whether references, scripts, evals, and manifests exist where they help.
+3. **Support layers** — whether references, scripts, and evals exist where they help.
 4. **Maintainability** — whether the skill stays narrow and worth activating.
 
 Preserve the skill's core purpose unless the user explicitly asks to reposition it.
@@ -29,7 +29,7 @@ Use when:
 - the user provides a SKILL.md and wants it improved,
 - the user says a skill feels weak, vague, generic, bloated, or under-specified,
 - the user wants better triggering, structure, examples, or supporting files,
-- the user wants to know whether a skill needs references/, scripts/, evals/, or manifest,
+- the user wants to know whether a skill needs references/, scripts/, or evals/,
 - the user wants a thin prompt upgraded into a durable skill package.
 
 # When NOT to use
@@ -102,7 +102,7 @@ Output: rewritten SKILL.md, new references/ if justified, eval stubs or updated 
 
 Use when the skill should become a first-class reusable package: shared across projects, needs baseline comparisons, needs scripts for repeated mechanics.
 
-Output: improved SKILL.md, manifest, evals, references, scripts only where deterministic, changelog.
+Output: improved SKILL.md, evals, references, scripts only where deterministic.
 
 Follow these phases in order unless the user clearly wants a lighter pass.
 
@@ -162,7 +162,7 @@ When no eval results are available, map the reported or observed failure to a fi
 | bloat | remove unnecessary steps or content |
 | resource mismatch | add or remove references/scripts as evidence warrants |
 | no proof | add eval stubs or test prompts |
-| package rot | add manifest/changelog/ownership metadata |
+| package rot | update docs, add evals, review support layers |
 
 Score informally against: routing quality, procedural clarity, decision support, support-layer quality, evaluation readiness, maintainability. See `references/skill-quality-rubric.md` for the detailed rubric.
 
@@ -175,7 +175,7 @@ Improve in this priority order:
 3. Add or improve workflow phases.
 4. Add decision rules for common branches.
 5. Add output contract and failure handling.
-6. Decide whether references, scripts, evals, or manifest are warranted.
+6. Decide whether references, scripts, or evals are warranted.
 
 For support-layer decisions, see `references/resource-decision-guide.md`.
 
@@ -194,8 +194,6 @@ Add references when optional depth would clutter SKILL.md or the skill covers mu
 Add scripts when a deterministic task recurs and a script reduces context waste.
 
 Add evals when routing quality matters or the user wants evidence the revision helped.
-
-Add manifest/packaging when the skill is meant to persist or be shared.
 
 Do not add scripts or references merely to make the package feel complete.
 
