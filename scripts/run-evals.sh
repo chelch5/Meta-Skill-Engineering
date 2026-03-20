@@ -15,16 +15,10 @@
 #
 # ROUTING DETECTION MODES:
 #
-# --fast (default): Checks whether the skill name appears in the copilot CLI
-#   response text. This is a lightweight proxy for skill engagement.
-#   False positives: model mentions skill name without actually reading it.
-#   False negatives: skill is used but name isn't mentioned verbatim.
-#
-# --observe: Parses structured JSON output (--output-format json) from copilot
-#   CLI to detect whether the model actually opened the target skill's SKILL.md
-#   file via the view tool. This is the strongest single-run routing signal —
-#   it detects actual file reads, not name mentions. Recommended for accurate
-#   trigger testing.
+# --observe (default): Parses structured JSON output (--output-format json)
+#   from copilot CLI to detect whether the model actually opened the target
+#   skill's SKILL.md file via the view tool. This detects actual file reads,
+#   not name mentions. Single-run, accurate.
 #
 # --strict: Differential testing — runs each prompt twice: once normally and
 #   once with --no-custom-instructions (disabling AGENTS.md and all project
@@ -47,7 +41,7 @@ DRY_RUN=false
 TARGETS=()
 MODEL="${EVAL_MODEL:-claude-sonnet-4.5}"
 TIMEOUT="${EVAL_TIMEOUT:-60}"
-ROUTING_MODE="${EVAL_ROUTING:-fast}"
+ROUTING_MODE="${EVAL_ROUTING:-observe}"
 REASONING_EFFORT="${EVAL_REASONING_EFFORT:-}"
 JSON_OUTPUT=false
 
@@ -62,14 +56,13 @@ CURRENT_REPORT=""
 OVERALL_FAIL=0
 
 usage() {
-  echo "Usage: $0 [--all | --dry-run | --fast | --observe | --strict | --json] [skill-name ...]"
+  echo "Usage: $0 [--all | --dry-run | --observe | --strict | --json] [skill-name ...]"
   echo ""
   echo "Options:"
   echo "  --all       Run evals for all skills that have evals/ directories"
   echo "  --dry-run   List test cases without executing them"
-  echo "  --fast      Name-grep routing detection (default)"
-  echo "  --observe   JSON-based routing: detects actual SKILL.md file reads"
-  echo "  --strict    Differential testing: with vs without custom instructions"
+  echo "  --observe   JSON-based routing: detects actual SKILL.md file reads (default)"
+  echo "  --strict    Differential testing: with vs without custom instructions (2x slower)"
   echo "  --json      Emit machine-readable JSON summary to stdout after report"
   echo "  --model X   Override model (default: claude-sonnet-4.5)"
   echo "  --timeout N Seconds per prompt (default: 60)"
@@ -77,7 +70,7 @@ usage() {
   echo "Environment variables:"
   echo "  EVAL_MODEL              Model to use (default: claude-sonnet-4.5)"
   echo "  EVAL_TIMEOUT            Seconds per prompt (default: 60)"
-  echo "  EVAL_ROUTING            Routing mode: fast|observe|strict"
+  echo "  EVAL_ROUTING            Routing mode: observe|strict"
   echo "  EVAL_REASONING_EFFORT   Reasoning effort: low|medium|high (omit for model default)"
   exit 1
 }
@@ -94,10 +87,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --dry-run)
       DRY_RUN=true
-      shift
-      ;;
-    --fast)
-      ROUTING_MODE="fast"
       shift
       ;;
     --observe)
@@ -241,7 +230,6 @@ run_trigger_tests() {
       fi
 
     elif [[ "$ROUTING_MODE" == "strict" ]]; then
-      # Strict mode: differential testing with vs without custom instructions
       local response_with response_without
       response_with=$(run_copilot_prompt "$prompt")
       response_without=$(run_copilot_prompt "$prompt" --no-custom-instructions)
@@ -259,10 +247,9 @@ run_trigger_tests() {
       fi
 
     else
-      # Fast mode: name-grep proxy
-      local response
-      response=$(run_copilot_prompt "$prompt")
-      if echo "$response" | grep -qi "$skill"; then
+      # Unknown routing mode — fall back to observe
+      run_copilot_observe "$prompt" "$skill"
+      if $OBSERVE_SKILL_READ; then
         skill_activated=true
       fi
     fi

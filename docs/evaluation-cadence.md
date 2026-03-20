@@ -67,11 +67,10 @@ Runs JSONL test cases from each skill's `evals/` directory:
 
 | Mode | Flag | Method | Speed |
 |------|------|--------|-------|
-| Fast | `--fast` (default) | Grep for skill name in response text | 1x |
-| Observe | `--observe` | Parse JSON output for actual SKILL.md file reads | 1x |
+| Observe | `--observe` (default) | Parse JSON output for actual SKILL.md file reads | 1x |
 | Strict | `--strict` | Run with and without `--no-custom-instructions`, compare | 2x |
 
-The **observe** mode is recommended for accurate trigger testing — it detects whether the model actually opened the skill's SKILL.md via the view tool.
+The default **observe** mode detects whether the model actually opened the skill's SKILL.md via the view tool.
 
 **Environment variables:** `EVAL_MODEL` (model), `EVAL_TIMEOUT` (seconds), `EVAL_ROUTING` (fast|observe|strict), `EVAL_REASONING_EFFORT` (low|medium|high, omit for model default).
 
