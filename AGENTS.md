@@ -6,6 +6,7 @@ This repository is a meta-skill engineering workspace. Treat each top-level skil
 
 - Prefer direct, factual documentation and implementation notes.
 - Keep the root skill inventory limited to the 12 repo-owned top-level skill packages.
+- **Keep root docs current with every commit.** When a commit changes scripts, eval capabilities, skill contracts, or repo structure, update `AGENTS.md`, `README.md`, and `.github/copilot-instructions.md` in the same commit so they never drift from the implemented system.
 - Update root docs when repo-owned skill packages are added, removed, renamed, or materially re-scoped.
 - Do not conflate archived material in `skill creator/` with the active inventory.
 
@@ -89,10 +90,31 @@ skill-catalog-curation → skill-lifecycle-management
 
 - Root inventory includes only the 12 skill packages at the repository root.
 - `archive/` contains skills removed from the active inventory (distribution-oriented skills).
-- `corpus/` contains test skills for evaluating meta-skills.
+- `corpus/` contains test skills for evaluating meta-skills (5 weak, 3 strong, 4 adversarial, 3 regression).
 - `skill creator/` is archived source material from the pre-consolidation state.
 - `tasks/` is documentation, worklogs, and reviews — not a skill package.
-- `scripts/` contains automation scripts for running evals and orchestration.
+- `scripts/` contains automation scripts for running evals, validation, and optimization.
+- `docs/` contains operational documentation (evaluation cadence, workflows).
+
+## Evaluation Tooling
+
+The eval system uses Copilot CLI (`copilot -p`) with structured JSON output for routing detection.
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/run-evals.sh` | Trigger and behavior tests with pass/fail gates (`--observe`/`--strict` routing, `--runs N` majority voting) |
+| `scripts/run-trigger-optimization.sh` | Automated trigger optimization with 60/40 train/test split and held-out validation |
+| `scripts/validate-skills.sh` | Structural compliance check for all 12 skills |
+| `scripts/run-full-cycle.sh` | Full 5-step evaluation cadence |
+| `scripts/run-baseline-comparison.sh` | Before/after comparison with gates |
+| `scripts/run-corpus-eval.sh` | Two-layer meta-skill evaluation against corpus |
+| `scripts/run-regression-suite.sh` | Regression protection runner |
+
+**Default model:** `gpt-4.1`. Override with `EVAL_MODEL` env var.
+
+**Routing modes:** `--observe` (default) parses JSON output to detect actual SKILL.md file reads. `--strict` runs with and without `--no-custom-instructions` for differential comparison (2x slower).
+
+See `docs/evaluation-cadence.md` for the full evaluation workflow.
 
 ## Copilot CLI Integration
 

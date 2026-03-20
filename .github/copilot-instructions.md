@@ -51,6 +51,7 @@ After editing any SKILL.md, run `scripts/validate-skills.sh` to confirm complian
 ## Key Rules
 
 - Frontmatter must contain only `name` and `description`. No other fields.
+- **Keep root docs current with every commit.** When a commit changes scripts, eval capabilities, skill contracts, or repo structure, update `AGENTS.md`, `README.md`, and `.github/copilot-instructions.md` in the same commit so they never drift from the implemented system.
 - Do not create `manifest.yaml` in skill packages — it is a stale distribution artifact.
 - Do not add license, compatibility, or release metadata to skills.
 - `archive/` is read-only historical storage. Do not modify archived skills.

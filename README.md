@@ -9,7 +9,8 @@ A meta-skill engineering workspace containing 12 skills that create, refine, tes
 - `corpus/` — test skills for evaluating meta-skills: 5 weak, 3 strong, 4 adversarial, plus a regression directory for harvested failures.
 - `skill creator/` — archived source material from the pre-consolidation state.
 - `tasks/` — task notes, worklogs, reviews, and maintenance instructions.
-- `scripts/` — automation scripts (eval runner, validation, corpus evaluation). `run-meta-skill-cycle.sh` is optional and requires an external orchestrator skill.
+- `scripts/` — automation scripts (eval runner, validation, optimization, corpus evaluation).
+- `docs/` — operational documentation including `evaluation-cadence.md`.
 
 ## Pipelines
 
@@ -81,3 +82,25 @@ skill-catalog-curation → skill-lifecycle-management
 **Transformation**
 - `skill-adaptation` — port skills to new environments
 - `skill-variant-splitting` — split broad skills into focused variants
+
+## Evaluation System
+
+The eval system uses Copilot CLI (`copilot -p`) to test skills with real model responses.
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/run-evals.sh` | Trigger and behavior tests with pass/fail gates |
+| `scripts/run-trigger-optimization.sh` | Automated trigger optimization with train/test split |
+| `scripts/validate-skills.sh` | Structural compliance check for all 12 skills |
+| `scripts/run-full-cycle.sh` | Full 5-step evaluation cadence |
+| `scripts/run-baseline-comparison.sh` | Before/after comparison with gates |
+| `scripts/run-corpus-eval.sh` | Two-layer meta-skill evaluation against corpus |
+| `scripts/run-regression-suite.sh` | Regression protection runner |
+
+**Key capabilities:**
+- **Observe routing** (default): parses JSON output to detect whether the model actually read a SKILL.md
+- **Multi-run voting**: `--runs N` runs each prompt N times with majority-vote pass/fail
+- **Default model**: `gpt-4.1` (override with `EVAL_MODEL`)
+- **Trigger optimization**: 60/40 train/test split, LLM-proposed improvements, held-out validation
+
+See `docs/evaluation-cadence.md` for the full workflow and environment variables.
