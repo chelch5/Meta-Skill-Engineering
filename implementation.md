@@ -1413,3 +1413,148 @@ All three are quick fixes that collectively close the library-management pipelin
 | 7 | Annex G | 3 | 4 | — | 41 |
 
 **Total unique findings: 41** (F-001 through F-041). 37 valid actionable, 2 by-design, 1 invalid, 1 low/optional.
+
+---
+
+# Task 8/9 — Annex H: Comprehensive Audit Report (agentskills.io + Reference Comparison)
+
+**Source:** `tasks/reviews/2026-03-20-meta-skill-engineering/8.md` (531 lines)
+**Validated:** 2026-03-20
+**Summary:** 10 remediation items across 7 distinct findings — 8 already logged, 2 new (both low severity). Top risks: all previously identified. This review is the most thorough single-pass audit and largely confirms the finding inventory from Tasks 1–7.
+
+### Cross-references to already-logged findings
+
+| Review Section | Topic | Existing Finding(s) |
+|---------------|-------|-------------------|
+| 3.1 [CRITICAL] | Precision/recall inverted in run-evals.sh | F-028 |
+| 3.2 [HIGH] | Threshold inconsistency (95/90 vs 80) | F-029 |
+| 3.3 [HIGH] | Stale archived skill references in eval files | F-014 |
+| 3.4 [MEDIUM] | Layer 2 corpus eval manual-only | F-020 |
+| 3.5 [MEDIUM] | quick_validate.py not in sync manifest | F-019 (additional context) |
+| 3.6 [LOW] | Behavior test coverage + usefulness gap | F-036 + F-006 |
+| §2.3 skill-creator | Next-steps ordering discrepancy | F-030 |
+| §2.3 skill-testing-harness | Script path assumption | F-003 |
+| §4.4 | validate-skills.sh should check better_skill | F-014 (part of remedy) |
+| §9 P2-4 | Add quick_validate.py to manifest or remove | F-019 |
+
+### Additional context for existing findings
+
+**F-019 (quick_validate.py):** The review confirms this script is also absent from the sync manifest (`scripts/sync-to-skills.sh:22-32`). Currently no skill references it, so the missing manifest entry is a secondary concern — the primary issue remains the 4 stale frontmatter fields. Resolution of F-019 (fix or remove the script) will inherently resolve the manifest gap.
+
+**F-014 (stale archived refs):** The review provides the exact line-by-line inventory of all 7 stale references across 6 files and recommends extending `validate-skills.sh` to scan `better_skill` fields. This validator extension should be part of the F-014 remediation plan.
+
+**F-036 (usefulness coverage):** The review notes that the `--usefulness` mode is "effectively a no-op for 11 of 12 skills" — only `skill-creator` has usefulness_criteria (2/3 cases). My Task 6 data shows 4/12 skills actually have usefulness_criteria (skill-creator: 2/3, skill-evaluation: 2/3, skill-improver: 2/4, skill-trigger-optimization: 2/3). The review undercounts, but the core observation is valid — 8/12 skills are uncovered.
+
+### Positive confirmations
+
+The review confirms several repo strengths not captured in findings:
+
+- All 12 skills pass structural checker at 10/10
+- All descriptions are under 1024 chars and use imperative phrasing
+- Cross-references form a coherent, non-circular graph
+- Multi-run majority voting formula is correct: `MAJORITY_THRESHOLD=$(( (RUNS + 1) / 2 ))`
+- 60/40 train/test split interleaving preserves category diversity
+- eval-driven diagnosis table in skill-improver is "the kind of concrete, actionable guidance that elevates the skill above generic advice"
+- MSE skill-creator is better scoped than the reference Anthropic skill-creator (which overloads creation + improvement + benchmarking and lacks negative boundaries)
+
+---
+
+## F-042 Description Extraction in run-trigger-optimization.sh Is Fragile — **Valid (Low)**
+
+**Review claims (3.7):** The description extraction uses a 7-stage sed pipeline that assumes `>-` folded block scalar format. If a description uses a different valid YAML format (plain scalar, quoted string, `|` block), extraction fails silently.
+
+**Why:** Confirmed. `scripts/run-trigger-optimization.sh:299`:
+```bash
+CURRENT_DESC=$(sed -n '/^---$/,/^---$/p' "$SKILL_MD" | grep -A 100 'description:' | \
+  tail -n +1 | sed '/^---$/d' | sed '/^name:/d' | sed 's/^  //' | tr '\n' ' ' | \
+  sed 's/description: *>- *//' | sed 's/description: *//' | xargs)
+```
+
+This pipeline: (1) extracts frontmatter between `---` markers, (2) greps for `description:`, (3) removes `---` and `name:` lines, (4) strips leading spaces, (5) joins lines, (6) strips `description: >- ` prefix, (7) trims whitespace.
+
+The `sed 's/description: *>- *//'` specifically handles `>-` format. All 12 current descriptions use `>-`, so this works today. But if a description were written as `description: "A quoted string"` or `description: |`, the pipeline would either fail to strip the format indicator or mangle the content. The Python-based patching later in the script (around line 470) uses regex substitution rather than a YAML parser, compounding the fragility.
+
+**Blast radius:** `scripts/run-trigger-optimization.sh` — only affects trigger optimization workflow.
+
+**Plan:**
+1. Replace the sed pipeline at line 299 with a Python YAML extraction:
+   ```bash
+   CURRENT_DESC=$(python3 -c "
+   import yaml, sys
+   with open('$SKILL_MD') as f:
+       text = f.read().split('---')
+       if len(text) >= 3:
+           fm = yaml.safe_load(text[1])
+           print(fm.get('description', ''))
+   ")
+   ```
+2. Replace the regex-based frontmatter patching (around line 470) with a proper YAML load/modify/dump cycle.
+3. The project already uses Python 3 for `check_skill_structure.py`, so `import yaml` is available.
+
+**Risks:** Minimal — improves robustness. If `pyyaml` is not installed, the Python call would fail. Rollback: `git checkout scripts/run-trigger-optimization.sh`.
+**Effort:** S (1 hour)
+
+**Citations:** `scripts/run-trigger-optimization.sh:299,470-535`
+
+---
+
+## F-043 skill-catalog-curation Missing Variant-Splitting Boundary — **Valid (Low)**
+
+**Review claims (§5.4):** `skill-catalog-curation` does not mention `skill-variant-splitting` in its "When NOT to use" section. A user wanting to "clean up" a broad skill could invoke catalog curation when variant splitting is the correct tool.
+
+**Why:** Confirmed. `skill-catalog-curation/SKILL.md:23-27` lists three alternatives:
+```
+- Improving or refining a single skill → skill-improver
+- Creating a new skill from scratch → skill-creator
+- Promoting, deprecating, or archiving individual skills → skill-lifecycle-management
+```
+
+Missing: a boundary for "splitting a broad skill into focused variants → skill-variant-splitting." The confusion scenario is specific (user says "this skill catalog has a bloated skill, clean it up" → routes to catalog-curation instead of variant-splitting), but it's a valid routing edge case. Other skills like skill-creator and skill-improver already include variant-splitting as a boundary.
+
+**Blast radius:** `skill-catalog-curation/SKILL.md` — minor routing edge case.
+
+**Plan:**
+1. Add to `skill-catalog-curation/SKILL.md:27`:
+   ```
+   - Splitting a broad skill into focused variants → `skill-variant-splitting`
+   ```
+2. Optionally add a corresponding trigger-negative entry for a prompt like "This skill in the catalog is too broad, split it into variants."
+
+**Risks:** None — additive boundary. Rollback: `git checkout skill-catalog-curation/SKILL.md`.
+**Effort:** XS (10 min)
+
+**Citations:** `skill-catalog-curation/SKILL.md:23-27`; comparison with `skill-creator/SKILL.md:8-11` and `skill-improver/SKILL.md:24-28` (both include variant-splitting boundary)
+
+---
+
+## Task 8 Priority Summary
+
+| Priority | ID | Title | Effort | Blocked By |
+|----------|----|-------|--------|------------|
+| P3 Low | F-042 | Description extraction fragile in trigger-opt script | S | None |
+| P3 Low | F-043 | Catalog-curation missing variant-splitting boundary | XS | None |
+
+**Recommended execution order:**
+1. F-043 first — trivial additive change, closes a routing edge case
+2. F-042 — robustness improvement, not urgent since all current descriptions use `>-`
+
+### Review Meta-Assessment
+
+This is the most comprehensive single-pass audit across all annexes. It confirms the overall pattern: the repo is structurally excellent (9/10 format compliance) but has systemic evaluation reliability issues. The comparison to the reference Anthropic skill-creator validates MSE's architectural decisions (separate skills, clear boundaries, JSONL format). No new critical or high-severity findings — the remaining gaps are all at the margins.
+
+---
+
+## Cumulative Finding Count (Tasks 1–8)
+
+| Task | Source | New | Already Logged | By-Design/Invalid | Running Total |
+|------|--------|-----|----------------|-------------------|---------------|
+| 1 | Annex A | 19 | — | 1 invalid (F-016) | 19 |
+| 2 | Annex C | 5 | 6 | 1 by-design (F-024) | 24 |
+| 3 | Annex B | 3 | 10 | 1 by-design | 27 |
+| 4 | Annex D | 5 | 3 | — | 32 |
+| 5 | Annex E | 3 | 11 | — | 35 |
+| 6 | Annex F | 3 | 6 | 1 by-design (D-1) | 38 |
+| 7 | Annex G | 3 | 4 | — | 41 |
+| 8 | Annex H | 2 | 8 | — | 43 |
+
+**Total unique findings: 43** (F-001 through F-043). 39 valid actionable, 2 by-design, 1 invalid, 1 low/optional.
