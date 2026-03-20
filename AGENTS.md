@@ -17,6 +17,19 @@ This repository is a meta-skill engineering workspace. Treat each top-level skil
 - When a package has evals or scripts, treat them as support layers for the skill rather than as the skill itself.
 - Skills are internal-only; do not add license, compatibility, or release metadata unless explicitly needed.
 
+## Script Distribution Model
+
+Root `scripts/` contains the **source-of-truth** copies of all automation scripts. Per-skill `scripts/` directories contain **deployed copies** — identical files, same names. Each skill gets only the scripts its procedure actually references.
+
+**Workflow**: Edit a script in root `scripts/` → run `scripts/sync-to-skills.sh` → copies propagate to all skills that use them.
+
+**Sync modes**:
+- `./scripts/sync-to-skills.sh` — copy all scripts per manifest
+- `./scripts/sync-to-skills.sh --dry-run` — show what would be copied
+- `./scripts/sync-to-skills.sh --check` — verify per-skill copies match root (CI-friendly)
+
+The manifest mapping (which scripts go to which skills) is defined at the top of `sync-to-skills.sh`. When adding a new script or changing which skills use it, update the manifest and re-run sync.
+
 ## Eval Suite Structure
 
 Every skill package should include an `evals/` directory with these files:
@@ -114,6 +127,7 @@ The eval system uses Copilot CLI (`copilot -p`) with structured JSON output for 
 | `scripts/run-baseline-comparison.sh` | Before/after comparison with gates |
 | `scripts/run-corpus-eval.sh` | Two-layer meta-skill evaluation against corpus |
 | `scripts/run-regression-suite.sh` | Regression protection runner |
+| `scripts/sync-to-skills.sh` | Sync root scripts to per-skill `scripts/` directories per manifest |
 
 **Default model:** `gpt-4.1`. Override with `EVAL_MODEL` env var.
 

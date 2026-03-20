@@ -140,6 +140,16 @@ Append new JSON lines to the appropriate .jsonl file. Follow the field schema:
 - trigger-negative: prompt, expected ("no_trigger"), better_skill, notes
 ```
 
+## Step 7 — Verify the test suite
+
+After creating all eval files, verify they are well-formed and parseable:
+
+```bash
+./scripts/run-evals.sh --dry-run <skill-name>
+```
+
+This validates JSONL syntax, lists all test cases, and confirms the eval runner can parse them. Fix any errors before delivering the test suite.
+
 # Output contract
 
 ```

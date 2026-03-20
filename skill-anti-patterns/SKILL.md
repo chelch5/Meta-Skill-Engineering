@@ -32,7 +32,16 @@ Scan a SKILL.md against a concrete anti-pattern checklist (AP-1 through AP-16). 
 
 # Procedure
 
-Read the target SKILL.md. Check each anti-pattern below. For each PRESENT, write the specific fix with before/after.
+Read the target SKILL.md. Before scanning, establish a quantitative baseline:
+
+```bash
+python3 scripts/check_skill_structure.py <skill-dir>/SKILL.md    # 10-point structural score
+python3 scripts/skill_lint.py <skill-dir>/SKILL.md               # Format lint
+```
+
+Record the structural score and any lint issues — these often correlate with anti-pattern presence and provide a measurable before/after comparison.
+
+Check each anti-pattern below. For each PRESENT, write the specific fix with before/after.
 
 > **Quick scan priority**
 > - **Quick scan (5 min):** Check AP-1, AP-7, AP-12 first — these are routing-critical. If the skill can't be found by the host, nothing else matters.

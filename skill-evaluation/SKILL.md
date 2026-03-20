@@ -45,9 +45,15 @@ Locate test files in the skill directory. Supported formats:
 - `evals/trigger-positive.jsonl` and `evals/trigger-negative.jsonl`
 - `evals/behavior.jsonl`
 
-For each trigger test case, run the prompt and record whether the skill fired.
-For each behavior test case, run the skill and check against expected patterns.
-For each baseline test case, compare skill-active vs skill-inactive output.
+Run the eval suite using `scripts/run-evals.sh`:
+
+```bash
+./scripts/run-evals.sh <skill-name>                  # Standard eval
+./scripts/run-evals.sh --usefulness <skill-name>     # With LLM-as-Judge usefulness scoring
+./scripts/run-evals.sh --runs 3 <skill-name>         # Multi-run with majority voting
+```
+
+This runs trigger tests (routing precision/recall), behavior tests (output format compliance), and optionally usefulness tests (LLM-judged output quality). Results are saved to `eval-results/`.
 
 Calculate precision, recall, output pass rate, and baseline win rate.
 Then skip to Step 6 to synthesize the verdict.

@@ -193,6 +193,13 @@ Save test cases as JSONL files in `evals/` using the canonical format (see AGENT
 
 For details on field schemas, delegate to `skill-testing-harness` or refer to AGENTS.md.
 
+After creating eval files, validate the new skill's structure and verify eval files are parseable:
+
+```bash
+python3 scripts/check_skill_structure.py <skill-dir>/SKILL.md    # Structural scoring
+./scripts/run-evals.sh --dry-run <skill-name>                    # Verify JSONL is parseable
+```
+
 Share the test cases with the user: "Here are test cases I'd like to try.
 Do these look right, or do you want to add or change any?"
 

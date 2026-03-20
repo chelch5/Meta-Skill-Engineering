@@ -63,11 +63,21 @@ Audit a skill for safety hazards before it is published, imported, or promoted. 
 
 5. **Description–behavior mismatch** — compare the `description` field and "When to use" section against actual procedure steps. Flag hidden behaviors, understated severity, or actions not disclosed in the description.
 
-6. **Bundled scripts** — if a `scripts/` directory exists, audit for unsafe operations, hardcoded credentials, and undocumented network calls. Flag any operation not documented in SKILL.md.
+6. **Structural compliance** — run automated validation to establish a quantitative baseline:
 
-7. **Partial-failure safety** — check whether destructive operations have rollback or cleanup paths. Flag any destructive step that leaves corrupted state on mid-operation failure.
+   ```bash
+   python3 scripts/check_skill_structure.py <skill-dir>/SKILL.md    # 10-point structural score
+   python3 scripts/skill_lint.py <skill-dir>/SKILL.md               # Format lint
+   ./scripts/validate-skills.sh                                      # Full repo compliance
+   ```
 
-8. **Verdict** — classify the skill:
+   Flag any structural score below 8/10 or lint errors as additional findings.
+
+7. **Bundled scripts** — if a `scripts/` directory exists, audit for unsafe operations, hardcoded credentials, and undocumented network calls. Flag any operation not documented in SKILL.md.
+
+8. **Partial-failure safety** — check whether destructive operations have rollback or cleanup paths. Flag any destructive step that leaves corrupted state on mid-operation failure.
+
+9. **Verdict** — classify the skill:
    - **Safe** — no findings.
    - **Safe with warnings** — minor issues documented, usable as-is.
    - **Requires changes** — must fix before publishing or promotion.

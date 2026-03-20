@@ -47,13 +47,17 @@ No other eval formats are active. Do not use `evals.json`, `output-tests.jsonl`,
 | `scripts/check_preservation.py` | Jaccard similarity for content preservation |
 | `scripts/skill_lint.py` | Lint a SKILL.md for format issues |
 | `scripts/harvest_failures.py` | Convert failures into regression cases |
+| `scripts/sync-to-skills.sh` | Sync root scripts to per-skill `scripts/` directories per manifest |
 
 After editing any SKILL.md, run `scripts/validate-skills.sh` to confirm compliance.
+
+After editing any script in root `scripts/`, run `scripts/sync-to-skills.sh` to propagate changes to per-skill copies.
 
 ## Key Rules
 
 - Frontmatter must contain only `name` and `description`. No other fields.
 - **Keep root docs current with every commit.** When a commit changes scripts, eval capabilities, skill contracts, or repo structure, update `AGENTS.md`, `README.md`, and `.github/copilot-instructions.md` in the same commit so they never drift from the implemented system.
+- **Script distribution**: Root `scripts/` = source-of-truth dev copies. Per-skill `scripts/` = deployed copies. Edit in root, then run `scripts/sync-to-skills.sh` to propagate. Never edit per-skill copies directly.
 - Do not create `manifest.yaml` in skill packages — it is a stale distribution artifact.
 - Do not add license, compatibility, or release metadata to skills.
 - `archive/` is read-only historical storage. Do not modify archived skills.

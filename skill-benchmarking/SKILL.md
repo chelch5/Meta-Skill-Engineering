@@ -42,6 +42,15 @@ Compare two or more skill variants (A vs B, before vs after) on the same test ca
    - Use identical cases across all variants — never mix.
 
 3. **Collect metrics**
+
+   Use automated tooling to collect metrics consistently:
+
+   ```bash
+   ./scripts/run-evals.sh <skill-name>                                     # Trigger + behavior tests
+   ./scripts/run-evals.sh --usefulness <skill-name>                        # Add LLM-judged quality
+   ./scripts/run-baseline-comparison.sh <variant-a.md> <variant-b.md>     # Before/after comparison
+   ```
+
    - **Pass rate**: % of cases meeting acceptance criteria.
    - **Token usage**: Average input + output tokens per case.
    - **Routing accuracy**: Precision and recall if routing is in scope.

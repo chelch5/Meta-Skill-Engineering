@@ -185,6 +185,14 @@ If any check fails, revise.
 
 ## Phase 7 — Package the result
 
+Before packaging, compare the improved skill against the original to verify quality gates pass:
+
+```bash
+./scripts/run-baseline-comparison.sh <original-skill.md> <modified-skill.md>
+```
+
+This checks structural score delta, section preservation, name preservation, line limits, and eval regression. If gates fail, revise before delivering.
+
 Return:
 
 - the improved files,
