@@ -28,9 +28,9 @@ def parse_failure_lines(text):
         failure = {"raw": stripped}
 
         # Try to extract structured fields from the line
-        # Pattern: ❌ [N] FAIL (category): prompt... [expected=X, mentioned=Y]
+        # Pattern: ❌ [N] FAIL (category): prompt... [expected=X, activated=Y
         m = re.search(
-            r"\[(\d+)\]\s*FAIL\s*\(([^)]*)\):\s*(.*?)\s*\[expected=(\w+),\s*mentioned=(\w+)\]",
+            r"\[(\d+)\]\s*FAIL\s*\(([^)]*)\):\s*(.*?)\s*\[expected=(\w+),\s*activated=(\w+)",
             stripped,
         )
         if m:

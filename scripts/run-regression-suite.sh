@@ -15,6 +15,17 @@
 
 set -euo pipefail
 
+if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
+  echo "Usage: ./scripts/run-regression-suite.sh"
+  echo ""
+  echo "Runs regression tests from corpus/regression/*.json."
+  echo "Supports preservation_failure (inline excerpts or file paths),"
+  echo "structural_failure (cross-reference validation), and"
+  echo "trigger_failure (logged for next eval run)."
+  echo "Requires: jq, python3"
+  exit 0
+fi
+
 # Auto-detect repo root
 _script_dir="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$_script_dir"
@@ -55,10 +66,55 @@ for case_file in "$REGRESSION_DIR"/*.json; do
 
     case "$case_type" in
         trigger_failure)
-            # Trigger failures are records for inclusion in the next eval run.
-            # We cannot re-run them here without the copilot CLI, so log and skip.
-            echo "  ⏭  [${case_id}] trigger_failure — logged for next eval run"
-            skip=$((skip + 1))
+            # Replay trigger failure if copilot CLI is available
+            if command -v copilot >/dev/null 2>&1 && [[ "$skill" != "unknown" ]] && [[ "$skill" != "null" ]]; then
+                prompt=$(jq -r '.prompt // ""' "$case_file")
+                expected=$(jq -r '.expected // ""' "$case_file")
+                if [[ -n "$prompt" ]] && [[ -n "$expected" ]]; then
+                    skill_md="${REPO_ROOT}/${skill}/SKILL.md"
+                    if [[ -f "$skill_md" ]]; then
+                        # Run prompt through copilot and check if skill file was read
+                        response=$(copilot -p "$prompt" --output-format json 2>/dev/null || echo '{}')
+                        skill_activated=$(echo "$response" | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    paths = [s.get('path','') for s in data.get('steps',[]) if s.get('tool') in ('view','read_file')]
+    print('true' if any('${skill}/SKILL.md' in p for p in paths) else 'false')
+except: print('error')
+" 2>/dev/null || echo "error")
+
+                        if [[ "$expected" == "trigger" ]]; then
+                            if [[ "$skill_activated" == "true" ]]; then
+                                echo "  ✅ [${case_id}] trigger replay — correctly activated"
+                                pass=$((pass + 1))
+                            else
+                                echo "  ❌ [${case_id}] trigger replay — expected activation, got none"
+                                fail=$((fail + 1))
+                                errors+=("${case_id}: expected trigger activation")
+                            fi
+                        else
+                            if [[ "$skill_activated" == "false" ]]; then
+                                echo "  ✅ [${case_id}] trigger replay — correctly rejected"
+                                pass=$((pass + 1))
+                            else
+                                echo "  ❌ [${case_id}] trigger replay — expected rejection, got activation"
+                                fail=$((fail + 1))
+                                errors+=("${case_id}: expected no trigger")
+                            fi
+                        fi
+                    else
+                        echo "  ⏭  [${case_id}] trigger_failure — skill SKILL.md not found"
+                        skip=$((skip + 1))
+                    fi
+                else
+                    echo "  ⏭  [${case_id}] trigger_failure — missing prompt or expected"
+                    skip=$((skip + 1))
+                fi
+            else
+                echo "  ⏭  [${case_id}] trigger_failure — copilot CLI not available, logged for next eval run"
+                skip=$((skip + 1))
+            fi
             ;;
 
         structural_failure)

@@ -194,6 +194,8 @@ Save test cases as JSONL files in `evals/` using the canonical format (see AGENT
 
 For details on field schemas, delegate to `skill-testing-harness` or refer to AGENTS.md.
 
+Phase 3 creates seed eval files (2–5 cases each). For comprehensive test suites (8+ cases, adversarial scenarios, edge coverage), route to `skill-testing-harness` afterward.
+
 After creating eval files, validate the new skill's structure and verify eval files are parseable:
 
 ```bash

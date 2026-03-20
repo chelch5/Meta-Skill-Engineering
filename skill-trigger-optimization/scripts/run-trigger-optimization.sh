@@ -23,7 +23,14 @@
 
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Auto-detect repo root
+_script_dir="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$_script_dir"
+while [[ "$REPO_ROOT" != "/" ]]; do
+  [[ -f "$REPO_ROOT/AGENTS.md" ]] && break
+  REPO_ROOT="$(dirname "$REPO_ROOT")"
+done
+[[ ! -f "$REPO_ROOT/AGENTS.md" ]] && { echo "Error: cannot find repo root (no AGENTS.md found)"; exit 1; }
 RESULTS_DIR="${REPO_ROOT}/eval-results"
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 MODEL="${EVAL_MODEL:-gpt-4.1}"
@@ -89,7 +96,13 @@ command -v jq >/dev/null 2>&1 || { echo "Error: jq is required"; exit 1; }
 mkdir -p "$RESULTS_DIR"
 REPORT="${RESULTS_DIR}/optimization-${SKILL}-${TIMESTAMP}.md"
 TMPDIR=$(mktemp -d)
-trap 'rm -rf "$TMPDIR"' EXIT
+trap '
+  # Restore SKILL.md from backup if it exists (safety net for interrupts)
+  if [[ -f "$TMPDIR/SKILL.md.backup" ]] && [[ -f "$SKILL_MD" ]]; then
+    cp "$TMPDIR/SKILL.md.backup" "$SKILL_MD" 2>/dev/null || true
+  fi
+  rm -rf "$TMPDIR"
+' EXIT
 
 MAJORITY_THRESHOLD=$(( (RUNS_PER_PROMPT + 1) / 2 ))
 

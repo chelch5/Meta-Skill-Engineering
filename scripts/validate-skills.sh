@@ -4,6 +4,15 @@ set -euo pipefail
 # validate-skills.sh — Structural validation for all skill packages
 # Checks: frontmatter, cross-references, phantom files, eval format, line counts
 
+if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
+  echo "Usage: ./scripts/validate-skills.sh"
+  echo ""
+  echo "Validates all 12 skill packages for structural compliance."
+  echo "Checks frontmatter, cross-references, phantom files, eval format, line counts."
+  echo "Requires: python3, jq"
+  exit 0
+fi
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'

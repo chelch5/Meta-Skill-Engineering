@@ -309,7 +309,15 @@ echo "  Baseline train score: ${BASELINE_TRAIN_PASS}/${BASELINE_TRAIN_TOTAL}"
 echo ""
 
 # Extract current description from SKILL.md frontmatter
-CURRENT_DESC=$(sed -n '/^---$/,/^---$/p' "$SKILL_MD" | grep -A 100 'description:' | tail -n +1 | sed '/^---$/d' | sed '/^name:/d' | sed 's/^  //' | tr '\n' ' ' | sed 's/description: *>- *//' | sed 's/description: *//' | xargs)
+CURRENT_DESC=$(python3 -c "
+import yaml, sys
+with open('$SKILL_MD') as f:
+    text = f.read()
+parts = text.split('---')
+if len(parts) >= 3:
+    fm = yaml.safe_load(parts[1])
+    print(fm.get('description', '').strip())
+" 2>/dev/null || sed -n '/^---$/,/^---$/p' "$SKILL_MD" | grep -A 100 'description:' | tail -n +1 | sed '/^---$/d' | sed '/^name:/d' | sed 's/^  //' | tr '\n' ' ' | sed 's/description: *>- *//' | sed 's/description: *//' | xargs)
 
 {
   echo "## Baseline (Train Set)"

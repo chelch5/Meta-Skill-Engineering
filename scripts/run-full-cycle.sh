@@ -132,7 +132,7 @@ else
   corpus_exit=0
   corpus_output=""
 
-  for meta_skill in skill-improver skill-anti-patterns; do
+  for meta_skill in skill-improver skill-anti-patterns skill-evaluation skill-safety-review; do
     echo "  Running: run-corpus-eval.sh ${meta_skill} --all"
     local_output=$("${REPO_ROOT}/scripts/run-corpus-eval.sh" "$meta_skill" --all 2>&1) || corpus_exit=1
     corpus_output+=$'\n'"--- ${meta_skill} ---"$'\n'"${local_output}"
