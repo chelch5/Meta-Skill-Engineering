@@ -6,306 +6,231 @@ The 12 skills form a 55%-dense dependency graph (73/132 possible edges). `skill-
 
 ---
 
-## Phase 1: Strip Negative Routing from Descriptions
+## Phase 1: ~~Strip Negative Routing from Descriptions~~ → REVISED: Compress Description Routing
 
-**Rationale**: Every description field contains "Do not use for X (use skill-Y)" text. This text is redundant — every skill already has a `# When NOT to use` section with the same (or better) content. The description is the primary routing signal for the host; overloading it with negative routing dilutes the positive signal.
+### Why the original Phase 1 was wrong
 
-**Rule**: Description field contains ONLY: action verb + what it does + positive trigger phrases. No "Do not use" text.
+Skills use **progressive disclosure** with three loading levels (per `skill-creator/SKILL.md:138-142`):
+
+1. **Metadata** (name + description) — **always in context** for ALL skills (~100 words)
+2. **SKILL.md body** — loaded **only after** the skill triggers
+3. **Bundled resources** — loaded on demand by the agent
+
+The `# When NOT to use` section in the body is **never seen during routing**. It's only available after the skill has already been selected. The "Do not use for..." text in the description is the **only negative routing signal** the host has when choosing between skills.
+
+The repo's own `skill-creator` explicitly instructs (line 87): *"End with 'Do not use for…' naming adjacent skills"*.
+
+**Removing "Do not use" from descriptions would break routing by eliminating pre-selection negative signals.**
+
+### Revised approach: Compress, don't remove
+
+The hub anti-pattern in descriptions is real — 34% of description words are routing overhead. But the fix is compression, not removal. Keep negative routing in descriptions, but make it concise.
+
+**Current verbose pattern** (skill-improver, 41 words of negative routing):
+```
+Do not use for creating a new skill from scratch (use skill-creator),
+trigger-only fixes when the body is fine (use skill-trigger-optimization),
+porting a skill to a different stack or context (use skill-adaptation),
+or quick structural audits with no rewrite (use skill-anti-patterns).
+```
+
+**Compressed pattern** (19 words):
+```
+Not for: new skills (skill-creator), trigger-only fixes
+(skill-trigger-optimization), stack porting (skill-adaptation),
+audits without rewrite (skill-anti-patterns).
+```
+
+This preserves every skill name (routing signal) and every scenario (discrimination signal) while cutting words by ~50%.
 
 ### Exact changes per skill:
 
 #### skill-adaptation
-**Current** (73 words):
-```yaml
-description: >-
-  Adapt an existing skill to a different repository, stack, team, or project
-  context while preserving the core pattern. Use when asked to "port this skill
-  to Python/Vue/pnpm", "customize this library skill for our project", or
-  "localize this skill for a different environment". Do not use for writing a
-  new skill from scratch (use skill-creator), improving an existing
-  project-specific skill without changing context (use skill-improver), or
-  splitting one skill into stack-specific variants (use skill-variant-splitting).
+**Current negative routing** (31 words):
 ```
-**After** (42 words):
-```yaml
-description: >-
-  Adapt an existing skill to a different repository, stack, team, or project
-  context while preserving the core pattern. Use when asked to "port this skill
-  to Python/Vue/pnpm", "customize this library skill for our project", or
-  "localize this skill for a different environment".
+Do not use for writing a new skill from scratch (use skill-creator),
+improving an existing project-specific skill without changing context
+(use skill-improver), or splitting one skill into stack-specific variants
+(use skill-variant-splitting).
+```
+**Compressed** (18 words):
+```
+Not for: new skills (skill-creator), in-context improvement
+(skill-improver), variant splitting (skill-variant-splitting).
 ```
 
 #### skill-anti-patterns
-**Current** (76 words):
-```yaml
-description: >-
-  Audit a SKILL.md for structural anti-patterns that reduce routing accuracy,
-  output quality, or maintainability. Use when a user says "check this skill
-  for anti-patterns", "what's wrong with this skill", or "audit this skill
-  before promotion". Also use for post-failure diagnostics when a skill
-  misbehaves but the root cause is unclear. Do not use for full skill rewrites
-  (use skill-creator), trigger-only fixes (use skill-trigger-optimization),
-  surgical fixes to known problems (use skill-improver), or measuring
-  routing precision/recall (use skill-evaluation).
+**Current negative routing** (26 words):
 ```
-**After** (50 words):
-```yaml
-description: >-
-  Audit a SKILL.md for structural anti-patterns that reduce routing accuracy,
-  output quality, or maintainability. Use when a user says "check this skill
-  for anti-patterns", "what's wrong with this skill", or "audit this skill
-  before promotion". Also use for post-failure diagnostics when a skill
-  misbehaves but the root cause is unclear.
+Do not use for full skill rewrites (use skill-creator), trigger-only
+fixes (use skill-trigger-optimization), surgical fixes to known problems
+(use skill-improver), or measuring routing precision/recall
+(use skill-evaluation).
+```
+**Compressed** (18 words):
+```
+Not for: full rewrites (skill-creator), trigger-only fixes
+(skill-trigger-optimization), surgical fixes (skill-improver),
+routing measurement (skill-evaluation).
 ```
 
 #### skill-benchmarking
-**Current** (67 words):
-```yaml
-description: >-
-  Compare skill variants head-to-head using pass rate, routing accuracy, and
-  usefulness score to pick a winner. Use when choosing between two skill versions
-  ("which is better?", "did the refinement help?", "benchmark these variants"),
-  measuring whether a change improved quality, or deciding whether to keep or
-  deprecate a variant. Do not use for evaluating a single skill in isolation (use
-  skill-evaluation) or for building test infrastructure (use
-  skill-testing-harness).
+**Current negative routing** (19 words):
 ```
-**After** (48 words):
-```yaml
-description: >-
-  Compare skill variants head-to-head using pass rate, routing accuracy, and
-  usefulness score to pick a winner. Use when choosing between two skill versions
-  ("which is better?", "did the refinement help?", "benchmark these variants"),
-  measuring whether a change improved quality, or deciding whether to keep or
-  deprecate a variant.
+Do not use for evaluating a single skill in isolation (use
+skill-evaluation) or for building test infrastructure (use
+skill-testing-harness).
+```
+**Compressed** (11 words):
+```
+Not for: single-skill evaluation (skill-evaluation), building tests
+(skill-testing-harness).
 ```
 
 #### skill-catalog-curation
-**Current** (63 words):
-```yaml
-description: >-
-  Audit a skill library for duplicates, category drift, and discoverability gaps;
-  verify naming conventions, cross-references between SKILL.md files, and
-  description quality across skill directories.
-  Use when: "audit the skill library", "clean up overlapping skills",
-  "organize the catalog", "find duplicate skills".
-  Do not use for: improving a single skill (skill-improver), creating a new skill (skill-creator),
-  promoting or deprecating individual skills through lifecycle states (skill-lifecycle-management).
+**Current negative routing** (23 words):
 ```
-**After** (40 words):
-```yaml
-description: >-
-  Audit a skill library for duplicates, category drift, and discoverability gaps;
-  verify naming conventions, cross-references between SKILL.md files, and
-  description quality across skill directories.
-  Use when: "audit the skill library", "clean up overlapping skills",
-  "organize the catalog", "find duplicate skills".
+Do not use for: improving a single skill (skill-improver), creating a
+new skill (skill-creator), promoting or deprecating individual skills
+through lifecycle states (skill-lifecycle-management).
+```
+**Compressed** (13 words):
+```
+Not for: single-skill improvement (skill-improver), creation
+(skill-creator), lifecycle state changes (skill-lifecycle-management).
 ```
 
 #### skill-creator
-**Current** (88 words):
-```yaml
-description: >-
-  Create new agent skills from scratch and iteratively improve them through
-  test-review-improve cycles. Use this for "create a skill for X", "write a
-  skill that handles Y", "I need a new skill to do Z", "turn this workflow
-  into a skill", or when a repeated task pattern should become a reusable
-  agent procedure. Do not use for splitting a broad skill into variants
-  (skill-variant-splitting), adapting a skill to a different environment
-  (skill-adaptation), improving an existing skill without full iteration
-  (skill-improver), or running standalone evaluations without creation
-  intent (skill-evaluation).
+**Current negative routing** (35 words):
 ```
-**After** (53 words):
-```yaml
-description: >-
-  Create new agent skills from scratch and iteratively improve them through
-  test-review-improve cycles. Use this for "create a skill for X", "write a
-  skill that handles Y", "I need a new skill to do Z", "turn this workflow
-  into a skill", or when a repeated task pattern should become a reusable
-  agent procedure.
+Do not use for splitting a broad skill into variants
+(skill-variant-splitting), adapting a skill to a different environment
+(skill-adaptation), improving an existing skill without full iteration
+(skill-improver), or running standalone evaluations without creation
+intent (skill-evaluation).
+```
+**Compressed** (17 words):
+```
+Not for: variant splitting (skill-variant-splitting), context porting
+(skill-adaptation), improving existing (skill-improver), standalone
+evaluation (skill-evaluation).
 ```
 
 #### skill-evaluation
-**Current** (84 words):
-```yaml
-description: >-
-  Evaluate whether a single skill routes correctly and produces better output
-  than a no-skill baseline — measuring positive trigger rate, negative rejection
-  rate, and output win rate. Use when someone says "is this skill working?", "validate before
-  promoting", "does this skill still add value?", "run the eval suite", or
-  "regression test this skill". Supports both ad-hoc evaluation and running
-  existing eval suites. Do not use for comparing multiple variants head-to-head
-  (skill-benchmarking), building test infrastructure or eval suites
-  (skill-testing-harness), or fixing a broken skill (skill-improver).
+**Current negative routing** (22 words):
 ```
-**After** (62 words):
-```yaml
-description: >-
-  Evaluate whether a single skill routes correctly and produces better output
-  than a no-skill baseline — measuring positive trigger rate, negative rejection
-  rate, and output win rate. Use when someone says "is this skill working?",
-  "validate before promoting", "does this skill still add value?", "run the
-  eval suite", or "regression test this skill". Supports both ad-hoc evaluation
-  and running existing eval suites.
+Do not use for comparing multiple variants head-to-head
+(skill-benchmarking), building test infrastructure or eval suites
+(skill-testing-harness), or fixing a broken skill (skill-improver).
+```
+**Compressed** (13 words):
+```
+Not for: variant comparison (skill-benchmarking), building tests
+(skill-testing-harness), fixing skills (skill-improver).
 ```
 
 #### skill-improver
-**Current** (80 words):
-```yaml
-description: >-
-  Improve an existing skill package — tighten routing, sharpen procedure, add or
-  prune support layers, upgrade packaging. Use when the user says "improve this
-  skill", "this skill is weak/vague/bloated", "harden this SKILL.md", or "add
-  evals/references to this skill package". Do not use for creating a new skill
-  from scratch (use skill-creator), trigger-only fixes when the body is fine
-  (use skill-trigger-optimization), porting a skill to a different stack or
-  context (use skill-adaptation), or quick structural audits with no rewrite
-  (use skill-anti-patterns).
+**Current negative routing** (41 words):
 ```
-**After** (39 words):
-```yaml
-description: >-
-  Improve an existing skill package — tighten routing, sharpen procedure, add or
-  prune support layers, upgrade packaging. Use when the user says "improve this
-  skill", "this skill is weak/vague/bloated", "harden this SKILL.md", or "add
-  evals/references to this skill package".
+Do not use for creating a new skill from scratch (use skill-creator),
+trigger-only fixes when the body is fine (use skill-trigger-optimization),
+porting a skill to a different stack or context (use skill-adaptation),
+or quick structural audits with no rewrite (use skill-anti-patterns).
+```
+**Compressed** (19 words):
+```
+Not for: new skills (skill-creator), trigger-only fixes
+(skill-trigger-optimization), stack porting (skill-adaptation),
+audits without rewrite (skill-anti-patterns).
 ```
 
 #### skill-lifecycle-management
-**Current** (72 words):
-```yaml
-description: >-
-  Manage skill lifecycle states (draft → beta → stable → deprecated → archived)
-  including promotion criteria, deprecation procedures, and maturity audits. Use
-  when a user says "deprecate this skill", "promote this to stable", "retire
-  this", "this is replaced by X", "which skills are production-ready", or
-  "audit maturity across the library". Do not use for creating new skills
-  (use skill-creator), improving individual skill quality (use skill-improver),
-  or reorganizing the library catalog (use skill-catalog-curation).
+**Current negative routing** (22 words):
 ```
-**After** (50 words):
-```yaml
-description: >-
-  Manage skill lifecycle states (draft → beta → stable → deprecated → archived)
-  including promotion criteria, deprecation procedures, and maturity audits. Use
-  when a user says "deprecate this skill", "promote this to stable", "retire
-  this", "this is replaced by X", "which skills are production-ready", or
-  "audit maturity across the library".
+Do not use for creating new skills (use skill-creator), improving
+individual skill quality (use skill-improver), or reorganizing the
+library catalog (use skill-catalog-curation).
+```
+**Compressed** (13 words):
+```
+Not for: new skills (skill-creator), quality improvement
+(skill-improver), catalog reorganization (skill-catalog-curation).
 ```
 
 #### skill-safety-review
-**Current** (100 words):
-```yaml
-description: >-
-  Audit a SKILL.md and its bundled scripts for safety hazards — destructive
-  operations missing confirmation gates, excessive permissions, prompt injection
-  vectors, scope creep, and description-behavior mismatches. Use when a user
-  says "review this skill for safety", "is this skill safe to publish",
-  "check for destructive operations", or "audit before sharing". Use before
-  publishing to a shared registry, after importing from an untrusted source,
-  or when a skill performs consequential operations (file deletion, API calls,
-  deployments). Do not use for routing or output-quality evaluation (use
-  skill-evaluation), structural anti-pattern detection (use skill-anti-patterns),
-  or skills that are purely informational with no side effects.
+**Current negative routing** (25 words):
 ```
-**After** (75 words):
-```yaml
-description: >-
-  Audit a SKILL.md and its bundled scripts for safety hazards — destructive
-  operations missing confirmation gates, excessive permissions, prompt injection
-  vectors, scope creep, and description-behavior mismatches. Use when a user
-  says "review this skill for safety", "is this skill safe to publish",
-  "check for destructive operations", or "audit before sharing". Use before
-  publishing to a shared registry, after importing from an untrusted source,
-  or when a skill performs consequential operations (file deletion, API calls,
-  deployments).
+Do not use for routing or output-quality evaluation (use
+skill-evaluation), structural anti-pattern detection (use
+skill-anti-patterns), or skills that are purely informational with
+no side effects.
+```
+**Compressed** (15 words):
+```
+Not for: routing/quality evaluation (skill-evaluation), anti-pattern
+detection (skill-anti-patterns), purely informational skills.
 ```
 
 #### skill-testing-harness
-**Current** (60 words):
-```yaml
-description: >-
-  Build trigger tests and behavior tests for a skill's evals/ directory.
-  Use when "create tests for this skill", "set up evals", "build a test
-  harness", a new skill needs test coverage, or a skill lacks an evals/
-  directory. Do not use for running existing tests (use skill-evaluation),
-  comparing skill variants (use skill-benchmarking), or updating tests that
-  already exist (edit directly).
+**Current negative routing** (22 words):
 ```
-**After** (38 words):
-```yaml
-description: >-
-  Build trigger tests and behavior tests for a skill's evals/ directory.
-  Use when "create tests for this skill", "set up evals", "build a test
-  harness", a new skill needs test coverage, or a skill lacks an evals/
-  directory.
+Do not use for running existing tests (use skill-evaluation),
+comparing skill variants (use skill-benchmarking), or updating tests
+that already exist (edit directly).
+```
+**Compressed** (13 words):
+```
+Not for: running existing tests (skill-evaluation), variant comparison
+(skill-benchmarking), updating existing tests.
 ```
 
 #### skill-trigger-optimization
-**Current** (79 words):
-```yaml
-description: >-
-  Fix skill routing by rewriting the description and trigger boundaries so the
-  right skill fires on the right inputs. Use when "this skill never fires",
-  "wrong skill fired", "fix the triggers", "why isn't this skill being used?",
-  or when a skill's description reads as vague marketing copy instead of routing
-  logic. Also use for batch-auditing descriptions before a library release.
-  Do not use for fixing output quality when routing is correct
-  (use skill-improver) or structural anti-pattern audits
-  (use skill-anti-patterns).
+**Current negative routing** (19 words):
 ```
-**After** (60 words):
-```yaml
-description: >-
-  Fix skill routing by rewriting the description and trigger boundaries so the
-  right skill fires on the right inputs. Use when "this skill never fires",
-  "wrong skill fired", "fix the triggers", "why isn't this skill being used?",
-  or when a skill's description reads as vague marketing copy instead of routing
-  logic. Also use for batch-auditing descriptions before a library release.
+Do not use for fixing output quality when routing is correct
+(use skill-improver) or structural anti-pattern audits
+(use skill-anti-patterns).
+```
+**Compressed** (12 words):
+```
+Not for: output quality fixes (skill-improver), anti-pattern audits
+(skill-anti-patterns).
 ```
 
 #### skill-variant-splitting
-**Current** (68 words):
-```yaml
-description: >-
-  Split a broad skill into focused variants along stack, platform, scope, or
-  domain axes. Use when "this skill does too much", "split this skill",
-  "create variants for X and Y", a skill has disjoint "For X" / "For Y"
-  sections, triggers on unrelated inputs, or has a conditional-branch-heavy
-  procedure. Do not use for porting a skill to a different context
-  (skill-adaptation), trigger-only fixes (skill-trigger-optimization), or
-  catalog-level reorganization (skill-catalog-curation).
+**Current negative routing** (19 words):
 ```
-**After** (49 words):
-```yaml
-description: >-
-  Split a broad skill into focused variants along stack, platform, scope, or
-  domain axes. Use when "this skill does too much", "split this skill",
-  "create variants for X and Y", a skill has disjoint "For X" / "For Y"
-  sections, triggers on unrelated inputs, or has a conditional-branch-heavy
-  procedure.
+Do not use for porting a skill to a different context
+(skill-adaptation), trigger-only fixes (skill-trigger-optimization),
+or catalog-level reorganization (skill-catalog-curation).
+```
+**Compressed** (12 words):
+```
+Not for: context porting (skill-adaptation), trigger-only fixes
+(skill-trigger-optimization), catalog reorganization
+(skill-catalog-curation).
 ```
 
-### Phase 1 Summary
+### Phase 1 Revised Summary
 
-| Skill | Before (words) | After (words) | Words removed |
-|-------|---------------|--------------|--------------|
-| skill-adaptation | 73 | 42 | 31 |
-| skill-anti-patterns | 76 | 50 | 26 |
-| skill-benchmarking | 67 | 48 | 19 |
-| skill-catalog-curation | 63 | 40 | 23 |
-| skill-creator | 88 | 53 | 35 |
-| skill-evaluation | 84 | 62 | 22 |
-| skill-improver | 80 | 39 | 41 |
-| skill-lifecycle-management | 72 | 50 | 22 |
-| skill-safety-review | 100 | 75 | 25 |
-| skill-testing-harness | 60 | 38 | 22 |
-| skill-trigger-optimization | 79 | 60 | 19 |
-| skill-variant-splitting | 68 | 49 | 19 |
-| **Total** | **910** | **606** | **304 (33% reduction)** |
+| Skill | Negative words before | Negative words after | Saved |
+|-------|----------------------|---------------------|-------|
+| skill-adaptation | 31 | 18 | 13 |
+| skill-anti-patterns | 26 | 18 | 8 |
+| skill-benchmarking | 19 | 11 | 8 |
+| skill-catalog-curation | 23 | 13 | 10 |
+| skill-creator | 35 | 17 | 18 |
+| skill-evaluation | 22 | 13 | 9 |
+| skill-improver | 41 | 19 | 22 |
+| skill-lifecycle-management | 22 | 13 | 9 |
+| skill-safety-review | 25 | 15 | 10 |
+| skill-testing-harness | 22 | 13 | 9 |
+| skill-trigger-optimization | 19 | 12 | 7 |
+| skill-variant-splitting | 19 | 12 | 7 |
+| **Total** | **304** | **174** | **130 (43% reduction)** |
 
-**No information is lost** — every "Do not use" routing statement already exists in the `# When NOT to use` section of each SKILL.md.
+All skill names preserved. All scenarios preserved. Just verbose prose compressed to terse format.
+Total description size: 910 → 780 words (14% reduction overall, vs 33% in the flawed original plan).
 
 ---
 
