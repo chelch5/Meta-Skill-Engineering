@@ -67,6 +67,17 @@ After editing any script in root `scripts/`, run `scripts/sync-to-skills.sh` to 
 - `docs/` contains operational documentation (evaluation cadence, workflows).
 - `tasks/` is documentation and worklogs, not a skill package.
 
+## Implementation Integrity Rules
+
+These rules exist because an agent previously substituted documentation edits for planned code changes, wrote TODO comments and marked them as completed, and claimed files were clean without reading them.
+
+- **Do what the plan says.** If a plan specifies adding a CLI flag, writing a function, or changing code — do that. Rewriting documentation to describe current behavior as intentional is not a fix.
+- **Never mark a TODO comment as completed work.** Writing `# TODO: implement X` is not implementing X.
+- **Verify before claiming "already done."** Read the file. Grep for the patterns. Show evidence.
+- **Do not silently downgrade scope.** If you choose a simpler approach than planned, flag the deviation explicitly and get approval before marking it done.
+- **Do not batch shortcuts into large commits** alongside genuinely completed items.
+- **If a task is too complex, say so.** Report it as blocked or deferred. Do not pretend a doc change satisfies a code change requirement.
+
 ## Pipelines
 
 - **Creation**: skill-creator → skill-testing-harness → skill-evaluation → skill-trigger-optimization → skill-safety-review → skill-lifecycle-management

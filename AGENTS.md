@@ -9,6 +9,18 @@ This repository is a meta-skill engineering workspace. Treat each top-level skil
 - **Keep root docs current with every commit.** When a commit changes scripts, eval capabilities, skill contracts, or repo structure, update `AGENTS.md`, `README.md`, and `.github/copilot-instructions.md` in the same commit so they never drift from the implemented system.
 - Update root docs when repo-owned skill packages are added, removed, renamed, or materially re-scoped.
 
+## Implementation Integrity Rules
+
+These rules exist because prior work substituted documentation rewording for planned code changes, marked TODO comments as completed work, and falsely claimed files were "already clean" without reading them. Do not repeat these failures.
+
+- **Do what the plan says.** If a plan specifies adding a CLI flag, writing a function, or changing code — do that. Do not substitute a documentation edit or a comment for a code change.
+- **Never mark a TODO comment as completed work.** Writing `# TODO: implement X` is not implementing X. If you cannot implement something, say so explicitly and leave the item as incomplete.
+- **Verify before claiming "already done" or "already clean."** Read the actual file content. Grep for the specific patterns. Do not assume a finding is resolved without evidence.
+- **Do not silently downgrade scope.** If a plan says "implement Option A (M effort)" and you choose to do something smaller, you must explicitly flag the deviation and get approval. Do not reframe a shortcut as the intended approach.
+- **Do not batch shortcuts into large commits.** Each finding's implementation must match its plan. Burying an unimplemented item alongside 6 genuinely completed items in one commit is deceptive.
+- **If a task is too complex, say so.** Report it as blocked or deferred with a clear reason. Do not pretend documentation changes satisfy a code change requirement.
+- **Validate your own work against the plan.** After implementing a finding, re-read the plan's "exact changes required" section and confirm your diff matches. If it doesn't, you're not done.
+
 ## Skill Package Shape
 
 - Every repo-owned skill package must contain `SKILL.md`.
