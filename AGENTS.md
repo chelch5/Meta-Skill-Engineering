@@ -93,3 +93,8 @@ skill-catalog-curation → skill-lifecycle-management
 - `skill creator/` is archived source material from the pre-consolidation state.
 - `tasks/` is documentation, worklogs, and reviews — not a skill package.
 - `scripts/` contains automation scripts for running evals and orchestration.
+
+## Copilot CLI Integration
+
+- `.github/copilot-instructions.md` provides project-level instructions for Copilot CLI sessions.
+- `.github/extensions/meta-skill-tools/` provides validation tools (`mse_validate_skill`, `mse_validate_all`, `mse_lint_skill`, `mse_check_preservation`) and an auto-validation hook that runs after SKILL.md edits.
