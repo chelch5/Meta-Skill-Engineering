@@ -307,3 +307,47 @@ Work done after Round 2 completion:
 - **Script distribution model** (`e924c5d`): Created `sync-to-skills.sh` with manifest. Root `scripts/` = source-of-truth dev copies, per-skill `scripts/` = deployed copies. 19 scripts distributed to 8 skills. All 7 relevant SKILL.md procedures updated with concrete script references.
 - **Eval-results loop** (`7718929`): Closed the write-only gap. `skill-evaluation` now produces structured Handoff blocks. `skill-improver` reads `eval-results/` in Phase 1 and uses eval-driven diagnosis in Phase 2.
 - **Corpus expansion**: Added 2 strong skills (comprehensive-failure-handling, branching-procedure) and 1 adversarial skill (scope-explosion) to reach 5/5/5 parity.
+
+## Round 3: 47-Finding Deep Review Implementation
+
+A comprehensive 9-annex review (`tasks/reviews/2026-03-20-meta-skill-engineering/`) produced 47 findings consolidated into `implementation.md`. All findings were validated against the codebase, planned, and implemented across 8 commits in 4 waves.
+
+### Wave Summary
+
+| Wave | Priority | Findings | Commits |
+|------|----------|----------|---------|
+| 1 | Critical | F-011, F-019, F-027, F-031 | `b5030e9` |
+| 2a | High | F-001, F-002, F-008, F-025, F-026, F-028 | `4bf724e` |
+| 2b | High | F-007, F-009, F-010, F-012, F-020, F-029, F-033 | `90c8f87` |
+| 3a | Medium | F-003/004/005, F-013, F-015, F-030, F-032, F-037, F-047 | `72002b1` |
+| 3b | Medium/Low | F-017, F-018, F-023, F-035, F-039, F-040, F-041, F-043, F-044, F-045, F-046 | `ac45e7e` |
+| 3c | Medium/Low | F-004/005, F-014, F-021, F-022, F-034, F-038, F-042 | `83a98ff` |
+| 3d | Medium | F-006, F-036 | `1c08961` |
+| Docs | Polish | R2/D6 docs refresh | `a7fae4d` |
+
+### Key Outcomes
+
+- **All 12 skills validate 10/10** structural score (0 errors, 0 warnings)
+- **Regression suite 3/3 PASS** (was 0/3 with 100% skip rate pre-fix)
+- **All 12 skills have usefulness_criteria** in behavior.jsonl (was 4/12)
+- **All 8 scripts portable** with AGENTS.md-based repo root auto-detection
+- **Metric naming standardized** to pos_trigger_rate/neg_reject_rate (was precision/recall)
+- **3 skills fully rewritten** (catalog-curation, lifecycle-management, benchmarking) to use observable signals instead of phantom artifacts
+- **harvest_failures.py** correctly extracts structured data (was losing all data due to regex mismatch)
+- **check_preservation.py** detects # and ## heading changes (was missing all top-level sections)
+- **Trap safety** in trigger optimization (restores backup on interrupt)
+- **4 root docs** (README, AGENTS.md, copilot-instructions.md, evaluation-cadence.md) fully synchronized
+
+### Disposition
+
+| Status | Count | Details |
+|--------|-------|---------|
+| Implemented | 43 | All valid findings addressed |
+| Invalid | 1 | F-016 (false premise — skill-adaptation doesn't claim to modify) |
+| By design | 1 | F-024 (strict mode is intentionally all-or-nothing per CLI constraint) |
+| Already clean | 1 | F-046 (schemas.md verified — no stale content) |
+| N/A (resolved by other) | 1 | F-041 (resolved by F-009 rewrite eliminating vocabulary conflict) |
+
+### Status: ✅ Complete
+
+All planned work from Rounds 1, 2, and 3 is complete. The `implementation.md` file contains the full detailed plan with citations. See `tasks/reviews/2026-03-20-meta-skill-engineering/` for the original review annexes.
