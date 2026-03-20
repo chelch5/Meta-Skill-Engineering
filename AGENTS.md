@@ -44,6 +44,11 @@ evals/
 {"prompt": "...", "expected_sections": ["..."], "required_patterns": ["..."], "forbidden_patterns": ["..."], "min_output_lines": 15, "notes": "..."}
 ```
 
+Optional usefulness evaluation fields (for `--usefulness` mode):
+```json
+{"prompt": "...", "expected_sections": ["..."], "required_patterns": ["..."], "forbidden_patterns": ["..."], "min_output_lines": 15, "notes": "...", "usefulness_criteria": "What 'good' looks like for this case", "usefulness_dimensions": ["correctness", "completeness", "actionability", "conciseness"], "usefulness_threshold": 3}
+```
+
 No other eval formats are active. Do not use `evals.json`, `output-tests.jsonl`, `triggers.yaml`, `outputs.yaml`, or `baselines.yaml`.
 
 ## SKILL.md Structure
@@ -102,7 +107,7 @@ The eval system uses Copilot CLI (`copilot -p`) with structured JSON output for 
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/run-evals.sh` | Trigger and behavior tests with pass/fail gates (`--observe`/`--strict` routing, `--runs N` majority voting) |
+| `scripts/run-evals.sh` | Trigger and behavior tests with pass/fail gates (`--observe`/`--strict` routing, `--runs N` majority voting, `--usefulness` LLM-as-Judge scoring) |
 | `scripts/run-trigger-optimization.sh` | Automated trigger optimization with 60/40 train/test split and held-out validation |
 | `scripts/validate-skills.sh` | Structural compliance check for all 12 skills |
 | `scripts/run-full-cycle.sh` | Full 5-step evaluation cadence |

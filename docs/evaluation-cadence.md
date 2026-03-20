@@ -62,6 +62,7 @@ Runs JSONL test cases from each skill's `evals/` directory:
 - **Trigger-positive tests** (`trigger-positive.jsonl`): Prompts that *should* activate the skill. Measures precision.
 - **Trigger-negative tests** (`trigger-negative.jsonl`): Prompts that should *not* activate the skill. Measures recall (true negative rate).
 - **Behavior tests** (`behavior.jsonl`): Prompts that test output format compliance — required patterns, forbidden patterns, minimum output length.
+- **Usefulness evaluation** (opt-in, `--usefulness`): LLM-as-Judge scoring of behavior test outputs across four dimensions (correctness, completeness, actionability, conciseness). Requires `usefulness_criteria` field in behavior.jsonl entries.
 
 **Routing detection modes** control how trigger tests determine whether a skill was activated:
 
@@ -75,6 +76,13 @@ The default **observe** mode detects whether the model actually opened the skill
 **Multi-run variance reduction:** Use `--runs N` to run each prompt N times and decide pass/fail by majority vote. Recommended: `--runs 3` for reliable results. Multiplies API calls by N.
 
 **Environment variables:** `EVAL_MODEL` (model, default gpt-4.1), `EVAL_TIMEOUT` (seconds), `EVAL_ROUTING` (observe|strict), `EVAL_RUNS` (runs per prompt), `EVAL_REASONING_EFFORT` (low|medium|high, omit for model default).
+
+**Usefulness evaluation:** Use `--usefulness` to enable LLM-as-Judge scoring on behavior tests that have a `usefulness_criteria` field. A second LLM call rates the output on correctness, completeness, actionability, and conciseness (1–5 scale). Configure with: `USEFULNESS_MODEL` (judge model, defaults to EVAL_MODEL — use a different model to avoid self-evaluation bias), `USEFULNESS_THRESHOLD` (minimum score, default 3), `USEFULNESS_TIMEOUT` (seconds, default 45), `USEFULNESS_RUNS` (judge runs per case for median voting, default 1).
+
+```bash
+./scripts/run-evals.sh --usefulness --all                              # With usefulness scoring
+USEFULNESS_MODEL=claude-sonnet-4-20250514 ./scripts/run-evals.sh --usefulness skill-creator  # Different judge model
+```
 
 After running all tests for a skill, the script evaluates pass/fail gates and appends a verdict to the report.
 
@@ -134,8 +142,9 @@ Each per-skill evaluation report includes a gates section with four checks:
 | Trigger recall | ≥ 80% | Negative trigger test pass rate — does the skill stay quiet when it shouldn't activate? |
 | Behavior pass rate | ≥ 80% | Behavior test pass rate — does the output match expected patterns and length? |
 | Structural validity | valid = true | `check_skill_structure.py` result — does SKILL.md have frontmatter and all required sections? |
+| Usefulness (opt-in) | ≥ 3/5 | LLM-as-Judge average score across scored behavior cases. Only active with `--usefulness`. |
 
-A skill passes only if **all four gates** pass. The overall cycle passes only if every skill passes its gates and every step exits cleanly.
+A skill passes only if **all four gates** pass (five gates when `--usefulness` is enabled). The overall cycle passes only if every skill passes its gates and every step exits cleanly.
 
 ## After a Failure
 

@@ -100,6 +100,7 @@ The eval system uses Copilot CLI (`copilot -p`) to test skills with real model r
 **Key capabilities:**
 - **Observe routing** (default): parses JSON output to detect whether the model actually read a SKILL.md
 - **Multi-run voting**: `--runs N` runs each prompt N times with majority-vote pass/fail
+- **Usefulness evaluation** (opt-in): `--usefulness` enables LLM-as-Judge scoring of behavior test outputs on correctness, completeness, actionability, and conciseness (1–5 scale)
 - **Default model**: `gpt-4.1` (override with `EVAL_MODEL`)
 - **Trigger optimization**: 60/40 train/test split, LLM-proposed improvements, held-out validation
 

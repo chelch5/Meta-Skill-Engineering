@@ -28,6 +28,8 @@ Each skill has an `evals/` directory with exactly these JSONL files:
 - `trigger-negative.jsonl` — `{"prompt": "...", "expected": "no_trigger", "category": "anti-match|adjacent|out-of-scope", "notes": "..."}`
 - `behavior.jsonl` — `{"prompt": "...", "expected_sections": [...], "required_patterns": [...], "forbidden_patterns": [...], "min_output_lines": 15, "notes": "..."}`
 
+Optional usefulness fields for `--usefulness` mode: `"usefulness_criteria": "...", "usefulness_dimensions": [...], "usefulness_threshold": N`
+
 No other eval formats are active. Do not use `evals.json`, `output-tests.jsonl`, `triggers.yaml`, `outputs.yaml`, or `baselines.yaml`.
 
 ## Available Scripts
@@ -35,7 +37,7 @@ No other eval formats are active. Do not use `evals.json`, `output-tests.jsonl`,
 | Script | Purpose |
 |--------|---------|
 | `scripts/validate-skills.sh` | Validate all 12 skills for structural compliance |
-| `scripts/run-evals.sh` | Run trigger and behavior tests; `--observe`/`--strict` routing, `--runs N` for majority voting (requires `copilot` CLI + `jq`) |
+| `scripts/run-evals.sh` | Run trigger and behavior tests; `--observe`/`--strict` routing, `--runs N` for majority voting, `--usefulness` for LLM-as-Judge scoring (requires `copilot` CLI + `jq`) |
 | `scripts/run-trigger-optimization.sh` | Automated trigger optimization with 60/40 train/test split and held-out validation |
 | `scripts/run-full-cycle.sh` | Full 5-step evaluation cadence |
 | `scripts/run-baseline-comparison.sh` | Before/after comparison with gates |

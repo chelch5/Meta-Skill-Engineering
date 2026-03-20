@@ -3,9 +3,13 @@
 #
 # Usage:
 #   ./scripts/run-baseline-comparison.sh <original-skill.md> <modified-skill.md>
+#   ./scripts/run-baseline-comparison.sh --usefulness <original-skill.md> <modified-skill.md>
 #
 # Produces a comparison report showing what changed, what was preserved,
 # and whether the modification passed quality gates.
+#
+# Options:
+#   --usefulness  Enable LLM-as-Judge usefulness scoring for eval comparison
 #
 # Requires: python3, jq
 
@@ -20,17 +24,39 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 usage() {
-  echo "Usage: $0 <original-skill.md> <modified-skill.md>"
+  echo "Usage: $0 [--usefulness] <original-skill.md> <modified-skill.md>"
   echo ""
   echo "Compares a skill before and after a meta-skill operation."
   echo "Outputs a markdown comparison report to stdout."
+  echo ""
+  echo "Options:"
+  echo "  --usefulness  Pass --usefulness to run-evals.sh for LLM-based quality scoring"
   exit 1
 }
 
-[[ $# -lt 2 ]] && usage
+# Parse options
+USEFULNESS_FLAG=""
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --usefulness)
+      USEFULNESS_FLAG="--usefulness"
+      shift
+      ;;
+    --help|-h)
+      usage
+      ;;
+    *)
+      POSITIONAL+=("$1")
+      shift
+      ;;
+  esac
+done
 
-ORIGINAL="$1"
-MODIFIED="$2"
+[[ ${#POSITIONAL[@]} -lt 2 ]] && usage
+
+ORIGINAL="${POSITIONAL[0]}"
+MODIFIED="${POSITIONAL[1]}"
 
 if [[ ! -f "$ORIGINAL" ]]; then
   echo "Error: original file not found: ${ORIGINAL}" >&2
@@ -115,7 +141,7 @@ if [[ "$skill_name" != "unknown" && -d "${skill_dir}/evals" && -f "$EVAL_SCRIPT"
 
   # Run evals with the original SKILL.md
   cp "$ORIGINAL" "${EVAL_TMPBASE}/SKILL.md"
-  if EVAL_ORIG_OUTPUT="$("$EVAL_SCRIPT" --json "$eval_skill_basename" 2>&1)"; then
+  if EVAL_ORIG_OUTPUT="$("$EVAL_SCRIPT" --json $USEFULNESS_FLAG "$eval_skill_basename" 2>&1)"; then
     EVAL_ORIG_EXIT=0
   else
     EVAL_ORIG_EXIT=$?
@@ -123,7 +149,7 @@ if [[ "$skill_name" != "unknown" && -d "${skill_dir}/evals" && -f "$EVAL_SCRIPT"
 
   # Run evals with the modified SKILL.md
   cp "$MODIFIED" "${EVAL_TMPBASE}/SKILL.md"
-  if EVAL_MOD_OUTPUT="$("$EVAL_SCRIPT" --json "$eval_skill_basename" 2>&1)"; then
+  if EVAL_MOD_OUTPUT="$("$EVAL_SCRIPT" --json $USEFULNESS_FLAG "$eval_skill_basename" 2>&1)"; then
     EVAL_MOD_EXIT=0
   else
     EVAL_MOD_EXIT=$?
@@ -275,6 +301,10 @@ EVALEOF
   elif [[ "$EVAL_ORIG_EXIT" -ne 0 && "$EVAL_MOD_EXIT" -eq 0 ]]; then
     echo ""
     echo "> 🟢 **Eval improvement**: modified SKILL.md now passes the eval suite."
+  fi
+  if [[ -n "$USEFULNESS_FLAG" ]]; then
+    echo ""
+    echo "> 🔍 **Usefulness evaluation**: enabled via \`--usefulness\`. Check per-skill eval reports in \`eval-results/\` for detailed usefulness scores."
   fi
 else
   cat <<EVALEOF
