@@ -27,6 +27,12 @@ For full field schemas, see AGENTS.md or `skill-testing-harness`.
 
 ---
 
+# Future / Optional Artifacts
+
+> **These schemas are NOT part of the current active eval system.** The active system uses only the three JSONL files above (`trigger-positive.jsonl`, `trigger-negative.jsonl`, `behavior.jsonl`). The schemas below are retained for potential future use (e.g., automated improvement loops, benchmarking dashboards). Do not generate these artifacts unless explicitly building one of these future capabilities — the eval runner (`run-evals.sh`) will not consume them.
+
+---
+
 ## history.json
 
 Tracks version progression in Improve mode. Located at workspace root.
