@@ -50,7 +50,6 @@ graph TB
         CP[check_preservation.py]
         HF[harvest_failures.py]
         IEF[init_eval_files.py]
-        QV["quick_validate.py<br/>⚠️ X-1: STALE — contradicts<br/>frontmatter rules"]
     end
 
     subgraph corpus["🧪 Test Corpus (5/5/5 + 3)"]
@@ -324,7 +323,6 @@ flowchart TB
         VS["validate-skills.sh<br/>All 12 skills at once"]
         CSS["check_skill_structure.py<br/>10-point scorer, single skill"]
         SL["skill_lint.py<br/>Format linter"]
-        QV["quick_validate.py<br/>⚠️ X-1: STALE<br/>Allows license, allowed-tools,<br/>metadata, compatibility<br/>in frontmatter"]
     end
 
     subgraph trigger["Layer 2: Trigger Testing (LLM)"]
@@ -634,8 +632,8 @@ All issues from the review report, mapped to the components they affect.
 
 ```mermaid
 graph TB
-    subgraph critical["🔴 CRITICAL"]
-        X1["X-1: quick_validate.py<br/>allows 4 extra frontmatter fields<br/>(license, allowed-tools, metadata,<br/>compatibility) that all other<br/>tools reject.<br/>📍 scripts/quick_validate.py:42"]
+    subgraph critical["🔴 CRITICAL (RESOLVED)"]
+        X1["X-1: quick_validate.py — REMOVED<br/>(was allowing 4 extra frontmatter fields)"]
     end
 
     subgraph significant["🟡 SIGNIFICANT"]

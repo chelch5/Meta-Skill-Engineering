@@ -5,6 +5,9 @@
 # previous failure. This script verifies that previously-fixed issues
 # stay fixed.
 #
+# Test cases use inline excerpts (original_excerpt / modified_excerpt)
+# or file paths (original / modified). The runner handles both.
+#
 # Usage:
 #   ./scripts/run-regression-suite.sh
 #
@@ -15,6 +18,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 REGRESSION_DIR="${REPO_ROOT}/corpus/regression"
 SCRIPTS_DIR="${REPO_ROOT}/scripts"
+TMPDIR=$(mktemp -d)
+trap 'rm -rf "$TMPDIR"' EXIT
 
 total=0
 pass=0
@@ -38,7 +43,8 @@ for case_file in "$REGRESSION_DIR"/*.json; do
 
     case_id=$(jq -r '.id' "$case_file")
     case_type=$(jq -r '.type' "$case_file")
-    skill=$(jq -r '.skill' "$case_file")
+    skill=$(jq -r '.skill // "unknown"' "$case_file")
+    expected_result=$(jq -r '.expected_result // "FAIL"' "$case_file")
 
     case "$case_type" in
         trigger_failure)
@@ -49,32 +55,80 @@ for case_file in "$REGRESSION_DIR"/*.json; do
             ;;
 
         structural_failure)
-            skill_dir="${REPO_ROOT}/${skill}"
-            if [[ ! -d "$skill_dir" ]]; then
-                echo "  ⚠️  [${case_id}] skill directory not found: ${skill}"
-                skip=$((skip + 1))
-                continue
-            fi
+            # Check that cross-references in modified_excerpt point to valid skills
+            modified_excerpt=$(jq -r '.modified_excerpt // ""' "$case_file")
 
-            if python3 "${SCRIPTS_DIR}/skill_lint.py" "$skill_dir" >/dev/null 2>&1; then
-                echo "  ✅ [${case_id}] structural check passed"
-                pass=$((pass + 1))
+            if [[ -z "$modified_excerpt" ]]; then
+                # Fall back to skill directory structural check
+                if [[ "$skill" == "unknown" ]] || [[ "$skill" == "null" ]]; then
+                    echo "  ⚠️  [${case_id}] no .skill field or .modified_excerpt — cannot validate"
+                    skip=$((skip + 1))
+                    continue
+                fi
+                skill_dir="${REPO_ROOT}/${skill}"
+                if [[ ! -d "$skill_dir" ]]; then
+                    echo "  ⚠️  [${case_id}] skill directory not found: ${skill}"
+                    skip=$((skip + 1))
+                    continue
+                fi
+                if python3 "${SCRIPTS_DIR}/skill_lint.py" "$skill_dir" >/dev/null 2>&1; then
+                    echo "  ✅ [${case_id}] structural check passed"
+                    pass=$((pass + 1))
+                else
+                    echo "  ❌ [${case_id}] structural check FAILED"
+                    fail=$((fail + 1))
+                    errors+=("${case_id}: structural check failed for ${skill}")
+                fi
             else
-                echo "  ❌ [${case_id}] structural check FAILED"
-                fail=$((fail + 1))
-                errors+=("${case_id}: structural check failed for ${skill}")
+                # Extract cross-referenced skill names (→ skill-name pattern)
+                invalid_refs=()
+                while IFS= read -r ref; do
+                    [[ -z "$ref" ]] && continue
+                    if [[ ! -d "${REPO_ROOT}/${ref}" ]]; then
+                        invalid_refs+=("$ref")
+                    fi
+                done < <(echo "$modified_excerpt" | grep -oP '→\s*\K[a-z][-a-z0-9]*' || true)
+
+                if [[ ${#invalid_refs[@]} -gt 0 ]]; then
+                    detected="FAIL"
+                else
+                    detected="PASS"
+                fi
+
+                if [[ "$detected" == "$expected_result" ]]; then
+                    echo "  ✅ [${case_id}] correctly detected: ${#invalid_refs[@]} invalid ref(s)"
+                    pass=$((pass + 1))
+                else
+                    echo "  ❌ [${case_id}] expected ${expected_result} but got ${detected}"
+                    fail=$((fail + 1))
+                    errors+=("${case_id}: expected ${expected_result}, got ${detected}")
+                fi
             fi
             ;;
 
         preservation_failure)
+            # Try file paths first, fall back to inline excerpts
             original=$(jq -r '.original // ""' "$case_file")
             modified=$(jq -r '.modified // ""' "$case_file")
-            check_name=$(jq -r '.check // ""' "$case_file")
+            check_name=$(jq -r '.check // .check_type // ""' "$case_file")
 
             if [[ -z "$original" ]] || [[ -z "$modified" ]]; then
-                echo "  ⚠️  [${case_id}] missing original/modified paths"
-                skip=$((skip + 1))
-                continue
+                original_excerpt=$(jq -r '.original_excerpt // ""' "$case_file")
+                modified_excerpt=$(jq -r '.modified_excerpt // ""' "$case_file")
+
+                if [[ -z "$original_excerpt" ]] || [[ -z "$modified_excerpt" ]]; then
+                    echo "  ⚠️  [${case_id}] missing original/modified data"
+                    skip=$((skip + 1))
+                    continue
+                fi
+
+                # Write excerpts to temp files for check_preservation.py
+                orig_tmp="$TMPDIR/original_${case_id}.md"
+                mod_tmp="$TMPDIR/modified_${case_id}.md"
+                printf '%b' "$original_excerpt" > "$orig_tmp"
+                printf '%b' "$modified_excerpt" > "$mod_tmp"
+                original="$orig_tmp"
+                modified="$mod_tmp"
             fi
 
             if [[ ! -f "$original" ]] || [[ ! -f "$modified" ]]; then
@@ -86,16 +140,24 @@ for case_file in "$REGRESSION_DIR"/*.json; do
             output=$(python3 "${SCRIPTS_DIR}/check_preservation.py" "$original" "$modified" 2>&1) || true
             preserved=$(echo "$output" | python3 -c "import sys,json; d=json.load(sys.stdin); print('true' if d.get('preserved') else 'false')" 2>/dev/null || echo "error")
 
+            # Determine detected result
             if [[ "$preserved" == "true" ]]; then
-                echo "  ✅ [${case_id}] preservation check passed"
-                pass=$((pass + 1))
+                detected="PASS"
             elif [[ "$preserved" == "false" ]]; then
-                echo "  ❌ [${case_id}] preservation check FAILED"
-                fail=$((fail + 1))
-                errors+=("${case_id}: preservation check failed")
+                detected="FAIL"
             else
                 echo "  ⚠️  [${case_id}] preservation check error"
                 skip=$((skip + 1))
+                continue
+            fi
+
+            if [[ "$detected" == "$expected_result" ]]; then
+                echo "  ✅ [${case_id}] preservation correctly detected (${check_name})"
+                pass=$((pass + 1))
+            else
+                echo "  ❌ [${case_id}] expected ${expected_result} but got ${detected}"
+                fail=$((fail + 1))
+                errors+=("${case_id}: preservation expected ${expected_result}, got ${detected}")
             fi
             ;;
 

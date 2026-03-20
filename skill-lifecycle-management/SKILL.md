@@ -95,12 +95,12 @@ Do NOT add lifecycle metadata to YAML frontmatter — the repo contract limits f
 
 Confirm with user before moving:
 ```
-About to move skill-name/ to ARCHIVE/skill-name/. Proceed? [y/N]
+About to move skill-name/ to archive/skill-name/. Proceed? [y/N]
 ```
 
 ```bash
-mkdir -p ARCHIVE
-mv skill-name/ ARCHIVE/skill-name/
+mkdir -p archive
+mv skill-name/ archive/skill-name/
 ```
 Do NOT delete — preserve for reference and provenance.
 
