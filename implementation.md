@@ -448,3 +448,157 @@ All three exist in `archive/` but not in the active inventory. The runner doesn'
 1. **F-002 decision:** Should the trigger-negative contract adopt `better_skill` (matching all 96 existing entries) or should all files be migrated to `category`? Recommendation: adopt `better_skill`.
 2. **F-010 decision:** Should the repo create a lifecycle tracking mechanism, or should skill-lifecycle-management work without persistent state? Recommendation: work without persistent state.
 3. **F-018 decision:** Should skill-variant-splitting produce draft packages or only a split plan? Recommendation: split plan only, with explicit handoff to skill-creator.
+
+---
+
+# Annex C: Archive, Corpus, And Flow Matrix — Validation
+
+**Source:** `tasks/reviews/2026-03-20-meta-skill-engineering/2.md`
+**Validated:** 2026-03-20
+**Summary:** 15 raw findings (2 archive, 3 corpus, 10 flow-matrix edges) — 5 new valid, 6 already logged, 4 valid-but-by-design. Top risks: corpus Layer 2 gap, broken safety→lifecycle pipeline edge.
+
+---
+
+### Already-Logged Findings (cross-reference to Task 1)
+
+| Review finding | Status | Task 1 ref | Rationale |
+|---|---|---|---|
+| Archive-1: Manifest concepts bleed into active inventory | Already logged | **F-008** | Identical finding: skill-improver references manifests at 6 locations |
+| Archive-2: Archived skills in active boundary tests | Already logged | **F-014** | Identical finding: skill-packaging (4 files), skill-provenance (1), skill-installer (1) |
+| Creation: skill-creator → skill-testing-harness Partial | Already logged | **F-001** | Stale eval schema is the root cause |
+| Creation: skill-testing-harness → skill-evaluation Partial | Already logged | **F-001** | Same root cause: stale fields make handoff unreliable |
+| Creation: skill-evaluation → skill-improver Broken | Already logged | **F-007** | Handoff section not emitted by runner |
+| Library: skill-catalog-curation → skill-lifecycle-management Broken | Already logged | **F-009, F-010** | Both skills depend on nonexistent state artifacts |
+
+---
+
+## F-020 Corpus Layer 2 Evaluation Is Manual-Only — **Valid (High)**
+
+**Review claims:** The automated corpus evaluation only implements Layer 1 (structural scoring). Layer 2 (before/after quality comparison after meta-skill acts) is documented as manual follow-up only.
+
+**Why:** Confirmed. `scripts/run-corpus-eval.sh:4-5` explicitly labels the two layers: "Layer 1: Did the meta-skill produce valid output? (structural checks)" and "Layer 2: Does the rewritten skill perform better? (eval comparison)". Lines 188-194 show Layer 2 is a comment block with manual instructions: "To complete the eval loop manually: 1. Run the meta-skill on working.md, 2. Run run-baseline-comparison.sh". `docs/evaluation-cadence.md:113` confirms: "Layer 2 (manual) compares before/after meta-skill output using run-baseline-comparison.sh."
+
+This is the core corpus evaluation gap: the system can check whether corpus fixtures are valid skills, but cannot automatically verify whether a meta-skill actually _improved_ them.
+
+**Blast radius:** scripts/run-corpus-eval.sh, scripts/run-full-cycle.sh (inherits the gap), the corpus evaluation system as a whole.
+
+**Plan:**
+1. Add a `--layer2` flag to `scripts/run-corpus-eval.sh` that automates the manual steps: invokes the meta-skill via `copilot -p` on each corpus fixture, then runs `run-baseline-comparison.sh` on original vs modified.
+2. Gate on `copilot` CLI availability — skip Layer 2 with a warning if not installed.
+3. Record Layer 2 results alongside Layer 1 in `eval-results/corpus/`.
+4. Update `docs/evaluation-cadence.md:113` to document the automated path.
+5. Update `scripts/run-full-cycle.sh` to pass `--layer2` when available.
+
+**Risks:** Layer 2 requires `copilot` CLI and is slow (LLM invocations per corpus fixture). Make it opt-in only. Rollback: `git checkout scripts/run-corpus-eval.sh`.
+**Effort:** M (3–5 hours)
+
+**Citations:** `scripts/run-corpus-eval.sh:4-5,188-194`; `docs/evaluation-cadence.md:106-113`; `scripts/run-full-cycle.sh:128-132`
+
+---
+
+## F-021 Regression Harvesting Limited to Trigger Failures — **Valid (Medium)**
+
+**Review claims:** Automatic harvesting does not reliably convert trigger failures into replayable protection.
+
+**Why:** Confirmed. `scripts/harvest_failures.py:31-35` uses regex to parse FAIL lines into `trigger_failure` records. `scripts/run-regression-suite.sh:43-47` then encounters these records but _skips_ them: "trigger_failure — logged for next eval run" with `skip=$((skip + 1))`. Only `structural_failure` cases (lines 50-59) are actually re-validated via `skill_lint.py`. So the harvest→regression loop works for structural issues but is a no-op for the most common failure type (trigger routing).
+
+**Blast radius:** scripts/harvest_failures.py, scripts/run-regression-suite.sh, corpus/regression/.
+
+**Plan:**
+1. Add trigger-failure replay to `scripts/run-regression-suite.sh`: for `trigger_failure` cases, invoke `copilot -p` with the prompt and check whether the skill file was read (same routing detection as `run-evals.sh`).
+2. Gate on `copilot` CLI availability — skip with warning if not installed.
+3. Update harvest_failures.py to also capture behavior failures (currently only trigger failures).
+4. Update corpus/README.md to document the expanded regression types.
+
+**Risks:** Requires `copilot` CLI for trigger replay. Rollback: `git checkout scripts/run-regression-suite.sh`.
+**Effort:** S (2–3 hours)
+
+**Citations:** `scripts/harvest_failures.py:31-35,42`; `scripts/run-regression-suite.sh:43-49,50-59`
+
+---
+
+## F-022 Full-Cycle Corpus Eval Limited to 2 Meta-Skills — **Valid (Medium)**
+
+**Review claims:** run-full-cycle.sh only runs corpus evaluation for skill-improver and skill-anti-patterns, even though the corpus README says it tests more meta-skills.
+
+**Why:** Confirmed. `scripts/run-full-cycle.sh:128` hardcodes: `for meta_skill in skill-improver skill-anti-patterns; do`. Meanwhile, `corpus/README.md:4-5` names four meta-skills: "skill-improver, skill-evaluation, skill-anti-patterns, skill-safety-review, and others". The corpus is designed to test whether meta-skills detect/repair issues, so `skill-evaluation` and `skill-safety-review` are logical candidates that are documented but not included in the automation.
+
+**Blast radius:** scripts/run-full-cycle.sh, corpus evaluation coverage.
+
+**Plan:**
+1. Expand the meta-skill list in `scripts/run-full-cycle.sh:128` to include `skill-evaluation` and `skill-safety-review`.
+2. Verify that `run-corpus-eval.sh` can handle these skills (it should, since Layer 1 is skill-agnostic structural scoring).
+3. Optionally add `skill-creator` (test whether it can assess corpus fixtures).
+
+**Risks:** More skills = longer full-cycle runtime. Rollback: revert line 128.
+**Effort:** XS (< 30 min)
+
+**Citations:** `scripts/run-full-cycle.sh:128-132`; `corpus/README.md:4-6`
+
+---
+
+## F-023 skill-safety-review → skill-lifecycle-management Pipeline Edge Broken — **Valid (Medium)**
+
+**Review claims:** The creation pipeline claims skill-safety-review → skill-lifecycle-management, but skill-safety-review doesn't hand off there and lifecycle-management lacks its expected state targets.
+
+**Why:** Confirmed. `README.md` documents the creation pipeline as `...skill-safety-review → skill-lifecycle-management`. But `skill-safety-review/SKILL.md:120-123` only lists `skill-improver` in its Next steps — it never mentions `skill-lifecycle-management`. This means the documented pipeline edge has no implementation: the upstream skill doesn't reference the downstream, and the downstream (per F-010) lacks the state artifacts it would need anyway.
+
+**Blast radius:** README.md pipeline documentation, skill-safety-review Next steps, skill-lifecycle-management.
+
+**Plan:**
+1. Add `skill-lifecycle-management` to `skill-safety-review/SKILL.md` Next steps: "If approved for promotion → `skill-lifecycle-management`".
+2. This depends on F-010 being resolved first (lifecycle-management needs to work without persistent state artifacts).
+3. Update README.md if the pipeline edge is intentionally removed instead.
+
+**Risks:** Adding a Next steps entry to a broken downstream is misleading until F-010 is fixed. Sequence: fix F-010 first. Rollback: `git checkout skill-safety-review/SKILL.md`.
+**Effort:** XS (< 15 min, but blocked on F-010)
+
+**Citations:** `README.md:20-24`; `skill-safety-review/SKILL.md:120-123`; `skill-lifecycle-management/SKILL.md:47-58,107-111`
+
+---
+
+## F-024 Manual Pipeline Edges Lack Structured Handoffs — **Valid (Low)**
+
+**Review claims:** Five pipeline edges (skill-evaluation → skill-trigger-optimization, skill-trigger-optimization → skill-safety-review, skill-evaluation → skill-anti-patterns, skill-anti-patterns → skill-improver, skill-improver → skill-trigger-optimization) are human-mediated with no machine-readable handoff artifact.
+
+**Why:** Confirmed as factually accurate, but this is largely by-design. Each of these edges follows the pattern: Skill A produces a human-readable report, human reads it, decides which Skill B to invoke next. The Next steps sections in each skill correctly name the downstream targets:
+- `skill-evaluation/SKILL.md:163`: "If routing fails → skill-trigger-optimization"
+- `skill-anti-patterns/SKILL.md:172`: "Fix found issues → skill-improver"
+- `skill-improver/SKILL.md:328-330`: "Verify → skill-evaluation, Optimize triggers → skill-trigger-optimization"
+- `skill-trigger-optimization/SKILL.md:126`: "Verify routing → skill-evaluation"
+
+These are reasonable manual handoffs for a meta-skill library where human judgment selects the next action. The one exception — skill-evaluation → skill-improver — is already logged as F-007 because that edge _should_ have a structured handoff (the improvement loop needs eval data).
+
+**Blast radius:** Pipeline documentation only — functional impact is low.
+
+**Plan:**
+1. No immediate code changes needed. The manual edges are working as designed.
+2. Optional future improvement: add a `--recommend-next` flag to eval/diagnosis scripts that outputs a structured JSON recommendation (next_skill, reason, evidence) to reduce manual interpretation.
+
+**Risks:** None. This is a low-priority enhancement.
+**Effort:** N/A (no immediate action) or M (if structured recommendations are added later)
+
+**Citations:** `skill-evaluation/SKILL.md:160-166`; `skill-anti-patterns/SKILL.md:169-174`; `skill-improver/SKILL.md:325-330`; `skill-trigger-optimization/SKILL.md:123-130`; `skill-safety-review/SKILL.md:120-123`
+
+---
+
+## Annex C Priority Summary
+
+| Priority | ID | Title | Effort | Dependency |
+|----------|----|-------|--------|------------|
+| P1 High | F-020 | Corpus Layer 2 manual-only | M | None |
+| P2 Medium | F-021 | Regression harvesting limited scope | S | None |
+| P2 Medium | F-022 | Full-cycle corpus eval limited to 2 skills | XS | None |
+| P2 Medium | F-023 | Safety→lifecycle pipeline edge broken | XS | F-010 |
+| P3 Low | F-024 | Manual pipeline edges (by-design) | N/A | None |
+
+**Recommended execution order:**
+1. Quick win: F-022 (expand full-cycle skill list, XS)
+2. Corpus depth: F-020 (Layer 2 automation), F-021 (regression replay)
+3. Pipeline fix: F-023 (after F-010 from Task 1)
+4. Optional: F-024 (structured recommendations — future enhancement)
+
+## Updated Open Questions
+
+4. **F-020 decision:** Should Layer 2 corpus evaluation invoke `copilot -p` directly, or should it prepare artifacts and document a one-command manual step? Recommendation: direct invocation behind `--layer2` flag.
+5. **F-022 decision:** Which additional meta-skills should be included in full-cycle corpus eval? Recommendation: add `skill-evaluation` and `skill-safety-review` at minimum.
