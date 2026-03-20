@@ -129,12 +129,21 @@ else
   echo "  Step 3: Corpus evaluation"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
+  # Enable Layer 2 automatically if copilot CLI is available
+  CORPUS_LAYER2_ARGS=()
+  if command -v copilot &>/dev/null; then
+    echo "  copilot CLI detected — enabling Layer 2 (meta-skill invocation + A/B judge)"
+    CORPUS_LAYER2_ARGS=(--layer2)
+  else
+    echo "  copilot CLI not found — running Layer 1 only (structural checks)"
+  fi
+
   corpus_exit=0
   corpus_output=""
 
   for meta_skill in skill-improver skill-anti-patterns skill-evaluation skill-safety-review; do
-    echo "  Running: run-corpus-eval.sh ${meta_skill} --all"
-    local_output=$("${REPO_ROOT}/scripts/run-corpus-eval.sh" "$meta_skill" --all 2>&1) || corpus_exit=1
+    echo "  Running: run-corpus-eval.sh ${CORPUS_LAYER2_ARGS[*]:-} ${meta_skill} --all"
+    local_output=$("${REPO_ROOT}/scripts/run-corpus-eval.sh" "${CORPUS_LAYER2_ARGS[@]}" "$meta_skill" --all 2>&1) || corpus_exit=1
     corpus_output+=$'\n'"--- ${meta_skill} ---"$'\n'"${local_output}"
   done
 

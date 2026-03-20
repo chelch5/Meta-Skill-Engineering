@@ -106,11 +106,26 @@ Does NOT auto-apply changes — outputs a proposed description for human review.
 ### 3. Corpus Evaluation
 
 ```bash
-./scripts/run-corpus-eval.sh skill-improver --all
-./scripts/run-corpus-eval.sh skill-anti-patterns adversarial
+./scripts/run-corpus-eval.sh skill-improver --all               # Layer 1 only (structural)
+./scripts/run-corpus-eval.sh --layer2 skill-improver --all      # Layer 1 + Layer 2 (meta-skill + judge)
+./scripts/run-corpus-eval.sh --layer2 skill-anti-patterns adversarial  # Single tier with Layer 2
 ```
 
-Tests meta-skills against the target skill corpus (`corpus/weak/`, `corpus/strong/`, `corpus/adversarial/`). Layer 1 checks structural validity of corpus skills. Layer 2 (manual) compares before/after meta-skill output using `run-baseline-comparison.sh`.
+Tests meta-skills against the target skill corpus (`corpus/weak/`, `corpus/strong/`, `corpus/adversarial/`).
+
+**Layer 1** (always runs): Structural scoring of each corpus fixture using `check_skill_structure.py`. Records pre-scores per skill.
+
+**Layer 2** (opt-in via `--layer2`, requires `copilot` CLI): For each corpus fixture:
+1. Invokes the meta-skill on the fixture via `copilot -p` to produce an improved version
+2. Runs structural scoring on the improved version (post-score, delta)
+3. Uses an LLM judge to A/B compare the original vs improved version
+4. Computes an aggregate win rate (improved wins / total judged)
+
+A win rate ≥ 60% indicates the meta-skill is effective. Below 40% indicates regression.
+
+**Environment variables:** `EVAL_MODEL` (invocation model, default gpt-4.1), `EVAL_TIMEOUT` (seconds, default 120), `LAYER2_JUDGE_MODEL` (judge model, defaults to EVAL_MODEL — use a different model to avoid self-evaluation bias).
+
+When `run-full-cycle.sh` detects the `copilot` CLI, it automatically enables `--layer2` for corpus evaluation.
 
 ### 4. Regression Suite
 
