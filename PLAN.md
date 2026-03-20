@@ -342,10 +342,9 @@ A comprehensive 9-annex review (`tasks/reviews/2026-03-20-meta-skill-engineering
 
 | Status | Count | Details |
 |--------|-------|---------|
-| Implemented | 43 | All valid findings addressed |
+| Implemented | 44 | All valid findings addressed |
 | Invalid | 1 | F-016 (false premise — skill-adaptation doesn't claim to modify) |
-| By design | 1 | F-024 (strict mode is intentionally all-or-nothing per CLI constraint) |
-| Already clean | 1 | F-046 (schemas.md verified — no stale content) |
+| By design | 1 | F-024 (manual pipeline edges are working as intended) |
 | N/A (resolved by other) | 1 | F-041 (resolved by F-009 rewrite eliminating vocabulary conflict) |
 
 ### Status: ✅ Complete
