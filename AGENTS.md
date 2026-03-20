@@ -90,6 +90,8 @@ skill-creator → skill-testing-harness → skill-evaluation
 skill-evaluation → skill-anti-patterns → skill-improver → skill-trigger-optimization
 ```
 
+**Eval-results handoff**: `skill-evaluation` produces reports in `eval-results/<skill>-eval.md` with a structured Handoff section (primary failure, failing cases, recommended next skill). `skill-improver` reads these reports in Phase 1 and uses eval signals to drive diagnosis in Phase 2 (eval-driven diagnosis table). When no eval results exist, skill-improver falls back to heuristic diagnosis.
+
 ### Library Management Pipeline
 ```
 skill-catalog-curation → skill-lifecycle-management
@@ -112,6 +114,7 @@ skill-catalog-curation → skill-lifecycle-management
 - `skill creator/` is archived source material from the pre-consolidation state.
 - `tasks/` is documentation, worklogs, and reviews — not a skill package.
 - `scripts/` contains automation scripts for running evals, validation, and optimization.
+- `eval-results/` contains timestamped eval reports (markdown) with a `<skill>-eval.md` symlink to the latest. These are the handoff mechanism between `skill-evaluation` and `skill-improver`.
 - `docs/` contains operational documentation (evaluation cadence, workflows).
 
 ## Evaluation Tooling

@@ -117,9 +117,38 @@ Identify:
 
 Read the existing skill package before editing. If the conversation provides enough context, extract it instead of re-asking.
 
+**Check for eval results.** Look for `eval-results/<skill-name>-eval.md` (symlink to latest run). If it exists, read it and extract:
+
+- Gate pass/fail status for each gate (precision, recall, behavior, structural, usefulness)
+- Trigger precision and recall percentages
+- Behavior pass rate and any failing cases
+- Usefulness scores and judge rationale (if present)
+- List of specific prompts that failed, with the reason (misrouted, wrong output, low usefulness)
+
+These quantitative signals become the primary input for Phase 2. If no eval results exist, proceed with the heuristic diagnosis below.
+
 ## Phase 2 — Diagnose the weakness
 
-Name the primary failure mode before rewriting. Map it to a fix target:
+Name the primary failure mode before rewriting.
+
+### Eval-driven diagnosis (preferred)
+
+When eval results from Phase 1 are available, use them as primary evidence:
+
+| Eval signal | → Failure mode | Primary fix target |
+|---|---|---|
+| Trigger precision < 80% | overtriggering | tighten description, add "do not use" boundaries |
+| Trigger recall < 80% | undertriggering | rewrite description with concrete trigger phrases |
+| Behavior pass rate < 80% | wrong output format or missing edge case | fix output contract, add missing procedure steps |
+| Usefulness score < 3/5 | prompt-blob syndrome or missing branching | replace prose with concrete steps, add decision rules |
+| Structural score < 8/10 | package rot | fix section ordering, add missing sections |
+| Multiple gates failing | compound failure | prioritize routing fixes first, then output quality |
+
+Cross-reference eval failures with the specific failing prompts to identify the root cause. A skill that fails on edge-case prompts needs different fixes than one that fails on core cases.
+
+### Heuristic diagnosis (fallback)
+
+When no eval results are available, map the reported or observed failure to a fix target:
 
 | Failure mode | Primary fix target |
 |---|---|

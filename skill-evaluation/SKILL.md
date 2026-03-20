@@ -128,7 +128,17 @@ Win rate: X/N (Y%)
 ### Verdict: [Pass | Fail | Needs Work]
 Failing metrics: [list or "None"]
 Next action: [specific remediation or "Ready for promotion"]
+
+### Handoff
+- **Eval report**: eval-results/[skill-name]-eval.md
+- **Primary failure**: [routing | output-quality | usefulness | none]
+- **Failing cases**:
+  - [prompt text] — [reason: misrouted / wrong output / low usefulness score]
+  - ...
+- **Recommended next skill**: [skill-trigger-optimization | skill-improver | skill-benchmarking | skill-safety-review | none]
 ```
+
+The Handoff section is consumed by downstream skills (especially `skill-improver`). Always include it — even when the verdict is Pass, set primary failure to "none" and recommended next skill to "skill-safety-review" or "none".
 
 # Failure handling
 
@@ -137,8 +147,15 @@ Next action: [specific remediation or "Ready for promotion"]
 | No eval cases exist | Create minimum set: 3 positive triggers, 3 negative triggers, 2 quality cases. Mark them as ad-hoc in the report. |
 | Cannot determine whether skill triggered | Inspect client routing logs. If unavailable, compare output structure with and without the skill description present. |
 | Baseline comparison inconclusive (win rate 45–55%) | Double the sample size. If still inconclusive, report as "neutral — skill neither helps nor hurts." |
-| Routing passes but output quality fails | Stop evaluation. Route to `skill-improver` with the failing cases attached. |
+| Routing passes but output quality fails | Stop evaluation. Route to `skill-improver` with the eval report path (`eval-results/<skill>-eval.md`) and the specific failing prompts listed in the Handoff section. |
 | Skill passes eval but fails in real usage | Eval set has coverage gaps. Add the failing real-world case and re-run. |
+
+**Routing to downstream skills:** When handing off to another skill (trigger-optimization, improver, etc.), always include:
+1. The eval report path: `eval-results/<skill-name>-eval.md`
+2. The Handoff section from the output contract (primary failure, failing cases, recommendation)
+3. The specific failing prompts so the downstream skill can reproduce the issue
+
+This enables `skill-improver` to use eval-driven diagnosis (reading the report) rather than relying on heuristic guesswork.
 
 # Next steps
 

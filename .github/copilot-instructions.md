@@ -68,7 +68,7 @@ After editing any script in root `scripts/`, run `scripts/sync-to-skills.sh` to 
 ## Pipelines
 
 - **Creation**: skill-creator → skill-testing-harness → skill-evaluation → skill-trigger-optimization → skill-safety-review → skill-lifecycle-management
-- **Improvement**: skill-evaluation → skill-anti-patterns → skill-improver → skill-trigger-optimization
+- **Improvement**: skill-evaluation → skill-anti-patterns → skill-improver → skill-trigger-optimization. Eval results in `eval-results/` are the handoff: skill-evaluation writes structured reports, skill-improver reads them to drive diagnosis.
 - **Library Management**: skill-catalog-curation → skill-lifecycle-management
 
 ## Entry Points
