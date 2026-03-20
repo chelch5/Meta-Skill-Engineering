@@ -1558,3 +1558,263 @@ This is the most comprehensive single-pass audit across all annexes. It confirms
 | 8 | Annex H | 2 | 8 | — | 43 |
 
 **Total unique findings: 43** (F-001 through F-043). 39 valid actionable, 2 by-design, 1 invalid, 1 low/optional.
+
+---
+
+# Task 9/9 — Annex I: Full Repository Review
+
+**Source:** `tasks/reviews/2026-03-20-meta-skill-engineering/9.md` (1381 lines)
+**Scope:** Comprehensive full-repository review covering all scripts, all 12 active skills, corpus, flows, reference files, and evaluation system effectiveness rating.
+
+## Summary
+
+**47 raw findings** across scripts (13), skills (12), references (2), flows (3), evaluation system (4), and priorities (12). After cross-referencing against F-001 through F-043:
+
+- **4 genuinely new findings** (F-044 through F-047)
+- **35 already logged** (map directly to existing F-xxx)
+- **1 invalid** (CRLF — zip-export artifact, not a repo issue)
+- **1 uncertain** (validate-skills.sh hang — environment-specific, not reproducible)
+- **6 confirmations** of existing findings with additional evidence
+
+## Cross-Reference Table
+
+| Review Item | Maps To | Status |
+|-------------|---------|--------|
+| CRLF line endings in scripts | — | **Invalid** (repo uses LF; `.gitattributes:2` `* text=auto`; hex confirms `0a` not `0d0a`) |
+| validate-skills.sh hang/timeout | — | **Uncertain** (reviewer saw hang on CRLF-normalized copy; not reproducible with native LF) |
+| skill-testing-harness stale Step 4 (expected_files, min_cases) | F-001 | Already logged |
+| category vs better_skill schema conflict | F-002 | Already logged |
+| Per-skill script REPO_ROOT wrong | F-003, F-004, F-005 | Already logged |
+| Behavior.jsonl under-checks output contracts | F-006 | Already logged |
+| skill-evaluation handoff section gap | F-007 | Already logged |
+| skill-improver manifest references | F-008 | Already logged |
+| skill-catalog-curation abstract governance | F-009 | Already logged |
+| skill-lifecycle-management missing lifecycle index | F-010 | Already logged |
+| skill-benchmarking overclaims token/win-rate | F-012 | Already logged |
+| run-trigger-optimization mutates SKILL.md | F-015 | Already logged |
+| skill-adaptation under-specifies support layers | F-017 | Already logged |
+| skill-variant-splitting output stops at report | F-018 | Already logged |
+| quick_validate.py stale frontmatter allowance | F-019 | Already logged |
+| Corpus Layer 2 manual-only | F-020 | Already logged |
+| Regression cases not executable by runner | F-031 | Already logged (combines F-021 + F-031) |
+| harvest_failures.py broken loop | F-027 | Already logged |
+| Precision/recall labels inverted | F-028 | Already logged |
+| Threshold inconsistency 95/90 vs 80 | F-029 | Already logged |
+| Baseline comparison not implemented | F-033 | Already logged |
+| Usefulness criteria gap (8/12 skills) | F-036 | Already logged |
+| run-meta-skill-cycle hardcoded model | F-032 | Already logged |
+| Lifecycle fallback inference unreachable | F-039 | Already logged |
+| run-full-cycle hardcodes 2 meta-skills | F-022 | Already logged |
+| README safety→lifecycle edge missing | F-023 | Already logged |
+| skill-creator procedure ordering conflict | F-030 | Already logged |
+| Category merge threshold too aggressive | F-040 | Already logged |
+| Vocabulary mismatch curation→lifecycle | F-041 | Already logged |
+| Description extraction fragile sed | F-042 | Already logged |
+| Missing variant-splitting boundary in curation | F-043 | Already logged |
+| skill-evaluation missing anti-patterns route | F-035 | Already logged |
+| 1024-char limit not taught | F-037 | Already logged |
+| "Do NOT use when" prose wording drift (6 skills) | — | **NEW → F-044** |
+| skill-variant-splitting stale "overlays" language | — | **NEW → F-045** |
+| skill-creator/references/schemas.md broader artifacts | — | **NEW → F-046** |
+| run-evals.sh strict mode coarseness | — | **NEW → F-047** |
+
+---
+
+## F-044 Cross-Skill "Do NOT Use When" Prose Wording Drift — **Valid (Low)**
+
+**Why:** Six skills reference the "When NOT to use" section using the phrase "Do NOT use when" in prose text. The canonical heading is `# When NOT to use` (per AGENTS.md:73), but prose instructions tell agents to look for "Do NOT use when" — an agent following skill-evaluation's guidance literally would search for a section that doesn't exist under that name.
+
+**Affected files (8 occurrences across 6 skills):**
+- `skill-adaptation/SKILL.md:55` — `"Do NOT use when" boundaries — these define the skill's identity`
+- `skill-anti-patterns/SKILL.md:87` — `AP-7: Missing "Do NOT use when" section`
+- `skill-anti-patterns/SKILL.md:89` — `Format: "Do NOT use when [scenario]..."`
+- `skill-creator/SKILL.md:104` — `confusion cases as "Do NOT use when:"`
+- `skill-evaluation/SKILL.md:77` — `Read the skill's "Do NOT use when" section`
+- `skill-testing-harness/SKILL.md:36` — `Negative cases from "Do NOT use when" section`
+- `skill-testing-harness/SKILL.md:75` — `Prompts that directly mirror a "Do NOT use when" bullet`
+- `skill-variant-splitting/SKILL.md:72` — `Each variant's "Do NOT use when" references siblings`
+
+**Plan:**
+1. Replace all 8 occurrences: `"Do NOT use when"` → `"When NOT to use"` in prose references
+2. For AP-7 in skill-anti-patterns, update the anti-pattern name to match: `AP-7: Missing "When NOT to use" section`
+3. For skill-creator line 104, update the template guidance
+4. Run `scripts/validate-skills.sh` to confirm no structural breakage
+
+**Risks:** Minimal — prose-only changes, no heading modifications.
+**Effort:** XS (~15 min)
+**Citations:** `skill-adaptation/SKILL.md:55`; `skill-anti-patterns/SKILL.md:87,89`; `skill-creator/SKILL.md:104`; `skill-evaluation/SKILL.md:77`; `skill-testing-harness/SKILL.md:36,75`; `skill-variant-splitting/SKILL.md:72`; `AGENTS.md:73` (canonical heading)
+
+---
+
+## F-045 Skill-variant-splitting Stale "Overlays" Language — **Valid (Low)**
+
+**Why:** `skill-variant-splitting/SKILL.md:28` uses "overlays" as a concept in its "When NOT to use" section: `Variations are minor enough for overlays`. Overlays were part of the pre-archive distribution architecture and are no longer an active concept in the internal-only repo. This gives agents a false alternative path.
+
+**Validation evidence:**
+- `skill-variant-splitting/SKILL.md:28` — `- Variations are minor enough for overlays`
+- No `overlay` concept exists in any active skill, script, or doc
+- `archive/` contains distribution-era artifacts; overlays were retired with them
+
+**Plan:**
+1. Replace line 28: `- Variations are minor enough for overlays` → `- Variations are minor enough to handle with conditional logic in one skill`
+2. Verify no other active references to "overlays" remain: `grep -r overlay skill-*/SKILL.md`
+
+**Risks:** None — single line in "When NOT to use" section.
+**Effort:** XS (~5 min)
+**Citations:** `skill-variant-splitting/SKILL.md:28`
+
+---
+
+## F-046 Skill-creator References Document Non-Active Eval Artifacts — **Valid (Medium)**
+
+**Why:** `skill-creator/references/schemas.md` documents four JSON artifact schemas (`history.json`, `grading.json`, `timing.json`, `benchmark.json`) that are not part of the active canonical eval system. The active system uses only three JSONL files (`trigger-positive.jsonl`, `trigger-negative.jsonl`, `behavior.jsonl`). A skill-creator invocation following this reference will produce artifacts the eval runner cannot consume, recreating eval-system drift.
+
+**Validation evidence:**
+- `skill-creator/references/schemas.md:30` — `## history.json` (Improve mode tracking)
+- `skill-creator/references/schemas.md:77` — `## grading.json` (grader agent output)
+- `skill-creator/references/schemas.md:188` — `## timing.json` (wall clock timing)
+- `skill-creator/references/schemas.md:210` — `## benchmark.json` (Benchmark mode output)
+- None of these 4 artifacts are referenced in `scripts/run-evals.sh`, `AGENTS.md`, or `.github/copilot-instructions.md`
+- The JSONL eval section (lines 1-27) IS correctly aligned with the active contract
+
+**Plan:**
+1. Add a clear header after the JSONL section: `## Future / Optional Artifacts` with a note that these are not part of the current active eval system
+2. Or move them to a separate `schemas-future.md` reference file
+3. Preferred: option 1 (simpler, preserves content for future use)
+
+**Risks:** Low — reference file only, not the SKILL.md itself.
+**Effort:** S (~20 min)
+**Citations:** `skill-creator/references/schemas.md:30,77,188,210`; `AGENTS.md:44-64` (active eval contract)
+
+---
+
+## F-047 Run-evals.sh Strict Mode Removes ALL Custom Instructions — **Valid (Medium)**
+
+**Why:** The `--strict` mode in `run-evals.sh` uses `--no-custom-instructions` (line 246) which disables ALL project-level instructions (AGENTS.md, copilot-instructions.md, and ALL SKILL.md files), not just the target skill being tested. This makes the differential comparison imprecise: it detects whether *any* custom instruction influenced the response, not whether the *specific target skill* was activated. A positive trigger result in strict mode could be caused by AGENTS.md guidance or a different skill entirely.
+
+**Validation evidence:**
+- `scripts/run-evals.sh:32-36` — Comment explicitly states: `--no-custom-instructions (disabling AGENTS.md and all project instructions)`
+- `scripts/run-evals.sh:246` — `response_without=$(run_copilot_prompt "$prompt" --no-custom-instructions)`
+- `scripts/run-evals.sh:248-256` — Differential check: if outputs differ >20% in character count, skill is considered "activated"
+- The `copilot` CLI `--no-custom-instructions` flag is all-or-nothing; there is no per-skill disable
+
+**Plan:**
+1. Document this limitation in the script header comments and in `docs/evaluation-cadence.md`
+2. Add a note in the `--strict` help text: `Note: disables ALL custom instructions, not just the target skill. Use --observe for per-skill detection.`
+3. Consider adding `--observe` as a secondary check within strict mode: if strict says "activated" but observe doesn't find the specific SKILL.md file read, flag as "likely influenced by project instructions, not target skill"
+4. Long-term: explore whether `copilot` CLI supports per-file instruction exclusion
+
+**Risks:** Documentation-only changes are safe. Step 3 (hybrid check) adds complexity but improves accuracy.
+**Effort:** S (~30 min for docs + help text), M (~2 hours for hybrid approach)
+**Citations:** `scripts/run-evals.sh:32-36,246,248-256`
+
+---
+
+## Invalid / Uncertain Findings
+
+### CRLF Line Endings in Scripts — **Invalid**
+
+**Why invalid:** The reviewer noted CRLF line endings in the zip snapshot, but the actual Git repository uses LF endings. `.gitattributes:2` sets `* text=auto`, and hex inspection of `scripts/validate-skills.sh` confirms `0a` (LF) not `0d0a` (CRLF) byte sequences. This is a zip-export artifact, not a repository defect.
+
+**Evidence:** `.gitattributes:2`; `xxd scripts/validate-skills.sh | head -5` shows `0a` terminators
+
+### validate-skills.sh Hang / Timeout — **Uncertain**
+
+**Why uncertain:** The reviewer reported the script "stalled/timed out" after normalizing line endings in a temp copy. In the actual repo (native LF), this is not reproducible. The script does contain loops with `python3 -c` subshell calls (lines 131-140) that theoretically could hang on malformed input, but there is no evidence this occurs under normal conditions. The reviewer's environment may have had additional factors (corrupted JSONL from line-ending normalization, Python path issues).
+
+**Evidence:** `scripts/validate-skills.sh:131-140` (JSONL validation loop with python3 subshell)
+
+---
+
+## Task 9 Priority Summary
+
+| Priority | ID | Title | Severity | Effort |
+|----------|----|-------|----------|--------|
+| P3 Low | F-044 | Cross-skill "Do NOT use when" prose wording drift | Low | XS |
+| P3 Low | F-045 | Stale overlay language in variant-splitting | Low | XS |
+| P2 Medium | F-046 | Creator reference schemas document non-active artifacts | Medium | S |
+| P2 Medium | F-047 | Strict mode removes ALL custom instructions | Medium | S–M |
+
+**Recommended execution order:**
+1. F-044 first — mechanical find/replace across 6 files, fixes a routing confusion risk
+2. F-045 — single-line edit, removes stale concept
+3. F-046 — add "Future/Optional" header in reference file
+4. F-047 — documentation first, hybrid approach later if needed
+
+---
+
+## Cumulative Finding Count (Tasks 1–9) — FINAL
+
+| Task | Source | New | Already Logged | Invalid/Uncertain | Running Total |
+|------|--------|-----|----------------|-------------------|---------------|
+| 1 | Annex A: Active Skills | 19 | — | 1 invalid (F-016) | 19 |
+| 2 | Annex C: Archive/Corpus/Flow | 5 | 6 | 1 by-design (F-024) | 24 |
+| 3 | Annex B: Shared Tooling/Docs | 3 | 10 | 1 by-design | 27 |
+| 4 | Annex D: Key Findings | 5 | 3 | — | 32 |
+| 5 | Annex E: Executive Summary | 3 | 11 | — | 35 |
+| 6 | Annex F: Comprehensive Report | 3 | 6 | 1 by-design (D-1) | 38 |
+| 7 | Annex G: Library Management | 3 | 4 | — | 41 |
+| 8 | Annex H: Comprehensive Audit | 2 | 8 | — | 43 |
+| 9 | Annex I: Full Repository Review | 4 | 35 | 1 invalid + 1 uncertain | 47 |
+
+---
+
+# Final Summary — All 9 Review Annexes Complete
+
+## Overall Statistics
+
+- **47 unique findings** (F-001 through F-047)
+- **42 valid actionable** findings requiring implementation
+- **2 by-design** (working as intended)
+- **1 invalid** (F-016: AP-14 metadata claim is about capability assumptions)
+- **1 low/optional** (F-034: overlapping eval creation scope)
+- **1 CRLF invalid** (zip artifact)
+- **Across 9 annexes, 96 already-logged cross-references** were detected and deduplicated
+
+## Severity Distribution
+
+| Severity | Count | IDs |
+|----------|-------|-----|
+| **P0 Critical** | 4 | F-011, F-019, F-027, F-031 |
+| **P1 High** | 9 | F-001, F-002, F-007, F-008, F-009, F-010, F-012, F-020, F-028, F-033 |
+| **P2 Medium** | 22 | F-003–F-006, F-013, F-015, F-017, F-018, F-021–F-023, F-025, F-026, F-029, F-030, F-032, F-035–F-037, F-039–F-041, F-046, F-047 |
+| **P3 Low** | 8 | F-014, F-034, F-038, F-042, F-043, F-044, F-045 |
+| **Invalid/By-Design** | 4 | F-016, F-024, CRLF, validate-hang |
+
+## Top Systemic Themes
+
+1. **Eval contract drift** (F-001, F-002, F-006, F-019, F-031, F-046) — Schema mismatches between what skills teach, what scripts expect, and what docs say
+2. **Broken regression pipeline** (F-021, F-027, F-031) — harvest→regress→rerun loop produces zero protection
+3. **Overclaimed automation** (F-012, F-020, F-033, F-047) — Skills and docs describe capabilities the tooling doesn't implement
+4. **Stale distribution-era concepts** (F-008, F-009, F-010, F-045) — Manifests, overlays, lifecycle indices from pre-archive era
+5. **Metric mislabeling** (F-028, F-029) — Precision/recall inverted; threshold inconsistency
+
+## Recommended Implementation Waves
+
+**Wave 1 — Critical Fixes (4 items, ~4 hours):**
+F-011 (ARCHIVE/ case), F-019 (quick_validate stale fields), F-027 (harvest regex), F-031 (regression JSON schema)
+
+**Wave 2 — High-Priority Alignment (10 items, ~16 hours):**
+F-001, F-002, F-007, F-008, F-009, F-010, F-012, F-028, F-033, F-020
+
+**Wave 3 — Medium Cleanup (22 items, ~24 hours):**
+F-003–F-006, F-013, F-015, F-017, F-018, F-021–F-023, F-025, F-026, F-029, F-030, F-032, F-035–F-037, F-039–F-041, F-046, F-047
+
+**Wave 4 — Polish (8 items, ~4 hours):**
+F-014, F-034, F-038, F-042, F-043, F-044, F-045
+
+## Open Decisions (carried from Task 1)
+
+1. **F-002:** Adopt `better_skill` in contract or migrate 96 entries to `category`?
+2. **F-010:** Create lifecycle tracking mechanism or rewrite skill without persistent state?
+3. **F-018:** Should skill-variant-splitting produce draft packages or only split plan?
+4. **F-020:** Should Layer 2 invoke `copilot -p` directly behind `--layer2` flag?
+5. **F-022:** Which additional meta-skills for full-cycle corpus eval?
+
+## Reviewer's Overall Assessment (from Annex I)
+
+> **Rating:** 7.7/10 for ordinary skill creation/testing; 5.8/10 for a serious end-state meta-skill benchmark system.
+>
+> "This is now a strong beta-quality internal meta-skill engineering repository, but not yet a fully complete or fully trustworthy end-state system. The repository is worth finishing."
+
+This assessment aligns with the implementation findings: the architecture is sound, the structural compliance is excellent (12/12 skills pass validation), and the trigger-testing mindset is strong. The gaps are in eval reliability, regression protection, and documentation honesty about what is automated vs. manual.
