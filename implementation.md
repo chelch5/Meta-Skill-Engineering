@@ -1089,3 +1089,172 @@ The review's evaluation-system scores confirm the pattern across prior annexes:
 | 5 | Annex E | 3 | 11 | — | 35 |
 
 **Total unique findings: 35** (F-001 through F-035). 31 valid actionable, 2 by-design, 1 invalid, 1 low/optional.
+
+---
+
+# Task 6/9 — Annex F: Comprehensive Review Report (agentskills.io Alignment)
+
+**Source:** `tasks/reviews/2026-03-20-meta-skill-engineering/6.md` (503 lines)
+**Validated:** 2026-03-20
+**Summary:** 20+ distinct findings (using IDs X-1, S-1/2, D-1/2, B-1, SC-1/2, E-1/2/3, CR-1/2/3, P-1, DOC-1/2/3, TH-1, SR-1, LM-1, EV-1, IM-1) — 6 already logged, 3 new actionable, remainder are enhancement recommendations or minor observations. Top risks: usefulness testing coverage, description limit enforcement.
+
+### Cross-references to already-logged findings
+
+| Review ID | Topic | Existing Finding |
+|-----------|-------|-----------------|
+| X-1 | quick_validate.py allows extra frontmatter fields | F-019 |
+| CR-1 | skill-creator/testing-harness Phase 3 overlap | F-034 |
+| TH-1 | behavior template uses `expected_files` field | F-001 |
+| P-1 | Pipelines advisory only, no automated chaining | F-024 (by-design) |
+| LM-1 | Lifecycle states before deprecation have no tracking | F-010 |
+| EV-1 | Baseline comparison manual SKILL.md removal | F-033 |
+
+### Findings confirmed as positive (no action needed)
+
+| Review ID | Topic | Assessment |
+|-----------|-------|------------|
+| D-1 | Boundaries in description (all 12 skills) | Smart routing optimization for coexisting meta-skills — by design |
+| Section 1.1 | Canonical format 12/12 | ✅ All pass |
+| Section 1.2 | All under 500 lines | ✅ Largest: 330 lines |
+| Section 2.1 | All descriptions under 1024 chars | ✅ Largest: safety-review at 736 chars (my measurement) |
+| Section 6.3 | Cross-reference integrity 12/12 | ✅ No broken references |
+| Section 9 | Corpus 5/5/5/3 tiers | ✅ Well-structured |
+
+---
+
+## F-036 Usefulness Criteria Coverage Gap — 8/12 Skills Untested — **Valid (Medium)**
+
+**Review claims (E-1):** Behavior test count is low at 3 per skill, and usefulness_criteria is only seeded in 4/12 skills. 8/12 skills have no mechanism to judge whether output is actually useful.
+
+**Why:** Confirmed. Verified by scanning all 12 `evals/behavior.jsonl` files:
+
+| Skill | Behavior Cases | With usefulness_criteria |
+|-------|---------------|-------------------------|
+| skill-creator | 3 | 2 |
+| skill-evaluation | 3 | 2 |
+| skill-improver | 4 | 2 |
+| skill-trigger-optimization | 3 | 2 |
+| skill-adaptation | 3 | 0 |
+| skill-anti-patterns | 3 | 0 |
+| skill-benchmarking | 3 | 0 |
+| skill-catalog-curation | 3 | 0 |
+| skill-lifecycle-management | 3 | 0 |
+| skill-safety-review | 3 | 0 |
+| skill-testing-harness | 3 | 0 |
+| skill-variant-splitting | 3 | 0 |
+
+The `--usefulness` flag in `run-evals.sh` (lines 607-748) is well-implemented but can only score cases that include `usefulness_criteria`. For 8 skills, the only quality checks are structural regex patterns (`required_patterns`, `forbidden_patterns`, `min_output_lines`). This means 67% of skills have no semantic output quality testing — they can produce correct-looking but unhelpful output and still pass all gates.
+
+This is distinct from F-006 (which covers misalignment between behavior.jsonl patterns and output contracts). F-036 is about the total absence of usefulness testing for most skills.
+
+**Blast radius:** 8 skill packages' behavior.jsonl files, evaluation credibility for those skills.
+
+**Plan:**
+1. Add `usefulness_criteria` to at least 1 behavior case per skill for the 8 uncovered skills.
+2. For each skill, the criteria should test the core value proposition:
+   - skill-adaptation: "Does the adapted skill preserve functional identity while changing environment-specific details?"
+   - skill-anti-patterns: "Does the report identify genuine anti-patterns with severity ratings and specific citations?"
+   - skill-benchmarking: "Does the comparison use consistent methodology and produce a clear winner recommendation?"
+   - skill-catalog-curation: "Does the audit identify real duplicates/gaps with actionable remediation?"
+   - skill-lifecycle-management: "Does the transition follow documented criteria and produce correct state changes?"
+   - skill-safety-review: "Does the review identify actual safety hazards with severity and remediation?"
+   - skill-testing-harness: "Are generated test cases realistic, diverse, and testing distinct scenarios?"
+   - skill-variant-splitting: "Are the split variants genuinely orthogonal with clear boundaries?"
+3. Run `./scripts/run-evals.sh --usefulness --all` to verify the new criteria work.
+
+**Risks:** Usefulness criteria are subjective — different judge models may score differently. Use USEFULNESS_MODEL to avoid self-evaluation bias. Rollback: `git checkout */evals/behavior.jsonl`.
+**Effort:** M (2–3 hours for all 8 skills)
+
+**Citations:** All 12 `*/evals/behavior.jsonl` files; `scripts/run-evals.sh:607-748` (usefulness implementation)
+
+---
+
+## F-037 1024-Character Description Limit Not Taught in Skill-Creator — **Valid (Medium)**
+
+**Review claims (D-2):** Neither `skill-creator/SKILL.md` nor any validation script enforces or mentions the 1024-character description limit from the Agent Skills specification.
+
+**Why:** Partially valid. The review is wrong that no script checks — `check_skill_structure.py:155-156` does check `len(desc_val) > 1024` and adds a warning. However:
+
+1. The check is a **non-blocking warning** — it doesn't reduce the 10-point score or cause a validation failure. A skill with a 2000-char description would still score 10/10.
+2. `skill-creator/SKILL.md` does NOT mention the 1024 limit anywhere. Phase 2 Step 3 (frontmatter template, lines 70-79) shows the `description` field but gives no length guidance.
+3. All 12 current descriptions are well under the limit (largest: skill-safety-review at 736 chars), so the gap hasn't caused problems yet.
+4. Per [agentskills.io spec](https://agentskills.io/skill-creation/optimizing-descriptions): the 1024-char limit is a hard specification constraint.
+
+**Blast radius:** `skill-creator/SKILL.md` (teaching gap), `check_skill_structure.py` (unenforced check), any externally-targeted skill created using skill-creator.
+
+**Plan:**
+1. Add description length guidance to `skill-creator/SKILL.md` Phase 2 Step 3 (around line 75): "Keep the description under 1024 characters (hard limit per the Agent Skills specification). Current repo skills average ~530 chars."
+2. Upgrade the `check_skill_structure.py:155-156` warning to a scored check: add a `"description_length"` key to `checks` dict with pass/fail, and adjust max_score accordingly.
+3. Alternatively: keep as warning but add it to `validate-skills.sh` output so it's visible during validation runs.
+
+**Risks:** Upgrading to a scored check changes the 10-point scale to 11 points. Rollback: `git revert`.
+**Effort:** S (1 hour)
+
+**Citations:** `check_skill_structure.py:155-156`; `skill-creator/SKILL.md:70-79`; `scripts/validate-skills.sh` (no description length in output)
+
+---
+
+## F-038 Missing --help Flags in validate-skills.sh and run-regression-suite.sh — **Valid (Low)**
+
+**Review claims (SC-1):** Two scripts lack `--help` flags. Per agentskills.io: "`--help` output is the primary way an agent learns your script's interface."
+
+**Why:** Confirmed. `scripts/validate-skills.sh` has no `--help` flag and no usage function (grep returns zero matches for `help`, `usage`, `-h`). `scripts/run-regression-suite.sh` has a comment header `# Usage:` at line 8 but no runtime `--help` flag parser. All 13 other scripts in the repo support `--help` or have usage functions.
+
+**Blast radius:** Agent discoverability — an agent invoking `validate-skills.sh --help` or `run-regression-suite.sh --help` would get either an error or unexpected behavior instead of usage instructions.
+
+**Plan:**
+1. Add a `show_help()` function and `--help`/`-h` flag parsing to both scripts, following the pattern in `run-evals.sh:85-107`.
+2. Include: purpose, usage syntax, examples, environment variables, exit codes.
+
+**Risks:** None — additive change. Rollback: `git revert`.
+**Effort:** XS (30 min)
+
+**Citations:** `scripts/validate-skills.sh` (zero matches for help/usage); `scripts/run-regression-suite.sh:8` (comment only, no runtime flag)
+
+---
+
+## Task 6 Enhancement Recommendations (Not Assigned F-Numbers)
+
+The following review observations are legitimate gaps relative to agentskills.io best practices but represent new feature development rather than fixes to existing functionality:
+
+| Review ID | Topic | Assessment | Priority |
+|-----------|-------|------------|----------|
+| E-2 | Token/cost tracking (`timing.json`) | agentskills.io recommends capturing `total_tokens` and `duration_ms`. No tracking exists in the repo. Would help identify expensive evals and detect token regressions. | Nice-to-have |
+| E-3 | Iteration workspace structure | agentskills.io recommends `iteration-N/` directories. Repo uses flat timestamped files. Makes iteration comparison difficult but doesn't break anything. | Nice-to-have |
+| S-1 | skill-creator could extract Phase 2 to references/ | At 328 lines with only 1 reference file, more progressive disclosure is possible. Not a bug — readability suggestion. | Nice-to-have |
+| S-2 | Conditional reference loading | Both skill-creator and skill-improver use generic "see references/" pointers instead of conditional "Read X if [condition]" patterns. | Nice-to-have |
+| SC-2 | Sync manifest has no reverse-check | `sync-to-skills.sh --check` verifies existing mappings but doesn't detect new script references in SKILL.md files not yet in the manifest. | Low |
+| B-1 | Some skills include explanatory text agent already knows | Minor context waste in skill-evaluation (line 16) and skill-lifecycle-management (lines 38-60). | Low |
+| IM-1 | skill-improver diagnosis table over-maps usefulness failures | "Usefulness score < 3/5 → prompt-blob syndrome" conflates multiple possible causes. The judge rationale provides better diagnosis. | Low |
+| DOC-1 | README script table doesn't list Python utils | Intentional (high-level view) but could confuse users. | Informational |
+| SR-1 | skill-safety-review has longest description (736 chars) | Still under 1024 limit. Could be trimmed but not required. | Informational |
+
+---
+
+## Task 6 Priority Summary
+
+| Priority | ID | Title | Effort | Blocked By |
+|----------|----|-------|--------|------------|
+| P2 Medium | F-036 | Usefulness criteria coverage gap (8/12 skills) | M | None |
+| P2 Medium | F-037 | 1024-char description limit not taught/enforced | S | None |
+| P3 Low | F-038 | Missing --help in 2 scripts | XS | None |
+
+**Recommended execution order:**
+1. F-036 — highest impact: enables semantic quality testing for 8 more skills
+2. F-037 — spec compliance: teach the limit and enforce it in scoring
+3. F-038 — quick fix: add --help to 2 scripts
+
+---
+
+## Cumulative Finding Count (Tasks 1–6)
+
+| Task | Source | New | Already Logged | By-Design/Invalid | Running Total |
+|------|--------|-----|----------------|-------------------|---------------|
+| 1 | Annex A | 19 | — | 1 invalid (F-016) | 19 |
+| 2 | Annex C | 5 | 6 | 1 by-design (F-024) | 24 |
+| 3 | Annex B | 3 | 10 | 1 by-design | 27 |
+| 4 | Annex D | 5 | 3 | — | 32 |
+| 5 | Annex E | 3 | 11 | — | 35 |
+| 6 | Annex F | 3 | 6 | 1 by-design (D-1) | 38 |
+
+**Total unique findings: 38** (F-001 through F-038). 34 valid actionable, 2 by-design, 1 invalid, 1 low/optional.
