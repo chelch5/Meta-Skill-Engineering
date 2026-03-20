@@ -77,6 +77,7 @@ USEFULNESS_THRESHOLD="${USEFULNESS_THRESHOLD:-3}"
 USEFULNESS_TIMEOUT="${USEFULNESS_TIMEOUT:-45}"
 USEFULNESS_RUNS="${USEFULNESS_RUNS:-1}"
 HANDOFF=false
+BASELINE=false
 
 # Gate tracking globals (set by test functions, read by run_gates)
 GATE_POS_PASS=0
@@ -110,6 +111,7 @@ usage() {
   echo "  --timeout N   Seconds per prompt (default: 60)"
   echo "  --usefulness  Enable LLM-as-Judge usefulness scoring for behavior tests"
   echo "  --handoff     Append structured Handoff section to report for downstream skill routing"
+  echo "  --baseline    Run baseline comparison: re-run behavior cases without skill, LLM judge pairwise"
   echo ""
   echo "Environment variables:"
   echo "  EVAL_MODEL              Model to use (default: gpt-4.1)"
@@ -156,6 +158,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --handoff)
       HANDOFF=true
+      shift
+      ;;
+    --baseline)
+      BASELINE=true
       shift
       ;;
     --runs)
@@ -855,6 +861,147 @@ generate_handoff() {
   } >> "$CURRENT_REPORT"
 }
 
+# ---------------------------------------------------------------------------
+# Baseline comparison: run behavior cases with and without the skill,
+# then use LLM judge to determine which output is better.
+# ---------------------------------------------------------------------------
+run_baseline_comparison() {
+  local skill="$1"
+  local jsonl_file="${REPO_ROOT}/${skill}/evals/behavior.jsonl"
+
+  if ! $BASELINE; then
+    return
+  fi
+
+  if [[ ! -f "$jsonl_file" ]]; then
+    echo "  ⚠️  No behavior.jsonl for baseline comparison"
+    return
+  fi
+
+  local skill_md="${REPO_ROOT}/${skill}/SKILL.md"
+  if [[ ! -f "$skill_md" ]]; then
+    echo "  ⚠️  No SKILL.md found for ${skill}"
+    return
+  fi
+
+  echo "  Running baseline comparison (skill vs no-skill)..."
+
+  local total=0
+  local skill_wins=0
+  local baseline_wins=0
+  local ties=0
+  local errors=0
+  local results=()
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -z "$line" ]] && continue
+    local prompt
+    prompt=$(echo "$line" | jq -r '.prompt // ""')
+    [[ -z "$prompt" ]] && continue
+    total=$((total + 1))
+
+    echo "    Baseline [${total}]: ${prompt:0:50}..."
+
+    # Run WITH skill (normal)
+    local response_with
+    response_with=$(run_copilot_prompt "$prompt" 2>/dev/null || true)
+
+    # Temporarily disable the skill by renaming SKILL.md
+    local backup="${skill_md}.baseline-backup"
+    mv "$skill_md" "$backup"
+
+    # Run WITHOUT skill
+    local response_without
+    response_without=$(run_copilot_prompt "$prompt" 2>/dev/null || true)
+
+    # Restore the skill immediately
+    mv "$backup" "$skill_md"
+
+    # Handle errors
+    if [[ -z "$response_with" ]] || [[ "$response_with" == ERROR:* ]] || \
+       [[ -z "$response_without" ]] || [[ "$response_without" == ERROR:* ]]; then
+      errors=$((errors + 1))
+      results+=("| ${total} | ${prompt:0:40}... | ERROR | Error in one or both runs |")
+      continue
+    fi
+
+    # LLM judge: which response is better?
+    local judge_model="${USEFULNESS_MODEL:-$MODEL}"
+    local judge_prompt="You are a quality judge comparing two responses to the same task.
+
+Task: ${prompt}
+
+=== Response A ===
+${response_with:0:2000}
+
+=== Response B ===
+${response_without:0:2000}
+
+Which response is better for the given task? Consider correctness, completeness, actionability, and specificity.
+
+Reply with EXACTLY one of these words on the first line: A, B, or TIE
+Then provide a one-sentence explanation on the second line."
+
+    local judge_output
+    judge_output=$(timeout "$USEFULNESS_TIMEOUT" copilot -p "$judge_prompt" --model "$judge_model" -s --no-ask-user --max-autopilot-continues 1 2>/dev/null || echo "ERROR")
+
+    local winner
+    winner=$(echo "$judge_output" | head -1 | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')
+    local explanation
+    explanation=$(echo "$judge_output" | sed -n '2p' | head -c 100)
+
+    case "$winner" in
+      A)
+        skill_wins=$((skill_wins + 1))
+        results+=("| ${total} | ${prompt:0:40}... | **Skill** | ${explanation} |")
+        ;;
+      B)
+        baseline_wins=$((baseline_wins + 1))
+        results+=("| ${total} | ${prompt:0:40}... | Baseline | ${explanation} |")
+        ;;
+      TIE)
+        ties=$((ties + 1))
+        results+=("| ${total} | ${prompt:0:40}... | Tie | ${explanation} |")
+        ;;
+      *)
+        ties=$((ties + 1))
+        results+=("| ${total} | ${prompt:0:40}... | Unclear | Could not parse judge output |")
+        ;;
+    esac
+  done < "$jsonl_file"
+
+  if [[ $total -eq 0 ]]; then
+    echo "  ⚠️  No behavior cases to compare"
+    return
+  fi
+
+  local win_rate=0
+  local judged=$((total - errors))
+  if [[ $judged -gt 0 ]]; then
+    win_rate=$((skill_wins * 100 / judged))
+  fi
+
+  echo "  Baseline result: skill wins ${skill_wins}/${judged} (${win_rate}%)"
+
+  # Append to report
+  {
+    echo "## Baseline Comparison"
+    echo ""
+    echo "Win rate: ${skill_wins}/${judged} (${win_rate}%)"
+    echo ""
+    echo "| # | Prompt | Winner | Reason |"
+    echo "|---|--------|--------|--------|"
+    for r in "${results[@]}"; do
+      echo "$r"
+    done
+    echo ""
+    if [[ $errors -gt 0 ]]; then
+      echo "> ${errors} case(s) had errors and were excluded from win rate calculation."
+      echo ""
+    fi
+  } >> "$CURRENT_REPORT"
+}
+
 run_gates() {
   local skill="$1"
 
@@ -1019,6 +1166,7 @@ for skill in "${TARGETS[@]}"; do
 
   run_gates "$skill"
   generate_handoff "$skill"
+  run_baseline_comparison "$skill"
 
   # Symlink to latest
   ln -sf "${skill}-${TIMESTAMP}.md" "${RESULTS_DIR}/${skill}-eval.md"
