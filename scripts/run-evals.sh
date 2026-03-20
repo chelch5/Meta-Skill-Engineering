@@ -76,6 +76,7 @@ USEFULNESS_MODEL="${USEFULNESS_MODEL:-}"
 USEFULNESS_THRESHOLD="${USEFULNESS_THRESHOLD:-3}"
 USEFULNESS_TIMEOUT="${USEFULNESS_TIMEOUT:-45}"
 USEFULNESS_RUNS="${USEFULNESS_RUNS:-1}"
+HANDOFF=false
 
 # Gate tracking globals (set by test functions, read by run_gates)
 GATE_POS_PASS=0
@@ -89,8 +90,14 @@ GATE_USE_SCORE_COUNT=0
 CURRENT_REPORT=""
 OVERALL_FAIL=0
 
+# Handoff tracking: accumulated failing cases across all test types
+HANDOFF_FAILING_CASES=()
+HANDOFF_FAIL_TYPE_ROUTING=0
+HANDOFF_FAIL_TYPE_QUALITY=0
+HANDOFF_FAIL_TYPE_USEFULNESS=0
+
 usage() {
-  echo "Usage: $0 [--all | --dry-run | --observe | --strict | --json | --runs N | --usefulness] [skill-name ...]"
+  echo "Usage: $0 [--all | --dry-run | --observe | --strict | --json | --runs N | --usefulness | --handoff] [skill-name ...]"
   echo ""
   echo "Options:"
   echo "  --all         Run evals for all skills that have evals/ directories"
@@ -102,6 +109,7 @@ usage() {
   echo "  --model X     Override model (default: gpt-4.1)"
   echo "  --timeout N   Seconds per prompt (default: 60)"
   echo "  --usefulness  Enable LLM-as-Judge usefulness scoring for behavior tests"
+  echo "  --handoff     Append structured Handoff section to report for downstream skill routing"
   echo ""
   echo "Environment variables:"
   echo "  EVAL_MODEL              Model to use (default: gpt-4.1)"
@@ -144,6 +152,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --usefulness)
       USEFULNESS=true
+      shift
+      ;;
+    --handoff)
+      HANDOFF=true
       shift
       ;;
     --runs)
@@ -440,6 +452,8 @@ run_trigger_tests() {
       fail=$((fail + 1))
       errors+=("    ❌ [${total}] FAIL (${category}): ${prompt:0:60}... [expected=${expected}, activated=${skill_activated}${vote_info}]")
       echo "${errors[-1]}"
+      HANDOFF_FAILING_CASES+=("${prompt:0:80} — routing: expected=${expected}, activated=${skill_activated}")
+      HANDOFF_FAIL_TYPE_ROUTING=$((HANDOFF_FAIL_TYPE_ROUTING + 1))
     fi
   done < "$jsonl_file"
 
@@ -612,6 +626,8 @@ run_behavior_tests() {
       fi
       errors+=("    ❌ [${total}] FAIL: ${prompt:0:60}... [${reason_str}${vote_info}]")
       echo "${errors[-1]}"
+      HANDOFF_FAILING_CASES+=("${prompt:0:80} — output-quality: ${reason_str}")
+      HANDOFF_FAIL_TYPE_QUALITY=$((HANDOFF_FAIL_TYPE_QUALITY + 1))
     fi
 
     # --- Usefulness evaluation (opt-in) ---
@@ -673,6 +689,8 @@ run_behavior_tests() {
           use_fail=$((use_fail + 1))
           use_errors+=("    ❌ [${total}] usefulness: ${median_score}/5 — \"${best_judge_summary}\"")
           echo "    🔍 [${total}] usefulness: ${median_score}/5 — FAIL: ${best_judge_summary}"
+          HANDOFF_FAILING_CASES+=("${prompt:0:80} — usefulness: ${median_score}/5, ${best_judge_summary}")
+          HANDOFF_FAIL_TYPE_USEFULNESS=$((HANDOFF_FAIL_TYPE_USEFULNESS + 1))
         fi
 
         use_results+=("| ${total} | ${c_score} | ${cm_score} | ${a_score} | ${cn_score} | ${median_score} | ${use_verdict} |")
@@ -765,6 +783,76 @@ run_behavior_tests() {
     GATE_USE_SCORE_SUM=$use_score_sum
     GATE_USE_SCORE_COUNT=$use_total
   fi
+}
+
+generate_handoff() {
+  local skill="$1"
+
+  if ! $HANDOFF; then
+    return
+  fi
+
+  # Determine primary failure type based on which gate failed first (priority order)
+  local primary_failure="none"
+  local recommended_next_skill="none"
+
+  if [[ $GATE_POS_TOTAL -gt 0 ]]; then
+    local pos_rate=$((GATE_POS_PASS * 100 / GATE_POS_TOTAL))
+    if [[ $pos_rate -lt 80 ]]; then
+      primary_failure="routing"
+      recommended_next_skill="skill-trigger-optimization"
+    fi
+  fi
+  if [[ $GATE_NEG_TOTAL -gt 0 ]] && [[ "$primary_failure" == "none" ]]; then
+    local neg_rate=$((GATE_NEG_PASS * 100 / GATE_NEG_TOTAL))
+    if [[ $neg_rate -lt 80 ]]; then
+      primary_failure="routing"
+      recommended_next_skill="skill-trigger-optimization"
+    fi
+  fi
+  if [[ "$primary_failure" == "none" ]] && [[ $GATE_BEH_TOTAL -gt 0 ]]; then
+    local beh_rate=$((GATE_BEH_PASS * 100 / GATE_BEH_TOTAL))
+    if [[ $beh_rate -lt 80 ]]; then
+      primary_failure="output-quality"
+      recommended_next_skill="skill-improver"
+    fi
+  fi
+  if [[ "$primary_failure" == "none" ]] && $USEFULNESS && [[ $GATE_USE_SCORE_COUNT -gt 0 ]]; then
+    local avg_int
+    avg_int=$(echo "$GATE_USE_SCORE_SUM / $GATE_USE_SCORE_COUNT" | bc 2>/dev/null || echo "0")
+    if [[ "$avg_int" -lt "$USEFULNESS_THRESHOLD" ]]; then
+      primary_failure="usefulness"
+      recommended_next_skill="skill-improver"
+    fi
+  fi
+
+  # If all gates passed but there were individual failing cases, note it
+  if [[ "$primary_failure" == "none" ]] && [[ ${#HANDOFF_FAILING_CASES[@]} -gt 0 ]]; then
+    primary_failure="minor-issues"
+    if [[ $HANDOFF_FAIL_TYPE_ROUTING -gt 0 ]]; then
+      recommended_next_skill="skill-trigger-optimization"
+    elif [[ $HANDOFF_FAIL_TYPE_QUALITY -gt 0 ]] || [[ $HANDOFF_FAIL_TYPE_USEFULNESS -gt 0 ]]; then
+      recommended_next_skill="skill-improver"
+    fi
+  fi
+
+  # Emit the Handoff section
+  {
+    echo "## Handoff"
+    echo ""
+    echo "- **Eval report**: eval-results/${skill}-eval.md"
+    echo "- **Primary failure**: ${primary_failure}"
+    echo "- **Failing cases**:"
+    if [[ ${#HANDOFF_FAILING_CASES[@]} -eq 0 ]]; then
+      echo "  - (none)"
+    else
+      for case_line in "${HANDOFF_FAILING_CASES[@]}"; do
+        echo "  - ${case_line}"
+      done
+    fi
+    echo "- **Recommended next skill**: ${recommended_next_skill}"
+    echo ""
+  } >> "$CURRENT_REPORT"
 }
 
 run_gates() {
@@ -920,12 +1008,17 @@ for skill in "${TARGETS[@]}"; do
   GATE_NEG_PASS=0; GATE_NEG_TOTAL=0
   GATE_BEH_PASS=0; GATE_BEH_TOTAL=0
   GATE_USE_SCORE_SUM=0; GATE_USE_SCORE_COUNT=0
+  HANDOFF_FAILING_CASES=()
+  HANDOFF_FAIL_TYPE_ROUTING=0
+  HANDOFF_FAIL_TYPE_QUALITY=0
+  HANDOFF_FAIL_TYPE_USEFULNESS=0
 
   run_trigger_tests "$skill" "$skill_dir/evals/trigger-positive.jsonl" "positive"
   run_trigger_tests "$skill" "$skill_dir/evals/trigger-negative.jsonl" "negative"
   run_behavior_tests "$skill" "$skill_dir/evals/behavior.jsonl"
 
   run_gates "$skill"
+  generate_handoff "$skill"
 
   # Symlink to latest
   ln -sf "${skill}-${TIMESTAMP}.md" "${RESULTS_DIR}/${skill}-eval.md"
