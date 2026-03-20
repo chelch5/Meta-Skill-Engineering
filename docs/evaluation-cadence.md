@@ -54,12 +54,26 @@ Run this after editing any SKILL.md to verify you haven't broken the required st
 ./scripts/run-evals.sh --all              # All skills with evals/
 ./scripts/run-evals.sh skill-improver     # Single skill
 ./scripts/run-evals.sh --dry-run --all    # List cases without running
+./scripts/run-evals.sh --observe --all    # Use JSON-based routing detection
+./scripts/run-evals.sh --strict --all     # Differential testing (2x slower)
 ```
 
 Runs JSONL test cases from each skill's `evals/` directory:
 - **Trigger-positive tests** (`trigger-positive.jsonl`): Prompts that *should* activate the skill. Measures precision.
 - **Trigger-negative tests** (`trigger-negative.jsonl`): Prompts that should *not* activate the skill. Measures recall (true negative rate).
 - **Behavior tests** (`behavior.jsonl`): Prompts that test output format compliance — required patterns, forbidden patterns, minimum output length.
+
+**Routing detection modes** control how trigger tests determine whether a skill was activated:
+
+| Mode | Flag | Method | Speed |
+|------|------|--------|-------|
+| Fast | `--fast` (default) | Grep for skill name in response text | 1x |
+| Observe | `--observe` | Parse JSON output for actual SKILL.md file reads | 1x |
+| Strict | `--strict` | Run with and without `--no-custom-instructions`, compare | 2x |
+
+The **observe** mode is recommended for accurate trigger testing — it detects whether the model actually opened the skill's SKILL.md via the view tool.
+
+**Environment variables:** `EVAL_MODEL` (model), `EVAL_TIMEOUT` (seconds), `EVAL_ROUTING` (fast|observe|strict), `EVAL_REASONING_EFFORT` (low|medium|high, omit for model default).
 
 After running all tests for a skill, the script evaluates pass/fail gates and appends a verdict to the report.
 

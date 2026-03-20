@@ -16,15 +16,27 @@
 # ROUTING DETECTION MODES:
 #
 # --fast (default): Checks whether the skill name appears in the copilot CLI
-#   response. This is a proxy for skill activation, not a direct measurement.
-#   False positives occur when the model mentions the skill name without
-#   actually activating it. False negatives occur when the skill activates
-#   but the response doesn't include the skill name verbatim.
+#   response text. This is a lightweight proxy for skill engagement.
+#   False positives: model mentions skill name without actually reading it.
+#   False negatives: skill is used but name isn't mentioned verbatim.
 #
-# --strict: Differential testing — runs each prompt twice: once with the
-#   skill's SKILL.md present and once with it temporarily hidden. If outputs
-#   differ meaningfully, the skill was activated. Slower (2x prompts) but
-#   credible. Set EVAL_ROUTING=strict or pass --strict flag.
+# --observe: Parses structured JSON output (--output-format json) from copilot
+#   CLI to detect whether the model actually opened the target skill's SKILL.md
+#   file via the view tool. This is the strongest single-run routing signal —
+#   it detects actual file reads, not name mentions. Recommended for accurate
+#   trigger testing.
+#
+# --strict: Differential testing — runs each prompt twice: once normally and
+#   once with --no-custom-instructions (disabling AGENTS.md and all project
+#   instructions). If outputs differ meaningfully (>20% character difference),
+#   instructions influenced the response. Slowest (2x prompts) but measures
+#   actual behavioral impact.
+#
+# RELIABILITY FLAGS (applied to all copilot calls):
+#   -s                          Strip stats/metadata from output
+#   --no-ask-user               Prevent model from blocking on questions
+#   --max-autopilot-continues 3 Bound runaway agent loops
+#   --reasoning-effort          Controlled via EVAL_REASONING_EFFORT env var
 
 set -euo pipefail
 
@@ -36,6 +48,7 @@ TARGETS=()
 MODEL="${EVAL_MODEL:-claude-sonnet-4.5}"
 TIMEOUT="${EVAL_TIMEOUT:-60}"
 ROUTING_MODE="${EVAL_ROUTING:-fast}"
+REASONING_EFFORT="${EVAL_REASONING_EFFORT:-}"
 JSON_OUTPUT=false
 
 # Gate tracking globals (set by test functions, read by run_gates)
@@ -49,15 +62,23 @@ CURRENT_REPORT=""
 OVERALL_FAIL=0
 
 usage() {
-  echo "Usage: $0 [--all | --dry-run | --strict | --json] [skill-name ...]"
+  echo "Usage: $0 [--all | --dry-run | --fast | --observe | --strict | --json] [skill-name ...]"
   echo ""
   echo "Options:"
   echo "  --all       Run evals for all skills that have evals/ directories"
   echo "  --dry-run   List test cases without executing them"
-  echo "  --strict    Use differential routing (with/without skill); slower but credible"
+  echo "  --fast      Name-grep routing detection (default)"
+  echo "  --observe   JSON-based routing: detects actual SKILL.md file reads"
+  echo "  --strict    Differential testing: with vs without custom instructions"
   echo "  --json      Emit machine-readable JSON summary to stdout after report"
   echo "  --model X   Override model (default: claude-sonnet-4.5)"
   echo "  --timeout N Seconds per prompt (default: 60)"
+  echo ""
+  echo "Environment variables:"
+  echo "  EVAL_MODEL              Model to use (default: claude-sonnet-4.5)"
+  echo "  EVAL_TIMEOUT            Seconds per prompt (default: 60)"
+  echo "  EVAL_ROUTING            Routing mode: fast|observe|strict"
+  echo "  EVAL_REASONING_EFFORT   Reasoning effort: low|medium|high (omit for model default)"
   exit 1
 }
 
@@ -73,6 +94,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --dry-run)
       DRY_RUN=true
+      shift
+      ;;
+    --fast)
+      ROUTING_MODE="fast"
+      shift
+      ;;
+    --observe)
+      ROUTING_MODE="observe"
       shift
       ;;
     --strict)
@@ -111,6 +140,63 @@ command -v jq >/dev/null 2>&1 || { echo "Error: jq is required"; exit 1; }
 
 mkdir -p "$RESULTS_DIR"
 
+# ---------------------------------------------------------------------------
+# Helper: run a prompt through copilot CLI with standard reliability flags
+# Usage: run_copilot_prompt <prompt> [extra_flags...]
+# Outputs response text to stdout.
+# ---------------------------------------------------------------------------
+run_copilot_prompt() {
+  local prompt="$1"
+  shift
+  local args=(-p "$prompt" --model "$MODEL" -s --no-ask-user --allow-all --autopilot --max-autopilot-continues 3)
+  if [[ -n "$REASONING_EFFORT" ]]; then
+    args+=(--reasoning-effort "$REASONING_EFFORT")
+  fi
+  if [[ $# -gt 0 ]]; then
+    args+=("$@")
+  fi
+  timeout "$TIMEOUT" copilot "${args[@]}" 2>/dev/null || echo "ERROR: timeout or failure"
+}
+
+# ---------------------------------------------------------------------------
+# Helper: run a prompt with JSON output for observe mode
+# Sets globals: OBSERVE_RESPONSE (response text), OBSERVE_SKILL_READ (bool)
+# ---------------------------------------------------------------------------
+OBSERVE_RESPONSE=""
+OBSERVE_SKILL_READ=false
+
+run_copilot_observe() {
+  local prompt="$1"
+  local target_skill="$2"
+
+  OBSERVE_RESPONSE=""
+  OBSERVE_SKILL_READ=false
+
+  local raw_json
+  raw_json=$(run_copilot_prompt "$prompt" --output-format json)
+
+  # Handle error/empty case
+  if [[ -z "$raw_json" ]] || [[ "$raw_json" == ERROR:* ]]; then
+    OBSERVE_RESPONSE="ERROR: timeout or failure"
+    return
+  fi
+
+  # Extract response text by concatenating all message deltas
+  OBSERVE_RESPONSE=$(echo "$raw_json" | jq -rs \
+    '[.[] | select(.type == "assistant.message_delta") | .data.deltaContent // ""] | join("")' \
+    2>/dev/null || echo "ERROR: JSON parse failure")
+
+  # Check if the model opened the target skill's SKILL.md via the view tool
+  local skill_paths
+  skill_paths=$(echo "$raw_json" | jq -rs \
+    '[.[] | select(.type == "tool.execution_start") | select(.data.toolName == "view") | .data.arguments.path // ""] | .[]' \
+    2>/dev/null || true)
+
+  if echo "$skill_paths" | grep -q "${target_skill}/SKILL.md"; then
+    OBSERVE_SKILL_READ=true
+  fi
+}
+
 run_trigger_tests() {
   local skill="$1"
   local jsonl_file="$2"
@@ -144,58 +230,47 @@ run_trigger_tests() {
       continue
     fi
 
-    # Run the prompt through copilot CLI
-    local response
-    response=$(timeout "$TIMEOUT" copilot -p "$prompt" \
-      --model "$MODEL" \
-      --reasoning-effort low \
-      --allow-all \
-      --autopilot 2>/dev/null || echo "ERROR: timeout or failure")
+    # Determine skill activation based on routing mode
+    local skill_activated=false
 
-    # Check if the target skill was activated
-    local skill_mentioned=false
-    if [[ "$ROUTING_MODE" == "strict" ]]; then
-      # Differential testing: run again with skill hidden, compare outputs
-      local skill_dir="${REPO_ROOT}/${skill}"
-      local skill_md="${skill_dir}/SKILL.md"
-      local hidden_md="${skill_dir}/.SKILL.md.hidden"
-      if [[ -f "$skill_md" ]]; then
-        mv "$skill_md" "$hidden_md"
-        local response_without
-        response_without=$(timeout "$TIMEOUT" copilot -p "$prompt" \
-          --model "$MODEL" \
-          --reasoning-effort low \
-          --allow-all \
-          --autopilot 2>/dev/null || echo "ERROR: timeout or failure")
-        mv "$hidden_md" "$skill_md"
-        # If outputs differ meaningfully (>20% character difference), skill was active
-        local len_with=${#response}
+    if [[ "$ROUTING_MODE" == "observe" ]]; then
+      # Observe mode: parse JSON output for actual SKILL.md file reads
+      run_copilot_observe "$prompt" "$skill"
+      if $OBSERVE_SKILL_READ; then
+        skill_activated=true
+      fi
+
+    elif [[ "$ROUTING_MODE" == "strict" ]]; then
+      # Strict mode: differential testing with vs without custom instructions
+      local response_with response_without
+      response_with=$(run_copilot_prompt "$prompt")
+      response_without=$(run_copilot_prompt "$prompt" --no-custom-instructions)
+
+      # If outputs differ meaningfully (>20% character difference), instructions mattered
+      if [[ "$response_with" != "$response_without" ]]; then
+        local len_with=${#response_with}
         local len_without=${#response_without}
-        if [[ "$response" != "$response_without" ]]; then
-          local diff_chars
-          diff_chars=$(diff <(echo "$response") <(echo "$response_without") | wc -c)
-          local avg_len=$(( (len_with + len_without) / 2 ))
-          if [[ $avg_len -gt 0 ]] && [[ $((diff_chars * 100 / avg_len)) -gt 20 ]]; then
-            skill_mentioned=true
-          fi
-        fi
-      else
-        # Fallback to name-grep if SKILL.md not found
-        if echo "$response" | grep -qi "$skill"; then
-          skill_mentioned=true
+        local diff_chars
+        diff_chars=$(diff <(echo "$response_with") <(echo "$response_without") | wc -c)
+        local avg_len=$(( (len_with + len_without) / 2 ))
+        if [[ $avg_len -gt 0 ]] && [[ $((diff_chars * 100 / avg_len)) -gt 20 ]]; then
+          skill_activated=true
         fi
       fi
+
     else
       # Fast mode: name-grep proxy
+      local response
+      response=$(run_copilot_prompt "$prompt")
       if echo "$response" | grep -qi "$skill"; then
-        skill_mentioned=true
+        skill_activated=true
       fi
     fi
 
     local test_passed=false
-    if [[ "$expected" == "trigger" ]] && $skill_mentioned; then
+    if [[ "$expected" == "trigger" ]] && $skill_activated; then
       test_passed=true
-    elif [[ "$expected" == "no_trigger" ]] && ! $skill_mentioned; then
+    elif [[ "$expected" == "no_trigger" ]] && ! $skill_activated; then
       test_passed=true
     fi
 
@@ -204,7 +279,7 @@ run_trigger_tests() {
       echo "    ✅ [${total}] PASS (${category}): ${prompt:0:60}..."
     else
       fail=$((fail + 1))
-      errors+=("    ❌ [${total}] FAIL (${category}): ${prompt:0:60}... [expected=${expected}, mentioned=${skill_mentioned}]")
+      errors+=("    ❌ [${total}] FAIL (${category}): ${prompt:0:60}... [expected=${expected}, activated=${skill_activated}]")
       echo "${errors[-1]}"
     fi
   done < "$jsonl_file"
@@ -286,11 +361,7 @@ run_behavior_tests() {
 
     # Run the prompt through copilot CLI
     local response
-    response=$(timeout "$TIMEOUT" copilot -p "$prompt" \
-      --model "$MODEL" \
-      --reasoning-effort low \
-      --allow-all \
-      --autopilot 2>/dev/null || echo "ERROR: timeout or failure")
+    response=$(run_copilot_prompt "$prompt")
 
     local response_lines
     response_lines=$(echo "$response" | wc -l)
@@ -464,6 +535,7 @@ echo "════════════════════════�
 echo "  Meta-Skill Eval Runner"
 echo "  Model: ${MODEL}"
 echo "  Routing: ${ROUTING_MODE}"
+echo "  Reasoning: ${REASONING_EFFORT:-model default}"
 echo "  Mode: $(if $DRY_RUN; then echo 'DRY RUN'; else echo 'LIVE'; fi)"
 echo "═══════════════════════════════════════════"
 echo ""
@@ -489,6 +561,7 @@ for skill in "${TARGETS[@]}"; do
   echo "# Eval Results: ${skill}" >> "$CURRENT_REPORT"
   echo "Date: $(date -Iseconds)" >> "$CURRENT_REPORT"
   echo "Model: ${MODEL}" >> "$CURRENT_REPORT"
+  echo "Routing: ${ROUTING_MODE}" >> "$CURRENT_REPORT"
   echo "" >> "$CURRENT_REPORT"
 
   # Reset gate tracking
