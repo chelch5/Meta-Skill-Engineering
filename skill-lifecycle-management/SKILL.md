@@ -46,8 +46,8 @@ Manage skills through lifecycle states: draft → beta → stable → deprecated
 ## Operating procedure
 
 1. **Assess current lifecycle stage for each skill** using these signals:
-   - **draft**: No `evals/` directory, or evals exist but fewer than 3 test cases. Passes `validate-skills.sh` with score < 8.
-   - **beta**: Has `evals/` with ≥3 cases. Passes structural validation (score ≥ 8). No formal evaluation Pass verdict yet.
+   - **draft**: Has `evals/` directory but fewer than 3 test cases total across all JSONL files, OR passes `validate-skills.sh` with score < 8.
+   - **beta**: Has `evals/` with ≥3 cases. Passes structural validation (score ≥ 8). No formal evaluation Pass verdict yet (no eval report in `eval-results/` with gate PASS).
    - **stable**: Formal evaluation (via `skill-evaluation`) returned a Pass verdict. At least 10 test cases with ≥90% pass rate. Referenced by other skills or AGENTS.md as a recommended tool.
    - **deprecated**: SKILL.md body contains a `⚠️ DEPRECATED` notice. Still in its root directory (not yet archived).
    - **archived**: Directory exists under `archive/` rather than at the repository root.
@@ -174,7 +174,7 @@ If no transitions are warranted, state that explicitly — do not invent changes
 
 | Problem | Response |
 |---------|----------|
-| Skills with unknown lifecycle state | Infer from evidence: has eval results in eval-results/ with gate PASS → stable; has evals/ but no results yet → beta; no eval results and no eval files → draft; has deprecation notice in SKILL.md → deprecated; lives in `archive/` → archived |
+| Skills with unknown lifecycle state | Infer from evidence: has eval results in eval-results/ with gate PASS → stable; has evals/ but no results yet → beta; has evals/ but fewer than 3 cases → draft; has deprecation notice in SKILL.md → deprecated; lives in `archive/` → archived |
 | Deprecated skill has active dependents | Identify or create replacement first; do not deprecate until dependents have a migration path |
 | Disputed maturity (e.g. "stable" but failing evals) | Default to the more conservative state and note the discrepancy |
 | No evaluation data available for promotion | Block promotion; recommend running `skill-evaluation` first |
