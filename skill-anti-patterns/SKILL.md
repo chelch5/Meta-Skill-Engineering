@@ -36,7 +36,7 @@ Read the target SKILL.md. Before scanning, establish a quantitative baseline:
 
 ```bash
 python3 scripts/check_skill_structure.py <skill-dir>/SKILL.md    # 10-point structural score
-python3 scripts/skill_lint.py <skill-dir>/SKILL.md               # Format lint
+python3 scripts/skill_lint.py <skill-dir>               # Format lint
 ```
 
 Record the structural score and any lint issues — these often correlate with anti-pattern presence and provide a measurable before/after comparison.

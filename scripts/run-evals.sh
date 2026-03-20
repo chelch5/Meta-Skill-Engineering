@@ -32,9 +32,11 @@
 #
 # --strict: Differential testing — runs each prompt twice: once normally and
 #   once with --no-custom-instructions (disabling AGENTS.md and all project
-#   instructions). If outputs differ meaningfully (>20% character difference),
-#   instructions influenced the response. Slowest (2x prompts) but measures
-#   actual behavioral impact.
+#   instructions, not just the target skill). If outputs differ meaningfully
+#   (>20% character difference), instructions influenced the response.
+#   NOTE: This tests whether ANY custom instruction influenced the response,
+#   not whether the specific target skill was activated. For per-skill
+#   detection, use --observe instead. Slowest (2x prompts).
 #
 # MULTI-RUN VARIANCE REDUCTION:
 #
@@ -51,7 +53,14 @@
 
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Auto-detect repo root: walk up from script location looking for AGENTS.md
+_script_dir="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$_script_dir"
+while [[ "$REPO_ROOT" != "/" ]]; do
+  [[ -f "$REPO_ROOT/AGENTS.md" ]] && break
+  REPO_ROOT="$(dirname "$REPO_ROOT")"
+done
+[[ ! -f "$REPO_ROOT/AGENTS.md" ]] && { echo "Error: cannot find repo root (no AGENTS.md found)"; exit 1; }
 RESULTS_DIR="${REPO_ROOT}/eval-results"
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 DRY_RUN=false

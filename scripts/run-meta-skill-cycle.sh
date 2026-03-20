@@ -18,12 +18,13 @@
 set -euo pipefail
 
 CYCLE="${1:-1}"
+MODEL="${EVAL_MODEL:-claude-opus-4.6}"
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 LOG_DIR="${REPO_DIR}/tasks/worklogs"
 
 echo "=== Meta-Skill Orchestrator Cycle ${CYCLE} ==="
 echo "Repository: ${REPO_DIR}"
-echo "Model: claude-opus-4.6 (high reasoning)"
+echo "Model: ${MODEL}"
 echo "Started: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 echo ""
 
@@ -34,7 +35,7 @@ cd "${REPO_DIR}"
 # Run copilot in non-interactive mode with full permissions
 # The prompt invokes the meta-skill-orchestrator entry point skill
 copilot -p "You have the meta-skill-orchestrator skill installed. Invoke it now to run a full quality-improvement cycle (cycle ${CYCLE}) against all skill packages in this repository. Follow the orchestrator's procedure exactly through all 7 phases. Apply improvements directly to SKILL.md files where warranted. Create the cycle report at tasks/worklogs/orchestrator-cycle-${CYCLE}-report.md. Commit all changes with message 'cycle-${CYCLE}: meta-skill orchestrator improvements' and the Co-authored-by trailer for Copilot." \
-  --model claude-opus-4.6 \
+  --model "$MODEL" \
   --reasoning-effort high \
   --allow-all \
   --autopilot \

@@ -88,10 +88,11 @@ description: >-
 5. Make it slightly assertive about when to trigger — agents tend to
    under-trigger rather than over-trigger
 6. Include keywords and contexts that should activate the skill
+7. Keep the description under 1024 characters (hard limit per the Agent Skills specification)
 
 Flag a description if it: is under 12 words, has no action verb first,
 has no condition, lacks trigger examples, could apply to multiple skills,
-or has no negative boundary.
+has no negative boundary, or exceeds 1024 characters.
 
 ### Step 4 — Write the body sections
 
@@ -268,9 +269,9 @@ skill-name/
 Only create subdirectories if they contain actual files.
 
 After finalization, recommend next steps:
-- Run `skill-trigger-optimization` to optimize the description for routing
 - Run `skill-testing-harness` to build a formal eval suite
 - Run `skill-evaluation` to validate routing accuracy and output quality
+- Run `skill-trigger-optimization` to optimize the description for routing
 - Run `skill-safety-review` if the skill executes code or writes files
 
 # Output contract
@@ -304,10 +305,10 @@ The SKILL.md must pass all Phase 2 Step 7 validation checks before delivery.
 
 1. Build test infrastructure → `skill-testing-harness`
 2. Evaluate routing and output quality → `skill-evaluation`
-3. Compare variants if multiple drafts → `skill-benchmarking`
-4. Optimize trigger description → `skill-trigger-optimization`
-5. Review for safety hazards → `skill-safety-review`
-6. Manage lifecycle state → `skill-lifecycle-management`
+3. Optimize trigger description → `skill-trigger-optimization`
+4. Review for safety hazards → `skill-safety-review`
+5. Manage lifecycle state → `skill-lifecycle-management`
+6. Compare variants if multiple drafts exist → `skill-benchmarking` (optional, not in standard pipeline)
 
 # References
 

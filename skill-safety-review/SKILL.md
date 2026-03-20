@@ -67,7 +67,7 @@ Audit a skill for safety hazards before it is published, imported, or promoted. 
 
    ```bash
    python3 scripts/check_skill_structure.py <skill-dir>/SKILL.md    # 10-point structural score
-   python3 scripts/skill_lint.py <skill-dir>/SKILL.md               # Format lint
+   python3 scripts/skill_lint.py <skill-dir>               # Format lint
    ./scripts/validate-skills.sh                                      # Full repo compliance
    ```
 

@@ -14,7 +14,14 @@
 
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Auto-detect repo root
+_script_dir="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$_script_dir"
+while [[ "$REPO_ROOT" != "/" ]]; do
+  [[ -f "$REPO_ROOT/AGENTS.md" ]] && break
+  REPO_ROOT="$(dirname "$REPO_ROOT")"
+done
+[[ ! -f "$REPO_ROOT/AGENTS.md" ]] && { echo "Error: cannot find repo root (no AGENTS.md found)"; exit 1; }
 CORPUS_DIR="${REPO_ROOT}/corpus"
 RESULTS_DIR="${REPO_ROOT}/eval-results"
 CHECK_SCRIPT="${REPO_ROOT}/scripts/check_skill_structure.py"
