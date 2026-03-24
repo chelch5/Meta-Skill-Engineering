@@ -1,0 +1,2 @@
+{"input":"Use Migration Pack Builder on a realistic task and return the result in a decision-ready shape.","must_include":["Inputs","Chosen Shape","Generated Artifacts","Validation and Handoff"],"expected":"migration-pack-builder"}
+{"input":"Apply Migration Pack Builder but call out uncertainty and the next verification step explicitly.","must_include":["Inputs","Validation and Handoff"],"expected":"migration-pack-builder"}

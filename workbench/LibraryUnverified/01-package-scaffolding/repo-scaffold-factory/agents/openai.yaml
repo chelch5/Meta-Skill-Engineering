@@ -1,0 +1,4 @@
+interface:
+  display_name: "Repo Scaffold Factory"
+  short_description: "Build repository skeletons, docs, and workflow scaffolds"
+  default_prompt: "Use $repo-scaffold-factory to create a repo structure, docs, and workflow scaffold from this spec."

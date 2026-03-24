@@ -135,38 +135,54 @@ skill-catalog-curation → skill-lifecycle-management
 - Root inventory includes only the 12 skill packages at the repository root.
 - `archive/` contains skills removed from the active inventory (distribution-oriented skills).
 - `corpus/` contains test skills for evaluating meta-skills (5 weak, 5 strong, 5 adversarial, 3 regression).
-- `tasks/` is documentation, worklogs, and reviews — not a skill package.
 - `scripts/` contains automation scripts for running evals, validation, and optimization.
 - `eval-results/` contains timestamped eval reports (markdown) with a `<skill>-eval.md` symlink to the latest. These are the handoff mechanism between `skill-evaluation` and `skill-improver`.
 - `docs/` contains operational documentation (evaluation cadence, workflows).
+- `VerifiedSkills/` contains benchmarked candidates from workbench/LibraryUnverified/ that have passed rigorous evaluation.
+- `.opencode/agents/` contains project-specific sub-agents for specialized tasks.
+
+## Sub-Agents
+
+Project-specific sub-agents are defined in `.opencode/agents/`:
+
+| Agent | Purpose |
+|-------|---------|
+| `manager` | Orchestrates the repository autonomously, delegates to other agents |
+| `categorizer` | Audits LibraryUnverified/ and reorganizes skills into correct categories |
+| `evaluator` | Runs evaluation tests against skills using the eval pipeline |
+| `performance-monitor` | Permanently monitors performance, auto-applies improvements |
+
+Invoke via OpenCode's `@agent` syntax.
 
 ## Evaluation Tooling
 
-The eval system uses Copilot CLI (`copilot -p`) with structured JSON output for routing detection.
+The eval system uses OpenCode SDK with structured JSON output for routing detection.
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/run-evals.sh` | Trigger and behavior tests with pass/fail gates (`--observe`/`--strict` routing, `--runs N` majority voting, `--usefulness` LLM-as-Judge scoring) |
-| `scripts/run-trigger-optimization.sh` | Automated trigger optimization with 60/40 train/test split and held-out validation |
+| `scripts/opencode-eval.sh` | Trigger and behavior tests with pass/fail gates (`--observe`/`--strict` routing, `--runs N` majority voting) |
+| `scripts/opencode-trigger-opt.sh` | Automated trigger optimization with 60/40 train/test split |
+| `scripts/opencode-corpus-eval.sh` | Two-layer meta-skill evaluation against corpus |
+| `scripts/opencode-full-cycle.sh` | Full 5-step evaluation cadence |
+| `scripts/opencode-meta-cycle.sh` | Meta-skill improvement cycle orchestration |
 | `scripts/validate-skills.sh` | Structural compliance check for all 12 skills |
-| `scripts/run-full-cycle.sh` | Full 5-step evaluation cadence |
-| `scripts/run-baseline-comparison.sh` | Before/after comparison with gates |
-| `scripts/run-corpus-eval.sh` | Two-layer meta-skill evaluation against corpus |
-| `scripts/run-regression-suite.sh` | Regression protection runner |
 | `scripts/check_skill_structure.py` | 10-point structural scoring for a skill |
 | `scripts/check_preservation.py` | Jaccard similarity for content preservation |
 | `scripts/skill_lint.py` | Lint a SKILL.md for format issues |
 | `scripts/harvest_failures.py` | Convert failures into regression cases |
 | `scripts/sync-to-skills.sh` | Sync root scripts to per-skill `scripts/` directories per manifest |
-| `scripts/run-meta-skill-cycle.sh` | **Optional/experimental** — orchestrate meta-skill cycle via non-interactive Copilot |
 
-**Default model:** `gpt-4.1`. Override with `EVAL_MODEL` env var.
+**Default model:** `minimax-coding-plan/Minimax-M2.7`. Override with `EVAL_MODEL` env var.
 
-**Routing modes:** `--observe` (default) parses JSON output to detect actual SKILL.md file reads. `--strict` runs with and without `--no-custom-instructions` for differential comparison (2x slower).
+**OpenCode server:** `http://127.0.0.1:4096` (default). Override with `OPENCODE_SERVER` env var.
+
+**Routing modes:** `--observe` (default) uses OpenCode session observation for SKILL.md file reads.
 
 See `docs/evaluation-cadence.md` for the full evaluation workflow.
 
-## Copilot CLI Integration
+## OpenCode SDK Integration
 
-- `.github/copilot-instructions.md` provides project-level instructions for Copilot CLI sessions.
-- `.github/extensions/meta-skill-tools/` provides validation tools (`mse_validate_skill`, `mse_validate_all`, `mse_lint_skill`, `mse_check_preservation`) and an auto-validation hook that runs after SKILL.md edits.
+- `.github/copilot-instructions.md` provides project-level instructions.
+- `.github/extensions/meta-skill-tools/` provides validation tools (`mse_validate_skill`, `mse_validate_all`, `mse_lint_skill`, `mse_check_preservation`) and an auto-validation hook.
+- `orchestrator.mjs` uses `@opencode-ai/sdk` for mass parallel evaluation via multiple OpenCode sessions.
+- `.opencode/opencode.json` configures plugins including `opencode-scheduler` for recurring tasks.

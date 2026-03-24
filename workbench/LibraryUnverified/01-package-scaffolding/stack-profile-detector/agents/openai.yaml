@@ -1,0 +1,6 @@
+interface:
+  display_name: "Stack Profile Detector"
+  short_description: "Apply stack profile detector through a concrete workflow with..."
+  default_prompt: "Use $stack-profile-detector-codex-c to handle this task with a concrete workflow and explicit verification."
+policy:
+  allow_implicit_invocation: true

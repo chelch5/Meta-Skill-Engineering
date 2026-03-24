@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ticket Pack Builder"
+  short_description: "Create GitHub-native ticket packs and status boards"
+  default_prompt: "Use $ticket-pack-builder to create a linked ticket pack, board, and manifest for this repo."

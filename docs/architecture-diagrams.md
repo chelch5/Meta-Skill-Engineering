@@ -1,4 +1,63 @@
-# Meta-Skill-Engineering — Architecture Diagrams
+# Role
+You are a senior software engineer operating in a coding CLI with repo access. Your task is to:
+1) read a repository review,
+2) verify each finding against the codebase,
+3) produce a concrete implementation plan for all findings that are truly valid.
+
+# Ground Rules
+- Work **read-only**: search, read, and run existing tests; do not modify files unless asked later.
+- Prefer **evidence over speculation**. If uncertain, say so and ask for the smallest missing detail.
+- You are not coding in this task
+
+# What to Do (deterministic steps)
+A. **Normalize the review**
+   - Parse REVIEW_SOURCE into atomic findings: {id, title, category (bug|security|perf|api|docs|style|build_ci, etc), evidence_from_review (quotes/links), any file/line hints}.
+
+B. **Validate each finding against the repo**
+   - Map each finding to code by exact path + line ranges when possible.
+   - Use code search (strings/symbols/flags), read files, think about the content of the file.
+   - Decide `validation_status ∈ {valid, invalid, uncertain, already solved, already logged}` and provide one short rationale.
+   - Attach **validation_evidence**: code citations (path:start-end), config snippets, or ≤20-line test outputs.
+   - Set `severity ∈ {critical, high, medium, low}` and list `blast_radius` (affected components).
+   - Refer to standard Agent Skills conventions found on https://agentskills.io
+
+C. **Plan implementations for valid findings only**
+   - For each valid item, produce a **minimal-risk change plan**:
+     - Change steps with exact files/functions and any config/schema changes.
+     - Risks and a fast rollback path.
+     - Effort estimate (T-shirt + hours).
+
+D. **Call out invalid/uncertain**
+   - Explain why, and list the smallest additional info needed to confirm.
+
+Output as Markdown:
+
+```markdown
+# Review Validation & Implementation Plan
+
+**Summary:** N findings — V valid, I invalid, U uncertain. Top risks: <themes>.
+
+## F-001 <Title> — **Valid (Medium)**
+**Why:** <1–2 sentence rationale>.
+**Plan:** <numbered change steps>.
+**Citations:** PATH/FILE:START-END; ...`
+```
+
+# Markdown rules
+
+This is the first task of 9. For this task, you will create a plan in the projects root called implementation.md and record your findings.
+
+For all subsequent tasks, you will append your findings to this file. You will NOT overwrite anything on this file.
+
+# Post Review
+
+Stage, commit, and push the review to GitHub
+
+# Stopping Condition
+If ambiguity blocks a verdict, stop after triage and emit `open_questions` specifying the minimal info needed.
+``# Meta-Skill-Engineering — Architecture Diagrams
+
+
 
 > All diagrams are Mermaid. Render in any Mermaid-compatible viewer (GitHub, VS Code, etc.).
 > Issues from the [review report](../tasks/review-report-2026-03-20.md) are annotated with ⚠️ markers.
@@ -50,6 +109,7 @@ graph TB
         CP[check_preservation.py]
         HF[harvest_failures.py]
         IEF[init_eval_files.py]
+        QV["quick_validate.py<br/>⚠️ X-1: STALE — contradicts<br/>frontmatter rules"]
     end
 
     subgraph corpus["🧪 Test Corpus (5/5/5 + 3)"]
@@ -323,6 +383,7 @@ flowchart TB
         VS["validate-skills.sh<br/>All 12 skills at once"]
         CSS["check_skill_structure.py<br/>10-point scorer, single skill"]
         SL["skill_lint.py<br/>Format linter"]
+        QV["quick_validate.py<br/>⚠️ X-1: STALE<br/>Allows license, allowed-tools,<br/>metadata, compatibility<br/>in frontmatter"]
     end
 
     subgraph trigger["Layer 2: Trigger Testing (LLM)"]
@@ -632,8 +693,8 @@ All issues from the review report, mapped to the components they affect.
 
 ```mermaid
 graph TB
-    subgraph critical["🔴 CRITICAL (RESOLVED)"]
-        X1["X-1: quick_validate.py — REMOVED<br/>(was allowing 4 extra frontmatter fields)"]
+    subgraph critical["🔴 CRITICAL"]
+        X1["X-1: quick_validate.py<br/>allows 4 extra frontmatter fields<br/>(license, allowed-tools, metadata,<br/>compatibility) that all other<br/>tools reject.<br/>📍 scripts/quick_validate.py:42"]
     end
 
     subgraph significant["🟡 SIGNIFICANT"]

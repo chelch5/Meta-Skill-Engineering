@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spec Pack Normalizer"
+  short_description: "Normalize multi-file specs into a canonical brief"
+  default_prompt: "Use $spec-pack-normalizer to turn this Markdown spec pack into a canonical project brief."

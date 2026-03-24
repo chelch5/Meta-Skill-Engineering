@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Prompt Engineering"
+  short_description: "Harden agent prompts, commands, and workflow wording for weaker models"
+  default_prompt: "Use $agent-prompt-engineering to tighten agent prompts, command contracts, and stage-gated workflow instructions."

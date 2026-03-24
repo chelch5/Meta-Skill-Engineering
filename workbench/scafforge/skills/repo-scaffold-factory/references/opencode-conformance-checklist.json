@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "required_files": [
+    "README.md",
+    "AGENTS.md",
+    "START-HERE.md",
+    "opencode.jsonc",
+    "docs/spec/CANONICAL-BRIEF.md",
+    "docs/process/git-capability.md",
+    "docs/process/model-matrix.md",
+    "docs/process/workflow.md",
+    "tickets/manifest.json",
+    "tickets/BOARD.md",
+    ".opencode/state/workflow-state.json",
+    ".opencode/state/artifacts/registry.json",
+    ".opencode/tools/ticket_create.ts",
+    ".opencode/tools/ticket_update.ts",
+    ".opencode/commands/kickoff.md",
+    ".opencode/commands/resume.md"
+  ],
+  "required_directories": [
+    ".opencode/agents",
+    ".opencode/tools",
+    ".opencode/plugins",
+    ".opencode/commands",
+    ".opencode/skills",
+    ".opencode/state/plans",
+    ".opencode/state/implementations",
+    ".opencode/state/reviews",
+    ".opencode/state/qa",
+    ".opencode/state/handoffs",
+    ".opencode/state/artifacts"
+  ],
+  "required_skill_ids": [
+    "project-context",
+    "repo-navigation",
+    "stack-standards",
+    "ticket-execution",
+    "review-audit-bridge",
+    "docs-and-handoff",
+    "workflow-observability",
+    "research-delegation",
+    "local-git-specialist",
+    "isolation-guidance"
+  ],
+  "required_agent_suffixes": [
+    "team-leader",
+    "planner",
+    "plan-review",
+    "implementer",
+    "reviewer-code",
+    "reviewer-security",
+    "tester-qa",
+    "docs-handoff",
+    "backlog-verifier",
+    "ticket-creator"
+  ],
+  "doc_template_map": {
+    "generated_truth_hierarchy": [
+      "README.md",
+      "AGENTS.md",
+      "docs/spec/CANONICAL-BRIEF.md",
+      "docs/process/workflow.md",
+      "docs/process/tooling.md",
+      "tickets/README.md"
+    ],
+    "runtime_model_contract": [
+      "docs/spec/CANONICAL-BRIEF.md",
+      "docs/process/model-matrix.md",
+      ".opencode/agents"
+    ]
+  }
+}

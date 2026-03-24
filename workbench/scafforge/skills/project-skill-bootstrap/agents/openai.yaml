@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Skill Bootstrap"
+  short_description: "Create deterministic project-local OpenCode skills"
+  default_prompt: "Use $project-skill-bootstrap to generate project-local OpenCode skills for this repo."

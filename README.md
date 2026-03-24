@@ -7,10 +7,11 @@ A meta-skill engineering workspace containing 12 skills that create, refine, tes
 - `./<skill-name>/` — repo-owned skill packages at the repository root. Each package has a `SKILL.md` baseline contract and may include `references/`, `scripts/`, `evals/`, or `assets/`.
 - `archive/` — skills removed from the active inventory (distribution-oriented skills).
 - `corpus/` — test skills for evaluating meta-skills: 5 weak, 5 strong, 5 adversarial, plus a regression directory for harvested failures.
-- `tasks/` — task notes, worklogs, reviews, and maintenance instructions.
 - `scripts/` — automation scripts (eval runner, validation, optimization, corpus evaluation). Root scripts are source-of-truth copies; per-skill `scripts/` directories contain deployed copies via `sync-to-skills.sh`.
 - `eval-results/` — timestamped eval reports; `<skill>-eval.md` symlinks to latest. Handoff mechanism between `skill-evaluation` and `skill-improver`.
 - `docs/` — operational documentation including `evaluation-cadence.md`.
+- `VerifiedSkills/` — benchmarked candidates from workbench/LibraryUnverified/ that have passed rigorous evaluation.
+- `workbench/` — unverified skill candidates organized by domain. See LibraryUnverified/ for candidate skills awaiting benchmarking.
 
 ## Pipelines
 
@@ -85,29 +86,53 @@ skill-catalog-curation → skill-lifecycle-management
 
 ## Evaluation System
 
-The eval system uses Copilot CLI (`copilot -p`) to test skills with real model responses.
+The eval system uses OpenCode SDK to test skills with real model responses via session-based evaluation.
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/run-evals.sh` | Trigger and behavior tests with pass/fail gates (`--observe`/`--strict` routing, `--runs N` majority voting, `--usefulness` LLM-as-Judge scoring) |
-| `scripts/run-trigger-optimization.sh` | Automated trigger optimization with train/test split |
+| `scripts/opencode-eval.sh` | Trigger and behavior tests with pass/fail gates (`--observe` routing, `--runs N` majority voting) |
+| `scripts/opencode-trigger-opt.sh` | Automated trigger optimization with train/test split |
+| `scripts/opencode-corpus-eval.sh` | Two-layer meta-skill evaluation against corpus |
+| `scripts/opencode-full-cycle.sh` | Full 5-step evaluation cadence |
+| `scripts/opencode-meta-cycle.sh` | Meta-skill improvement cycle orchestration |
 | `scripts/validate-skills.sh` | Structural compliance check for all 12 skills |
-| `scripts/run-full-cycle.sh` | Full 5-step evaluation cadence |
-| `scripts/run-baseline-comparison.sh` | Before/after comparison with gates |
-| `scripts/run-corpus-eval.sh` | Two-layer meta-skill evaluation against corpus |
-| `scripts/run-regression-suite.sh` | Regression protection runner |
 | `scripts/check_skill_structure.py` | 10-point structural scoring for a skill |
 | `scripts/check_preservation.py` | Jaccard similarity for content preservation |
 | `scripts/skill_lint.py` | Lint a SKILL.md for format issues |
 | `scripts/harvest_failures.py` | Convert failures into regression cases |
 | `scripts/sync-to-skills.sh` | Sync root scripts to per-skill `scripts/` directories |
-| `scripts/run-meta-skill-cycle.sh` | **Optional/experimental** — orchestrate meta-skill cycle via non-interactive Copilot |
 
 **Key capabilities:**
-- **Observe routing** (default): parses JSON output to detect whether the model actually read a SKILL.md
+- **Observe routing** (default): uses OpenCode session observation to detect actual SKILL.md file reads
 - **Multi-run voting**: `--runs N` runs each prompt N times with majority-vote pass/fail
-- **Usefulness evaluation** (opt-in): `--usefulness` enables LLM-as-Judge scoring of behavior test outputs on correctness, completeness, actionability, and conciseness (1–5 scale)
-- **Default model**: `gpt-4.1` (override with `EVAL_MODEL`)
+- **Default model**: `minimax-coding-plan/Minimax-M2.7` (override with `EVAL_MODEL`)
 - **Trigger optimization**: 60/40 train/test split, LLM-proposed improvements, held-out validation
 
 See `docs/evaluation-cadence.md` for the full workflow and environment variables.
+
+## VerifiedSkills
+
+Skills in `workbench/LibraryUnverified/` that have passed rigorous benchmarking live here. Categories are defined by the `categorizer` agent based on SKILL.md content analysis. See `VerifiedSkills/README.md` for the complete inventory.
+
+## Sub-Agents
+
+This project uses OpenCode sub-agents for specialized tasks:
+
+| Agent | Purpose |
+|-------|---------|
+| `manager` | Orchestrates the repository autonomously, delegates to other agents |
+| `categorizer` | Audits LibraryUnverified/ and reorganizes skills into correct categories |
+| `evaluator` | Runs evaluation tests against skills using the eval pipeline |
+| `performance-monitor` | Permanently monitors performance, auto-applies improvements |
+
+Agents are defined in `.opencode/agents/` and activated via OpenCode's `@agent` syntax.
+
+## SDK Orchestration
+
+Mass parallel evaluation is orchestrated via `@opencode-ai/sdk`:
+
+```bash
+node orchestrator.mjs --skills=skill1,skill2 --workers=5
+```
+
+The orchestrator creates multiple sessions on a single OpenCode server and distributes eval jobs across workers. See `orchestrator.mjs` for details.

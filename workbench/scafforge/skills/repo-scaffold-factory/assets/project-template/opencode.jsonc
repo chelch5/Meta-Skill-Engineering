@@ -1,0 +1,55 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "START-HERE.md",
+    "AGENTS.md",
+    "README.md",
+    "docs/process/*.md",
+    "docs/spec/CANONICAL-BRIEF.md",
+    "tickets/README.md",
+    "tickets/manifest.json",
+    "tickets/BOARD.md"
+  ],
+  "mcp": {
+    "browser_research": {
+      "type": "local",
+      "command": ["npx", "-y", "@playwright/mcp@latest"],
+      "enabled": false
+    },
+    "project_github": {
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "enabled": false
+    },
+    "openai_docs": {
+      "type": "remote",
+      "url": "https://developers.openai.com/mcp",
+      "enabled": false
+    }
+  },
+  "permission": {
+    "read": {
+      "*": "allow",
+      "*.env": "deny",
+      "*.env.*": "deny",
+      "*.env.example": "allow",
+      "**/*.env": "deny",
+      "**/*.env.*": "deny",
+      "**/*.env.example": "allow"
+    },
+    "bash": {
+      "*": "deny",
+      "pwd": "allow",
+      "ls *": "allow",
+      "find *": "allow",
+      "rg *": "allow",
+      "sed *": "allow",
+      "cat *": "allow",
+      "head *": "allow",
+      "tail *": "allow",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "git log*": "allow"
+    }
+  }
+}

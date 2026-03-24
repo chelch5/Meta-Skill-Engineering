@@ -1,0 +1,4 @@
+interface:
+  display_name: "OpenCode Team Bootstrap"
+  short_description: "Generate autonomous OpenCode teams, tools, and plugins"
+  default_prompt: "Use $opencode-team-bootstrap to generate an OpenCode team, local tools, and plugins for this project."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Scaffold Kickoff"
+  short_description: "Start the full spec-to-repo scaffold workflow"
+  default_prompt: "Use $scaffold-kickoff to turn this spec pack into a scaffolded repo with tickets, OpenCode team files, and handoff docs."

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Migration Pack Builder"
+  short_description: "Build migration pack builder artifacts with deterministic str..."
+  default_prompt: "Use $migration-pack-builder-codex-c to handle this task with a concrete workflow and explicit verification."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "project": "__PROJECT_NAME__",
+  "active_ticket": "SETUP-001",
+  "tickets": [
+    {
+      "id": "SETUP-001",
+      "title": "Establish scaffold and canonical brief",
+      "wave": 0,
+      "lane": "repo-foundation",
+      "parallel_safe": false,
+      "overlap_risk": "high",
+      "stage": "planning",
+      "status": "todo",
+      "depends_on": [],
+      "summary": "Replace placeholders in the canonical brief, review the scaffold, and begin ticketed planning.",
+      "acceptance": [
+        "Canonical brief updated with real project content",
+        "Team entrypoints verified",
+        "Ticket tools working"
+      ],
+      "decision_blockers": [],
+      "artifacts": []
+    }
+  ]
+}

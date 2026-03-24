@@ -1,0 +1,4 @@
+interface:
+  display_name: "Repo Process Doctor"
+  short_description: "Audit existing repos for workflow drift and process repair work"
+  default_prompt: "Use $repo-process-doctor to audit this repo's agent workflow, diagnose drift, and propose deterministic repairs."

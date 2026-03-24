@@ -1,0 +1,4 @@
+interface:
+  display_name: "Handoff Brief"
+  short_description: "Create concise repo handoff and resume artifacts"
+  default_prompt: "Use $handoff-brief to create a concise START-HERE and resume handoff for this repo."
