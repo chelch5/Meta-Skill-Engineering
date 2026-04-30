@@ -1,5 +1,16 @@
 # LibraryUnverified Skill Organization
 
+This directory is a quarantine and research corpus. Nothing here is production-ready unless it has been promoted through `LibraryWorkbench/` and then `Library/`.
+
+Promotion requires all of the following evidence:
+
+- source provenance is recorded or recoverable
+- `SKILL.md` is valid and uses the repository skill shape
+- trigger-positive, trigger-negative, and behavior evals exist
+- `scripts/validate-skills.sh` or an equivalent package validator passes for the candidate package
+- `skill-safety-review` and `skill-provenance` have no release-blocking findings
+- `skill-packaging` produces a verified archive with checksums
+
 This directory contains **881 skills** organized into **56 thematic categories** for the Meta-Skill-Engineering project.
 
 ## 📊 Organization Overview
@@ -160,10 +171,6 @@ During categorization, we discovered several unusual skill types:
 - Esoteric/spiritual skills surprisingly common (61 skills)
 - Strong Microsoft ecosystem representation (Azure, Power Platform)
 
-## 🎯 Next Steps
+## Promotion Flow
 
-- [ ] Evaluate categories with < 5 skills for potential merging
-- [ ] Create sub-categories within large categories (e.g., misc-specialized)
-- [ ] Add category metadata (description, tags, relationships)
-- [ ] Implement automated categorization for new skills
-- [ ] Create category-specific evaluation criteria
+Use Meta Skill Studio to move a candidate through `LibraryUnverified/` -> `LibraryWorkbench/` -> `Library/`. Rejected candidates remain here with rationale in their package notes or are moved to an archive category when they are not useful as future source material.

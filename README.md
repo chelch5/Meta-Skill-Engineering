@@ -126,6 +126,7 @@ skill-catalog-curation → skill-lifecycle-management
 | Script | Purpose |
 | --- | --- |
 | `scripts/meta-skill-studio.py` | Authoritative CLI/TUI/GUI entrypoint |
+| `scripts/validate_cli_contract.py` | Verifies that `docs/cli/action-contract.md` matches the implemented action inventory |
 | `scripts/validate-skills.sh` | Structural validator for repo-owned root skills |
 | `scripts/run-evals.sh` | JSONL eval runner |
 | `scripts/pre-commit-check.sh` | Local pre-commit checks |
@@ -138,6 +139,7 @@ skill-catalog-curation → skill-lifecycle-management
 - JSONL fixture-driven evals remain the base testing model.
 - `evaluate-skill` now emits a versioned run artifact with a measurement plan and improvement brief.
 - `compare-runs` and `improvement-brief` turn evaluation output into reusable follow-up artifacts.
+- `package-skill` now builds a checksum-verified archive from the real skill folder instead of relying on a prompt-only packaging request.
 - Full plugin-eval cost/budget machinery is **not** applied blindly repo-wide; see `docs/evaluation/plugin-eval-disposition.md`.
 
 ## Contributing

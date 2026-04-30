@@ -9,3 +9,7 @@ Skills in this directory have been tested, evaluated, and approved for productio
 3. **Verified** (Library/) — Skills that passed quality thresholds and are ready for use.
 
 Use Meta Skill Studio to promote skills through these tiers.
+
+## Verification Contract
+
+Verified skills must retain the evidence that justified promotion: eval files, provenance notes or source links, safety disposition when applicable, and a package archive that was checksum-verified by `skill-packaging`.

@@ -36,9 +36,11 @@ Bundle one or more finished skill folders into distributable archives (tar.gz or
 
 ## 1. Validate the skill folder
 
-- Confirm `SKILL.md` exists and has valid YAML frontmatter with `name`, `description`, and `license`
+- Confirm `SKILL.md` exists and has valid YAML frontmatter with `name` and `description`
+- Read `manifest.yaml` when present for `version`; otherwise mark the archive `0.0.0-dev`
 - Walk every path referenced in SKILL.md (scripts/, references/) — fail if any file is missing
 - Reject skills whose frontmatter `name` is empty or whose `description` is under 20 characters
+- For the exact package schema, generated manifest shape, and verification rules, read `references/schema.md`
 
 ## 2. Build the manifest
 
@@ -48,7 +50,7 @@ Create `manifest.yaml` at the bundle root:
 name: <from frontmatter>
 version: <semver — prompt user if absent>
 description: <from frontmatter>
-license: <from frontmatter>
+license: <from frontmatter or repository default>
 files:          # exhaustive list, no globs
   - SKILL.md
   - scripts/validate.sh
@@ -62,7 +64,7 @@ compatibility:
 
 - List every file explicitly — no wildcards
 - Compute SHA-256 per file, not a single concatenated hash
-- If `version` is missing from frontmatter, ask the user; do not default to `1.0.0`
+- If `version` is missing from `manifest.yaml`, use `0.0.0-dev` and make that explicit in the generated manifest.
 
 **Version format — use semver (MAJOR.MINOR.PATCH):**
 - MAJOR: breaking changes to SKILL.md structure, output format, or removed procedure steps
@@ -70,7 +72,7 @@ compatibility:
 - PATCH: typos, wording fixes, example updates that don't change behavior
 
 **Required vs optional fields:**
-- Required: `name`, `version`, `description`, `license`, `compatibility`. If any required field is missing, **stop and report the specific missing field** — never silently default or skip.
+- Required generated manifest fields: `name`, `version`, `description`, `license`, `compatibility`, `files`, and `checksums`. The packager may supply repository defaults for `license` and compatibility when the source package lacks those fields, but it must never invent the skill `name`, `description`, or checksums.
 - Optional: `resources`, `scripts`, `evals`. Omit from manifest if the skill folder doesn't contain them.
 
 ## 3. Generate client overlays (only when needed)

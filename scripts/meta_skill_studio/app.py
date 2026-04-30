@@ -6,6 +6,8 @@ import re
 import shutil
 import subprocess
 import sys
+import hashlib
+import tarfile
 import tempfile
 import textwrap
 from dataclasses import dataclass
@@ -1005,28 +1007,200 @@ class StudioCore:
         )
 
     def run_package_skill(self, skill_name: str, destination: Optional[str], goal: Optional[str] = None) -> Path:
-        objective = goal or "Prepare packaging outputs and verify the skill package is ready to distribute internally."
-        prompt = textwrap.dedent(
-            f"""
-            Execute packaging work for the skill package `{skill_name}`.
-            Goal:
-            {objective}
+        del goal
+        skill_dir = self.repo_root / self._safe_skill_slug(skill_name)
+        if not skill_dir.is_dir() or not (skill_dir / "SKILL.md").is_file():
+            raise RuntimeError(f"Skill package not found: {skill_name}")
 
-            Requirements:
-            - Apply the repo's skill-packaging workflow.
-            - Use `{destination}` as the package destination if it is provided.
-            - Return the produced artifact paths or the blocking reasons if packaging cannot complete.
-            """
-        ).strip()
-        result = self.run_role_prompt("orchestrate", prompt)
-        return self._save_runtime_workflow_run(
+        output_dir = Path(destination).expanduser() if destination else self.repo_root / "dist" / "skills"
+        if not output_dir.is_absolute():
+            output_dir = self.repo_root / output_dir
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        package_result = self._build_skill_package(skill_dir, output_dir)
+        return self.save_run(
             "package-skill",
-            "distribution",
-            "orchestrate",
-            {"skill_name": skill_name, "destination": destination, "goal": objective},
-            result,
-            summary={"exit_code": result.get("exit_code"), "skill_name": skill_name},
+            {
+                "workflow": {
+                    "area": "distribution",
+                    "execution_surface": "python-cli",
+                    "script": "scripts/meta-skill-studio.py",
+                },
+                "input": {"skill_name": skill_name, "destination": str(output_dir)},
+                "summary": {
+                    "skill_name": skill_name,
+                    "version": package_result["version"],
+                    "file_count": len(package_result["files"]),
+                    "archive": package_result["archive"],
+                    "verification": package_result["verification"]["status"],
+                },
+                "artifacts": {
+                    "archive": package_result["archive"],
+                    "manifest": package_result["manifest"],
+                    "verification": package_result["verification"],
+                },
+                "measurements": self._measurement_summary(
+                    expected_steps=4,
+                    observed_steps=4,
+                    duration_seconds=package_result["duration_seconds"],
+                ),
+                "result": {"package_result": package_result},
+            },
         )
+
+    def _build_skill_package(self, skill_dir: Path, output_dir: Path) -> Dict[str, object]:
+        start = datetime.now(timezone.utc)
+        frontmatter = self._read_skill_frontmatter(skill_dir / "SKILL.md")
+        name = str(frontmatter.get("name") or skill_dir.name).strip()
+        if name != skill_dir.name:
+            raise RuntimeError(f"Skill frontmatter name '{name}' does not match directory '{skill_dir.name}'.")
+        description = str(frontmatter.get("description") or "").strip()
+        if len(description) < 20:
+            raise RuntimeError(f"Skill description is too short: {skill_dir.name}")
+
+        version = self._read_skill_version(skill_dir)
+        files = self._collect_package_files(skill_dir)
+        checksums = {rel: self._sha256(skill_dir / rel) for rel in files}
+        manifest_text = self._render_package_manifest(name, version, description, files, checksums)
+
+        with tempfile.TemporaryDirectory(prefix="meta-skill-package-") as tmp:
+            staging_root = Path(tmp) / f"{name}-{version}"
+            staging_root.mkdir(parents=True)
+            (staging_root / "manifest.yaml").write_text(manifest_text, encoding="utf-8")
+            for rel in files:
+                source = skill_dir / rel
+                target = staging_root / rel
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, target)
+
+            archive_path = output_dir / f"{name}-{version}.tar.gz"
+            if archive_path.exists():
+                archive_path.unlink()
+            with tarfile.open(archive_path, "w:gz") as tar:
+                tar.add(staging_root, arcname=staging_root.name)
+
+            verification = self._verify_skill_archive(archive_path, staging_root.name, checksums)
+
+        duration = (datetime.now(timezone.utc) - start).total_seconds()
+        return {
+            "name": name,
+            "version": version,
+            "archive": str(archive_path),
+            "manifest": str(archive_path) + "#manifest.yaml",
+            "files": files,
+            "checksums": checksums,
+            "verification": verification,
+            "duration_seconds": round(duration, 3),
+        }
+
+    def _read_skill_frontmatter(self, skill_md: Path) -> Dict[str, object]:
+        text = skill_md.read_text(encoding="utf-8")
+        if not text.startswith("---\n"):
+            raise RuntimeError(f"Missing YAML frontmatter: {skill_md}")
+        end = text.find("\n---", 4)
+        if end == -1:
+            raise RuntimeError(f"Unclosed YAML frontmatter: {skill_md}")
+        payload: Dict[str, object] = {}
+        current_key: Optional[str] = None
+        for raw_line in text[4:end].splitlines():
+            line = raw_line.rstrip()
+            if not line.strip():
+                continue
+            if line.startswith(" ") and current_key:
+                payload[current_key] = f"{payload[current_key]} {line.strip()}".strip()
+                continue
+            if ":" not in line:
+                continue
+            key, value = line.split(":", 1)
+            current_key = key.strip()
+            payload[current_key] = value.strip().strip("'\"")
+        return payload
+
+    def _read_skill_version(self, skill_dir: Path) -> str:
+        manifest = skill_dir / "manifest.yaml"
+        if manifest.exists():
+            match = re.search(r"(?m)^version:\s*([0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9._-]+)?)\s*$", manifest.read_text(encoding="utf-8"))
+            if match:
+                return match.group(1)
+        return "0.0.0-dev"
+
+    def _collect_package_files(self, skill_dir: Path) -> List[str]:
+        ignored_dirs = {".git", "__pycache__", "node_modules", "dist", ".pytest_cache"}
+        files: List[str] = []
+        for path in sorted(skill_dir.rglob("*")):
+            if path.is_dir():
+                continue
+            rel = path.relative_to(skill_dir).as_posix()
+            if any(part in ignored_dirs for part in path.relative_to(skill_dir).parts):
+                continue
+            if path.name.endswith((".pyc", ".pyo")):
+                continue
+            files.append(rel)
+
+        if "SKILL.md" not in files:
+            raise RuntimeError(f"Cannot package {skill_dir.name}: SKILL.md is missing.")
+
+        referenced = self._referenced_skill_files(skill_dir / "SKILL.md")
+        missing = sorted(ref for ref in referenced if ref not in files)
+        if missing:
+            raise RuntimeError(f"Cannot package {skill_dir.name}: missing referenced files: {', '.join(missing)}")
+        return files
+
+    @staticmethod
+    def _referenced_skill_files(skill_md: Path) -> List[str]:
+        text = skill_md.read_text(encoding="utf-8")
+        refs = re.findall(r"(?:references|scripts)/[A-Za-z0-9._/-]+\.[A-Za-z0-9]+", text)
+        return sorted(set(ref.strip("/") for ref in refs))
+
+    @staticmethod
+    def _sha256(path: Path) -> str:
+        digest = hashlib.sha256()
+        with path.open("rb") as fh:
+            for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
+
+    @staticmethod
+    def _render_package_manifest(name: str, version: str, description: str, files: List[str], checksums: Dict[str, str]) -> str:
+        lines = [
+            "schema_version: 1",
+            f"name: {name}",
+            f"version: {version}",
+            f"description: {json.dumps(description, ensure_ascii=True)}",
+            "license: MIT",
+            "compatibility:",
+            "  clients:",
+            "    - codex",
+            "    - opencode",
+            "files:",
+        ]
+        lines.extend(f"  - {rel}" for rel in files)
+        lines.append("checksums:")
+        lines.extend(f"  {rel}: {digest}" for rel, digest in checksums.items())
+        return "\n".join(lines) + "\n"
+
+    def _verify_skill_archive(self, archive_path: Path, root_name: str, expected_checksums: Dict[str, str]) -> Dict[str, object]:
+        with tempfile.TemporaryDirectory(prefix="meta-skill-verify-") as tmp:
+            verify_root = Path(tmp)
+            with tarfile.open(archive_path, "r:gz") as tar:
+                tar.extractall(verify_root, filter="data")
+            extracted = verify_root / root_name
+            mismatches = []
+            for rel, expected in expected_checksums.items():
+                target = extracted / rel
+                if not target.exists():
+                    mismatches.append({"file": rel, "error": "missing"})
+                    continue
+                actual = self._sha256(target)
+                if actual != expected:
+                    mismatches.append({"file": rel, "expected": expected, "actual": actual})
+            if not (extracted / "manifest.yaml").is_file():
+                mismatches.append({"file": "manifest.yaml", "error": "missing"})
+            return {
+                "status": "failed" if mismatches else "passed",
+                "mismatches": mismatches,
+                "verified_files": len(expected_checksums),
+            }
 
     def run_install_skill(self, skill_name: str, destination: Optional[str], goal: Optional[str] = None) -> Path:
         objective = goal or "Install the target skill into the intended client skill directory with minimal risk."

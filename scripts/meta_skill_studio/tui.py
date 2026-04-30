@@ -33,7 +33,7 @@ def _select_target_skill(core: StudioCore) -> Optional[str]:
     return skills[idx]
 
 
-def _print_run_preview(run_file: Path) -> None:
+def _print_run_summary(run_file: Path) -> None:
     data = json.loads(run_file.read_text(encoding="utf-8"))
     print(f"\nRun saved: {run_file}")
     print(f"Action: {data.get('action')}")
@@ -75,27 +75,27 @@ def run_tui(core: StudioCore) -> None:
                 target = input("Target library [u=Unverified, w=Workbench] (default u): ").strip().lower()
                 library = "LibraryWorkbench" if target == "w" else "LibraryUnverified"
                 run_file = core.run_create_skill(brief=brief, target_library=library)
-                _print_run_preview(run_file)
+                _print_run_summary(run_file)
             elif choice == "2":
                 skill = _read_nonempty("Skill name: ")
                 goal = _read_nonempty("Improvement goal: ")
                 run_file = core.run_improve_skill(skill_name=skill, goal=goal)
-                _print_run_preview(run_file)
+                _print_run_summary(run_file)
             elif choice == "3":
                 target_skill = _select_target_skill(core)
                 run_file = core.run_test_benchmark_evaluate(target_skill=target_skill)
-                _print_run_preview(run_file)
+                _print_run_summary(run_file)
             elif choice == "4":
                 objective = _read_nonempty("Meta-manage objective: ")
                 run_file = core.run_meta_manage(objective=objective)
-                _print_run_preview(run_file)
+                _print_run_summary(run_file)
             elif choice == "5":
                 skill = _read_nonempty("Skill name for benchmark generation: ")
                 goal = _read_nonempty("Benchmark goal: ")
                 raw_cases = input("Number of benchmark cases (default 8): ").strip()
                 cases = int(raw_cases) if raw_cases.isdigit() else 8
                 run_file = core.run_create_benchmarks(skill_name=skill, benchmark_goal=goal, cases=cases)
-                _print_run_preview(run_file)
+                _print_run_summary(run_file)
             elif choice == "6":
                 print("Re-running OpenCode model setup.")
                 config = core.configure_interactive_tui(force=True)

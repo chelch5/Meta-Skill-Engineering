@@ -40,6 +40,14 @@ echo "=== Skill Package Validator ==="
 echo "Found ${#SKILL_DIRS[@]} skill packages"
 echo ""
 
+echo "--- platform contract ---"
+if "$PYTHON_BIN" "$REPO_ROOT/scripts/validate_cli_contract.py"; then
+  log_ok "CLI action contract matches docs"
+else
+  log_error "CLI action contract drift detected"
+fi
+echo ""
+
 for skill_dir in "${SKILL_DIRS[@]}"; do
   skill_name=$(basename "$skill_dir")
   echo "--- $skill_name ---"

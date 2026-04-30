@@ -112,6 +112,7 @@ skill-catalog-curation → skill-lifecycle-management
 | Script | Purpose |
 |------|-----------|
 | `scripts/meta-skill-studio.py` | Authoritative CLI/TUI/GUI entrypoint |
+| `scripts/validate_cli_contract.py` | CLI/docs contract drift check used by `validate-skills.sh` |
 | `scripts/validate-skills.sh` | Structural validator for repo-owned root skills |
 | `scripts/run-evals.sh` | JSONL eval runner |
 | `scripts/pre-commit-check.sh` | Local pre-commit checks |
