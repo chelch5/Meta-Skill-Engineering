@@ -34,6 +34,7 @@ Legacy aliases remain for compatibility:
 | `--from-library`, `--to-library` | Source/target tier selectors |
 | `--run-file`, `--before-run`, `--after-run` | Existing Studio run artifact inputs |
 | `--pipeline`, `--run-id` | Orchestrator pipeline selection and resume id |
+| `--count`, `--seed`, `--worker-model`, `--judge-model`, `--timeout-seconds`, `--dry-run` | Deterministic autonomous library-improvement run controls |
 
 ## Canonical actions
 
@@ -84,6 +85,7 @@ Legacy aliases remain for compatibility:
 | `run-pipeline` | `--pipeline` and pipeline-specific inputs (`--brief` for creation, `--skill` for improvement/library-management) | run artifact plus `tasks/pipelines/*.json` |
 | `resume-pipeline` | `--run-id` | run artifact plus `tasks/pipelines/*.json` |
 | `ingest-skill-fault` | `--packet` | run artifact plus `tasks/pipelines/*.json` |
+| `run-library-improvement` | optional `--count --seed --worker-model --judge-model --timeout-seconds --dry-run` | run artifact plus `tasks/worklogs/library-improvement-*.jsonl` and summary markdown |
 
 ### Runtime and introspection
 

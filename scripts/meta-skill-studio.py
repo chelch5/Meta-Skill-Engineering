@@ -53,6 +53,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--provider", help="Provider name for auth operations")
     parser.add_argument("--logout", action="store_true", help="Log out the provider instead of logging in")
     parser.add_argument("--cases", type=int, default=8, help="Benchmark case count")
+    parser.add_argument("--count", type=int, default=50, help="Library skill count for improvement runs")
+    parser.add_argument("--seed", help="Deterministic selection seed for library improvement runs")
+    parser.add_argument("--worker-model", dest="worker_model", help="OpenCode worker model for library improvement runs")
+    parser.add_argument("--judge-model", dest="judge_model", help="OpenCode judge model for library improvement runs")
+    parser.add_argument("--timeout-seconds", dest="timeout_seconds", type=int, default=180, help="Per-agent timeout for library improvement runs")
+    parser.add_argument("--dry-run", action="store_true", help="Select and report skills without invoking improvement workers")
     parser.add_argument("--pipeline", choices=PIPELINE_CHOICES, help="Pipeline name for orchestrator actions")
     parser.add_argument("--run-id", dest="run_id", help="Pipeline run id for resume actions")
     parser.add_argument("--run-file", dest="run_file", help="Studio run artifact path")
@@ -173,6 +179,15 @@ def run_cli_action(core: StudioCore, args: argparse.Namespace, parser: argparse.
     if action == "ingest-skill-fault":
         _require(parser, bool(args.packet), "--packet is required for ingest-skill-fault")
         return core.run_ingest_skill_fault(args.packet)
+    if action == "run-library-improvement":
+        return core.run_library_improvement(
+            count=args.count,
+            seed=args.seed,
+            worker_model=args.worker_model,
+            judge_model=args.judge_model,
+            timeout_seconds=args.timeout_seconds,
+            dry_run=args.dry_run,
+        )
     if action == "run-pipeline":
         _require(parser, bool(args.pipeline), "--pipeline is required for run-pipeline")
         if args.pipeline == "creation":

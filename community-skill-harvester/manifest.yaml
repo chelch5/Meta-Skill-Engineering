@@ -15,8 +15,6 @@ categories:
   - harvester
 compatibility:
   clients:
-    - openai-codex
-    - gemini-cli
     - opencode
 requires:
   tools: []
@@ -37,5 +35,5 @@ security:
   destructive_actions: false
 provenance:
   source_repo: local://skilllibrary
-  maintainer: codex
+  maintainer: project-local
   signed: false

@@ -46,7 +46,7 @@ The Python CLI is the required contract for headless agents and automation. Cano
 - evaluation: `validate-skills`, `run-evals`, `evaluate-skill`, `benchmark-skill`, `compare-runs`, `improvement-brief`
 - library/catalog: `find-skills`, `import-skill`, `promote-skill`, `demote-skill`, `move-skill`, `meta-manage`, `catalog-audit`
 - governance/distribution: `safety-review`, `provenance-review`, `package-skill`, `install-skill`, `lifecycle-review`
-- orchestration: `run-pipeline`, `resume-pipeline`, `ingest-skill-fault`
+- orchestration: `run-pipeline`, `resume-pipeline`, `ingest-skill-fault`, `run-library-improvement`
 - introspection/runtime: `list-actions`, `list-skills`, `list-runs`, `show-run`, `list-models`, `list-providers`, `auth-provider`, `opencode-stats`
 
 Prefer `--format json` for machine-readable output.
@@ -129,6 +129,7 @@ skill-catalog-curation → skill-lifecycle-management
 | `scripts/validate_cli_contract.py` | Verifies that `docs/cli/action-contract.md` matches the implemented action inventory |
 | `scripts/validate-skills.sh` | Structural validator for repo-owned root skills |
 | `scripts/run-evals.sh` | OpenCode SDK-backed JSONL eval runner |
+| `scripts/run-library-improvement-agents.mjs` | OpenCode-backed deterministic library improvement worker/judge runner exposed through the Studio CLI |
 | `scripts/pre-commit-check.sh` | Local pre-commit checks |
 | `scripts/nightly-full-test.sh` | Nightly-oriented repository test wrapper |
 | `scripts/regression-alert.sh` | Regression alert helper |

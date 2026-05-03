@@ -1,4 +1,4 @@
-skill: community-skill-harvester-codex-c
+skill: community-skill-harvester
 permissions:
   read:
     - ./SKILL.md

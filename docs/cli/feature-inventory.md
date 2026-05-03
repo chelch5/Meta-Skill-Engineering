@@ -18,7 +18,7 @@ This inventory records the **actual suite surface** for plan 13. It is the audit
 | Library operations | External skill discovery, import, promote, demote, move, library/meta audit | `find-skills`, `import-skill`, `promote-skill`, `demote-skill`, `move-skill`, `meta-manage`, `catalog-audit` | `.meta-skill-studio/runs/*.json`, copied skill trees in library tiers |
 | Governance | Safety review, provenance review, lifecycle review | `safety-review`, `provenance-review`, `lifecycle-review` | `.meta-skill-studio/runs/*.json` |
 | Distribution | Packaging and install workflows | `package-skill`, `install-skill` | `.meta-skill-studio/runs/*.json` |
-| Orchestration | Documented creation / improvement / library-management pipelines and Archive skill-fault ingestion | `run-pipeline`, `resume-pipeline`, `ingest-skill-fault` | `tasks/pipelines/<id>-state.json`, `tasks/pipelines/<id>-final-report.json`, `.meta-skill-studio/runs/*.json` |
+| Orchestration | Documented creation / improvement / library-management pipelines, Archive skill-fault ingestion, and deterministic autonomous library-improvement batches | `run-pipeline`, `resume-pipeline`, `ingest-skill-fault`, `run-library-improvement` | `tasks/pipelines/<id>-state.json`, `tasks/pipelines/<id>-final-report.json`, `tasks/worklogs/library-improvement-*.jsonl`, `.meta-skill-studio/runs/*.json` |
 | Runtime introspection | Model/provider discovery, auth, runtime stats | `list-models`, `list-providers`, `auth-provider`, `opencode-stats` | JSON stdout, `.meta-skill-studio/config.json` |
 | Platform introspection | Action inventory, root/library skill listing, run listing, run inspection | `list-actions`, `list-skills`, `list-runs`, `show-run` | JSON stdout, `.meta-skill-studio/runs/*.json` |
 
@@ -37,6 +37,7 @@ These are backed by `scripts/meta-skill-studio.py` plus `scripts/meta_skill_stud
 - provider/model/runtime inspection
 - run artifact persistence under `.meta-skill-studio/runs/`
 - orchestrator pipeline execution via `skill-orchestrator/scripts/run_pipeline.py`
+- autonomous 50-skill library improvement runs through the OpenCode SDK bridge with worker and judge model controls
 
 ### Tauri convenience-shell features
 

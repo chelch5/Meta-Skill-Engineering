@@ -1,5 +1,5 @@
-{"prompt": "I want to improve skill-creator", "expected": "trigger", "skill": "skill-improver"}
-{"prompt": "Just run skill-safety-review on my skill", "expected": "trigger", "skill": "skill-safety-review"}
-{"prompt": "Can you help me package this skill?", "expected": "trigger", "skill": "skill-packaging"}
-{"prompt": "Run the installer for my new skill", "expected": "trigger", "skill": "skill-installer"}
-{"prompt": "What is the purpose of skill-evaluation?", "expected": "trigger", "skill": "skill-evaluation"}
+{"prompt": "I want to improve skill-creator", "expected": "no_trigger", "better_skill": "skill-improver", "notes": "Single-skill improvement, not a pipeline"}
+{"prompt": "Just run skill-safety-review on my skill", "expected": "no_trigger", "better_skill": "skill-safety-review", "notes": "Single governance action"}
+{"prompt": "Can you help me package this skill?", "expected": "no_trigger", "better_skill": "skill-packaging", "notes": "Single distribution action"}
+{"prompt": "Run the installer for my new skill", "expected": "no_trigger", "better_skill": "skill-installer", "notes": "Install action only"}
+{"prompt": "What is the purpose of skill-evaluation?", "expected": "no_trigger", "better_skill": "skill-evaluation", "notes": "Information request about one skill"}

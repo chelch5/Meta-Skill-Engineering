@@ -28,7 +28,6 @@ description: "Skill description from SKILL.md frontmatter"
 license: MIT
 compatibility:
   clients:
-    - codex
     - opencode
 files:
   - SKILL.md

@@ -8,7 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "tauri": "tauri",
-    "library:improve": "node scripts/run-library-improvement-agents.mjs"
+    "library:improve": "node -e \"const {spawnSync}=require('node:child_process'); const candidates=process.platform==='win32'?['python','py']:['python3','python']; const py=candidates.find((cmd)=>spawnSync(cmd,['--version'],{stdio:'ignore'}).status===0); if(!py){console.error('python3 or python is required'); process.exit(1)} const r=spawnSync(py,['scripts/meta-skill-studio.py','--mode','cli','--action','run-library-improvement',...process.argv.slice(1)],{stdio:'inherit'}); process.exit(r.status ?? 1)\" --"
   },
   "dependencies": {
     "@opencode-ai/sdk": "^1.14.33",

@@ -163,6 +163,7 @@ skill-catalog-curation → skill-lifecycle-management
 | `scripts/validate_cli_contract.py` | CLI/docs contract drift check used by `validate-skills.sh` |
 | `scripts/validate-skills.sh` | Structural validator for repo-owned root skills |
 | `scripts/run-evals.sh` | OpenCode SDK-backed JSONL eval runner |
+| `scripts/run-library-improvement-agents.mjs` | Deterministic OpenCode worker/judge runner, exposed through `run-library-improvement` |
 | `scripts/pre-commit-check.sh` | Local pre-commit checks |
 | `scripts/nightly-full-test.sh` | Nightly-oriented repository test wrapper |
 | `scripts/regression-alert.sh` | Regression alert helper |

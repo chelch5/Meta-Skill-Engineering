@@ -6,17 +6,14 @@ from __future__ import annotations
 import os
 import urllib.request
 
-CLIENT_CHOICES = ["opencode", "codex", "claude-code", "gemini-cli"]
+CLIENT_CHOICES = ["opencode"]
 DEFAULT_CLIENT = "opencode"
 
 
 def client_skills_dir(client: str) -> str:
     """Return the default skills directory for the given client."""
     paths = {
-        "codex": os.path.expanduser("~/.codex/skills"),
         "opencode": os.path.join(".opencode", "skills"),
-        "claude-code": os.path.expanduser("~/.claude/skills"),
-        "gemini-cli": os.path.expanduser("~/.gemini/skills"),
     }
     if client not in paths:
         raise ValueError(f"Unknown client: {client}")

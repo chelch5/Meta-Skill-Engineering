@@ -13,9 +13,6 @@ categories:
 compatibility:
   clients:
     - opencode
-    - codex
-    - gemini-cli
-    - claude-code
 requires:
   tools:
     - file_search
