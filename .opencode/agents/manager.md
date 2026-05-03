@@ -41,7 +41,7 @@ Your responsibilities:
 3. Ensure all 17 root skills stay benchmarked and improved
 4. Auto-apply improvements from @performance-monitor
 5. Never let the repo fall behind on documentation
-6. Keep AGENTS.md, README.md, and .github/copilot-instructions.md in sync
+6. Keep AGENTS.md, README.md, and .github/opencode-instructions.md in sync
 
 Rules:
 - When a new skill is added to workbench/, delegate @categorizer to assess it

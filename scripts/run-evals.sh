@@ -5,6 +5,7 @@
 #   ./scripts/run-evals.sh [skill-name]       # Run evals for one skill
 #   ./scripts/run-evals.sh --all              # Run evals for all skills with evals/
 #   ./scripts/run-evals.sh --dry-run [skill]  # Show test cases without running
+#   ./scripts/run-evals.sh --runtime opencode --model minimax-coding-plan/MiniMax-M2.7 [skill]
 #
 # Requires: node, jq, and @opencode-ai/sdk installed from package.json
 #
@@ -20,6 +21,7 @@ RESULTS_DIR="${REPO_ROOT}/eval-results"
 DRY_RUN=false
 TARGETS=()
 MODEL="${EVAL_MODEL:-minimax-coding-plan/MiniMax-M2.7}"
+RUNTIME="${EVAL_RUNTIME:-opencode}"
 TIMEOUT="${EVAL_TIMEOUT:-60}"
 SDK_BRIDGE="${REPO_ROOT}/scripts/meta_skill_studio/opencode_sdk_bridge.mjs"
 
@@ -29,6 +31,7 @@ usage() {
   echo "Options:"
   echo "  --all       Run evals for all skills that have evals/ directories"
   echo "  --dry-run   List test cases without executing them"
+  echo "  --runtime X Runtime name; only opencode is supported"
   echo "  --model X   Override OpenCode model (default: minimax-coding-plan/MiniMax-M2.7)"
   echo "  --timeout N Seconds per prompt (default: 60)"
   exit 1
@@ -50,6 +53,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --model)
       MODEL="$2"
+      shift 2
+      ;;
+    --runtime)
+      RUNTIME="$2"
       shift 2
       ;;
     --timeout)
@@ -75,6 +82,7 @@ fi
 command -v jq >/dev/null 2>&1 || { echo "Error: jq is required"; exit 1; }
 command -v node >/dev/null 2>&1 || { echo "Error: node is required"; exit 1; }
 [[ -f "$SDK_BRIDGE" ]] || { echo "Error: OpenCode SDK bridge not found: $SDK_BRIDGE"; exit 1; }
+[[ "$RUNTIME" == "opencode" ]] || { echo "Error: unsupported runtime '$RUNTIME'; only opencode is supported"; exit 1; }
 
 mkdir -p "$RESULTS_DIR"
 

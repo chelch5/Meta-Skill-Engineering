@@ -6,14 +6,19 @@ import process from "node:process";
 
 const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const bridge = path.join(repoRoot, "scripts", "meta_skill_studio", "opencode_sdk_bridge.mjs");
+const DEFAULT_COUNT = 50;
+const DEFAULT_SEED = "2026-05-03-library-improvement";
+const DEFAULT_WORKER_MODEL = "fireworks-ai/accounts/fireworks/routers/kimi-k2p5-turbo";
+const DEFAULT_JUDGE_MODEL = "minimax-coding-plan/MiniMax-M2.7";
+const DEFAULT_TIMEOUT_SECONDS = 180;
 
 function parseArgs(argv) {
   const args = {
-    count: 50,
-    seed: "2026-05-03-library-improvement",
-    workerModel: "fireworks-ai/accounts/fireworks/routers/kimi-k2p5-turbo",
-    judgeModel: "minimax-coding-plan/MiniMax-M2.7",
-    timeoutSeconds: 180,
+    count: DEFAULT_COUNT,
+    seed: DEFAULT_SEED,
+    workerModel: DEFAULT_WORKER_MODEL,
+    judgeModel: DEFAULT_JUDGE_MODEL,
+    timeoutSeconds: DEFAULT_TIMEOUT_SECONDS,
     dryRun: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
@@ -114,7 +119,7 @@ function workerPrompt(skillPath) {
     "- Improve routing clarity, procedure specificity, failure handling, and validation usefulness.",
     "- Do not delete domain-specific substance.",
     `- Do not add any of these blocked terms or concepts: ${blockedTerms}.`,
-    "- Keep the skill usable by OpenCode/Codex-style agents.",
+    "- Keep the skill usable by OpenCode agents.",
     "- Make concrete file edits, then report changed paths and a short validation note.",
   ].join("\n");
 }
@@ -175,6 +180,8 @@ function main() {
   }
 
   const completed = records.filter((record) => record.status === "completed").length;
+  const needsReview = records.filter((record) => record.status === "needs_review").length;
+  const ok = args.dryRun || needsReview === 0;
   fs.writeFileSync(
     summaryPath,
     [
@@ -183,9 +190,11 @@ function main() {
       `- seed: ${args.seed}`,
       `- selected_skills: ${skills.length}`,
       `- completed: ${completed}`,
+      `- needs_review: ${needsReview}`,
       `- dry_run: ${args.dryRun}`,
       `- worker_model_requested: ${args.workerModel}`,
       `- judge_model_requested: ${args.judgeModel}`,
+      `- timeout_seconds: ${args.timeoutSeconds}`,
       `- evidence_jsonl: ${path.relative(repoRoot, jsonlPath).replaceAll(path.sep, "/")}`,
       "",
       "## Skills",
@@ -195,7 +204,22 @@ function main() {
     ].join("\n"),
     "utf8",
   );
-  console.log(JSON.stringify({ok: true, summaryPath: path.relative(repoRoot, summaryPath), jsonlPath: path.relative(repoRoot, jsonlPath), completed, selected: skills.length}, null, 2));
+  console.log(JSON.stringify({
+    ok,
+    summaryPath: path.relative(repoRoot, summaryPath),
+    jsonlPath: path.relative(repoRoot, jsonlPath),
+    completed,
+    needsReview,
+    selected: skills.length,
+    seed: args.seed,
+    workerModel: args.workerModel,
+    judgeModel: args.judgeModel,
+    timeoutSeconds: args.timeoutSeconds,
+    dryRun: args.dryRun,
+  }, null, 2));
+  if (!ok) {
+    process.exitCode = 1;
+  }
 }
 
 main();

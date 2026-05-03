@@ -184,6 +184,13 @@ ACTION_SPECS: Tuple[ActionSpec, ...] = (
         required_args=("packet",),
     ),
     ActionSpec(
+        name="run-library-improvement",
+        category="orchestration",
+        summary="Select library skills by seed, run OpenCode improvement workers and a MiniMax judge, and write retained evidence.",
+        optional_args=("count", "seed", "worker-model", "judge-model", "timeout-seconds", "dry-run"),
+        aliases=("library-improve",),
+    ),
+    ActionSpec(
         name="list-actions",
         category="introspection",
         summary="List the supported CLI actions and their contracts.",

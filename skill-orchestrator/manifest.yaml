@@ -1,0 +1,33 @@
+schema_version: 1
+skill_id: skill-orchestrator
+canonical_name: skill-orchestrator
+version: 0.1.0
+owner: project-local
+status: stable
+summary: Coordinate documented multi-skill workflows through the Meta Skill Studio CLI.
+risk_level: medium
+categories:
+  - meta
+  - skills
+  - orchestration
+compatibility:
+  clients:
+    - opencode
+requires:
+  tools:
+    - python3
+artifacts:
+  - SKILL.md
+  - manifest.yaml
+  - references/conditional-branching-rules.md
+  - references/eval-artifact-schema.md
+  - references/pipeline-definitions.md
+  - scripts/run_pipeline.py
+security:
+  network_required: false
+  executes_local_code: true
+  writes_files: true
+  destructive_actions: false
+metrics:
+  pipeline_resume_required: true
+  branch_decision_required: true

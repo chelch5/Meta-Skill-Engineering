@@ -2,10 +2,9 @@
 name: skill-packaging
 description: >-
   Bundle one or more completed skill folders into versioned distributable
-  archives with manifests, integrity checksums, and client-specific overlays.
+  archives with manifests, integrity checksums, and OpenCode metadata.
   Use when a user says "package this skill", "bundle for distribution",
-  "prepare a versioned release", "generate overlays", "publish to multiple
-  agent clients", "build a release bundle", or "package these skills for
+  "prepare a versioned release", "generate OpenCode metadata", "build a release bundle", or "package these skills for
   release". Do not use for installing bundles (use skill-installer), writing
   new skills (use skill-creator), or documenting skill origin and trust chain
   (use skill-provenance).
@@ -13,7 +12,7 @@ description: >-
 
 ## Purpose
 
-Bundle one or more finished skill folders into distributable archives (tar.gz or zip) containing manifests, per-file SHA-256 checksums, and optional client-specific overlays so skills can be versioned, shared, and installed elsewhere. Supports both single-skill packaging and multi-skill coordinated releases.
+Bundle one or more finished skill folders into distributable archives (tar.gz or zip) containing manifests, per-file SHA-256 checksums, and OpenCode metadata so skills can be versioned, shared, and installed elsewhere. Supports both single-skill packaging and multi-skill coordinated releases.
 
 ## When to use
 
@@ -59,7 +58,8 @@ checksums:      # per-file SHA-256
   SKILL.md: af3b…
   scripts/validate.sh: 9c01…
 compatibility:
-  clients: <from frontmatter or prompt>
+  clients:
+    - opencode
 ```
 
 - List every file explicitly — no wildcards
@@ -72,14 +72,12 @@ compatibility:
 - PATCH: typos, wording fixes, example updates that don't change behavior
 
 **Required vs optional fields:**
-- Required generated manifest fields: `name`, `version`, `description`, `license`, `compatibility`, `files`, and `checksums`. The packager may supply repository defaults for `license` and compatibility when the source package lacks those fields, but it must never invent the skill `name`, `description`, or checksums.
+- Required generated manifest fields: `name`, `version`, `description`, `license`, `compatibility`, `files`, and `checksums`. The packager supplies the repository default OpenCode compatibility when the source package lacks that field, but it must never invent the skill `name`, `description`, or checksums.
 - Optional: `resources`, `scripts`, `evals`. Omit from manifest if the skill folder doesn't contain them.
 
-## 3. Generate client overlays (only when needed)
+## 3. Generate OpenCode metadata (only when needed)
 
-If the skill targets multiple agent clients, generate per-client overlay files.
-
-**Supported overlay formats:**
+If the package needs an execution metadata overlay, generate only the OpenCode overlay format.
 
 OpenCode (`overlays/opencode/permissions.yaml`):
 ```yaml
@@ -90,18 +88,9 @@ permissions:
   write: ["src/**/*", "tests/**/*"]
 ```
 
-Codex (`overlays/codex/openai.yaml`):
-```yaml
-name: <name>
-description: "<description>"
-schema_version: "1.0"
-capabilities: [file_read, file_write, shell_execute]
-```
+OpenCode metadata must not contradict the base manifest. It must reference the same name and description as the canonical SKILL.md.
 
-Overlays must not contradict the base manifest — they extend it.
-All overlays must reference the same name and description as the canonical SKILL.md.
-
-Skip this step entirely when the skill is client-agnostic or targets a single client.
+Skip this step entirely when the archive does not need OpenCode permission metadata.
 
 For batch overlay generation across a skill library, iterate over all skill
 directories and generate overlays for each.

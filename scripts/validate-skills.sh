@@ -89,6 +89,11 @@ if "$PYTHON_BIN" "$REPO_ROOT/scripts/validate_cli_contract.py"; then
 else
   log_error "CLI action contract drift detected"
 fi
+if "$PYTHON_BIN" "$REPO_ROOT/scripts/validate_eval_schema.py"; then
+  log_ok "Eval JSONL schema matches the canonical prompt/expected contract"
+else
+  log_error "Eval JSONL schema drift detected"
+fi
 echo ""
 
 for skill_dir in "${SKILL_DIRS[@]}"; do

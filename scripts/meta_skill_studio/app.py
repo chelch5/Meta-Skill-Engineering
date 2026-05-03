@@ -18,6 +18,9 @@ from typing import Callable, Dict, List, Optional
 from urllib.parse import urlparse
 
 OPENCODE_RUNTIME = {"name": "opencode", "command": "opencode"}
+DEFAULT_LIBRARY_IMPROVEMENT_SEED = "2026-05-03-library-improvement"
+DEFAULT_LIBRARY_IMPROVEMENT_WORKER_MODEL = "fireworks-ai/accounts/fireworks/routers/kimi-k2p5-turbo"
+DEFAULT_LIBRARY_IMPROVEMENT_JUDGE_MODEL = "minimax-coding-plan/MiniMax-M2.7"
 
 LIBRARY_TIERS: Dict[str, Dict[str, object]] = {
     "LibraryUnverified": {
@@ -1393,7 +1396,6 @@ class StudioCore:
             "license: MIT",
             "compatibility:",
             "  clients:",
-            "    - codex",
             "    - opencode",
             "files:",
         ]
@@ -1832,6 +1834,111 @@ class StudioCore:
         if kind == "reject_evidence":
             return ["Return the packet to Archive with validation errors and request stronger evidence."]
         return ["Keep the packet as historical Archive evidence; no Meta implementation task was identified."]
+
+    def run_library_improvement(
+        self,
+        count: int = 50,
+        seed: Optional[str] = None,
+        worker_model: Optional[str] = None,
+        judge_model: Optional[str] = None,
+        timeout_seconds: int = 180,
+        dry_run: bool = False,
+    ) -> Path:
+        if count < 1:
+            raise RuntimeError("--count must be at least 1")
+        if timeout_seconds < 10:
+            raise RuntimeError("--timeout-seconds must be at least 10")
+
+        script = self.repo_root / "scripts" / "run-library-improvement-agents.mjs"
+        if not script.is_file():
+            raise RuntimeError(f"Library improvement runner is missing: {script.relative_to(self.repo_root)}")
+
+        effective_seed = seed or DEFAULT_LIBRARY_IMPROVEMENT_SEED
+        effective_worker_model = worker_model or DEFAULT_LIBRARY_IMPROVEMENT_WORKER_MODEL
+        effective_judge_model = judge_model or DEFAULT_LIBRARY_IMPROVEMENT_JUDGE_MODEL
+
+        cmd = [
+            shutil.which("node") or "node",
+            str(script),
+            "--count",
+            str(count),
+            "--timeout-seconds",
+            str(timeout_seconds),
+            "--seed",
+            effective_seed,
+            "--worker-model",
+            effective_worker_model,
+            "--judge-model",
+            effective_judge_model,
+        ]
+        if dry_run:
+            cmd.append("--dry-run")
+
+        command_result = self._run_command(cmd)
+        runner_payload = self._parse_last_json_object(command_result.get("stdout", ""))
+        summary_path = str(runner_payload.get("summaryPath") or "") if isinstance(runner_payload, dict) else ""
+        jsonl_path = str(runner_payload.get("jsonlPath") or "") if isinstance(runner_payload, dict) else ""
+        completed = runner_payload.get("completed") if isinstance(runner_payload, dict) else None
+        needs_review = runner_payload.get("needsReview") if isinstance(runner_payload, dict) else None
+        selected = runner_payload.get("selected") if isinstance(runner_payload, dict) else None
+
+        return self.save_run(
+            "run-library-improvement",
+            {
+                "workflow": {
+                    "area": "orchestration",
+                    "execution_surface": "python-cli",
+                    "script": "scripts/run-library-improvement-agents.mjs",
+                },
+                "input": {
+                    "count": count,
+                    "seed": effective_seed,
+                    "worker_model": effective_worker_model,
+                    "judge_model": effective_judge_model,
+                    "timeout_seconds": timeout_seconds,
+                    "dry_run": dry_run,
+                },
+                "summary": {
+                    "exit_code": command_result.get("exit_code"),
+                    "selected": selected,
+                    "completed": completed,
+                    "needs_review": needs_review,
+                    "dry_run": dry_run,
+                },
+                "artifacts": {
+                    "summary": summary_path,
+                    "jsonl": jsonl_path,
+                },
+                "measurements": self._measurement_summary(
+                    expected_steps=count if not dry_run else 1,
+                    observed_steps=selected if isinstance(selected, int) else 0,
+                    duration_seconds=command_result.get("duration_seconds") if isinstance(command_result.get("duration_seconds"), (int, float)) else None,
+                    estimated_runtime_calls=count * 2 if not dry_run else 0,
+                    observed_runtime_calls=(completed * 2) if isinstance(completed, int) and not dry_run else 0,
+                ),
+                "result": {
+                    "command_result": command_result,
+                    "runner_payload": runner_payload,
+                },
+            },
+        )
+
+    @staticmethod
+    def _parse_last_json_object(output: object) -> Dict[str, object]:
+        text = str(output or "").strip()
+        if not text:
+            return {}
+        for index, char in enumerate(text):
+            if char != "{":
+                continue
+            candidate = text[index:].strip()
+            try:
+                parsed = json.loads(candidate)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(parsed, dict):
+                return parsed
+        return {}
 
     def run_pipeline(self, pipeline_name: str, skill_name: Optional[str] = None, brief: Optional[str] = None) -> Path:
         pipeline_script = self.repo_root / "skill-orchestrator" / "scripts" / "run_pipeline.py"
@@ -2436,16 +2543,10 @@ class StudioCore:
             return model_name.split("/", 1)[0]
         if ":" in model_name:
             return model_name.split(":", 1)[0]
-        if model_name.startswith("gpt"):
-            return "openai"
-        if model_name.startswith("claude"):
-            return "anthropic"
-        if model_name.startswith("gemini"):
-            return "google"
         if model_name.startswith("minimax"):
             return "minimax"
         if model_name.startswith("kimi"):
-            return "moonshot"
+            return "fireworks-ai"
         if model_name.startswith("bigpickle") or model_name.startswith("big-pickle"):
             return "bigpickle"
         return "opencode"
