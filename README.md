@@ -5,7 +5,7 @@ Within the canonical Scafforge workspace this repo lives at `agent-tools/meta-sk
 
 Inside the wider ecosystem it owns the `skill-faults` research path: when skills are weak, misleading, missing, or not being triggered appropriately, the retained evidence should route here for evaluation, improvement, and possible promotion into verified library skills.
 
-The repository contains **17 repo-owned root skill packages** plus the automation surfaces used to operate them. The authoritative execution path is the **Python Studio CLI**; TUI, tkinter GUI, and WPF are convenience shells layered on top of the same workflow truth.
+The repository contains **17 repo-owned root skill packages** plus the automation surfaces used to operate them. The authoritative execution path is the **Python Studio CLI**; the cross-platform app shell is Tauri, and TUI/tkinter remain convenience shells layered on top of the same workflow truth.
 
 ## Authoritative surfaces
 
@@ -32,7 +32,7 @@ Run artifacts are stored in `.meta-skill-studio/runs/`. Pipeline state and final
 - `LibraryUnverified/` — imported or raw skills awaiting validation
 - `LibraryWorkbench/` — skills under active evaluation or benchmark work
 - `Library/` — verified library tier
-- `windows-wpf/` — Windows-native convenience shell and packaging path
+- `src/` and `src-tauri/` — Tauri app shell
 - `skill creator/` — archived pre-consolidation material
 - `tasks/` — worklogs, reviews, and orchestrator pipeline state/report artifacts
 
@@ -51,23 +51,23 @@ The Python CLI is the required contract for headless agents and automation. Cano
 
 Prefer `--format json` for machine-readable output.
 
-### TUI and tkinter GUI — convenience shells
+### Tauri, TUI, and tkinter GUI — convenience shells
+
+The Tauri shell is the cross-platform desktop app:
+
+```bash
+npm install
+npm run build
+(cd src-tauri && cargo check)
+npm run tauri -- dev
+```
+
+It reads Studio actions through the Python CLI contract and does not replace the headless execution surface.
 
 - `python scripts/meta-skill-studio.py`
 - `python scripts/meta-skill-studio.py --mode gui`
 
 These are useful local shells, but they are **not** the source of workflow truth.
-
-### Windows WPF — convenience shell and delivery path
-
-The supported Windows app path lives in `windows-wpf/`. It provides:
-
-- native Windows shell UX
-- bundled workspace release builds
-- MSI packaging
-- inline assistant, analytics, provider/model, import, and library views
-
-See `windows-wpf/README.md` for build and publish guidance. WPF remains layered on the same documented workflow contract; it is not the only real product path.
 
 ## Root skill inventory
 
@@ -128,7 +128,7 @@ skill-catalog-curation → skill-lifecycle-management
 | `scripts/meta-skill-studio.py` | Authoritative CLI/TUI/GUI entrypoint |
 | `scripts/validate_cli_contract.py` | Verifies that `docs/cli/action-contract.md` matches the implemented action inventory |
 | `scripts/validate-skills.sh` | Structural validator for repo-owned root skills |
-| `scripts/run-evals.sh` | JSONL eval runner |
+| `scripts/run-evals.sh` | OpenCode SDK-backed JSONL eval runner |
 | `scripts/pre-commit-check.sh` | Local pre-commit checks |
 | `scripts/nightly-full-test.sh` | Nightly-oriented repository test wrapper |
 | `scripts/regression-alert.sh` | Regression alert helper |
@@ -146,4 +146,4 @@ skill-catalog-curation → skill-lifecycle-management
 
 ## Contributing
 
-Read `AGENTS.md` first. When changing CLI, scripts, or workflow contracts, keep `README.md`, `AGENTS.md`, and `.github/copilot-instructions.md` aligned with the implementation.
+Read `AGENTS.md` first. When changing CLI, scripts, or workflow contracts, keep `README.md`, `AGENTS.md`, and `.github/opencode-instructions.md` aligned with the implementation.

@@ -1,12 +1,11 @@
 ---
 name: build-grafana-dashboards
 description: >
-  Create production-ready Grafana dashboards with reusable panels, template variables,
-  annotations, and provisioning for version-controlled dashboard deployment. Use when
-  creating visual representations of Prometheus, Loki, or other data source metrics,
-  building operational dashboards for SRE teams, migrating from manual dashboard creation
-  to version-controlled provisioning, or establishing executive-level SLO compliance
-  reporting.
+  Create Grafana dashboards as code with template variables, reusable panels, and provisioning configuration.
+  Triggers on: "grafana dashboard", "provision grafana", "dashboard as code", "grafana json",
+  "template variable grafana", "grafana panel", "grafana provisioning", "observability dashboard".
+  Use for version-controlled dashboard deployment and operational visualization.
+  Do NOT use for general data visualization, BI reporting, or non-Grafana tools.
 license: MIT
 allowed-tools: Read Write Edit Bash Grep Glob
 metadata:
@@ -22,6 +21,11 @@ metadata:
 
 Design and deploy Grafana dashboards with best practices for maintainability, reusability, and version control.
 
+## Purpose
+
+Enable version-controlled, reusable Grafana dashboard creation that supports operational monitoring,
+SRE workflows, and SLO compliance reporting through infrastructure-as-code practices.
+
 ## When to Use
 
 - Creating visual representations of Prometheus, Loki, or other data source metrics
@@ -30,6 +34,16 @@ Design and deploy Grafana dashboards with best practices for maintainability, re
 - Migrating dashboards from manual creation to version-controlled provisioning
 - Standardizing dashboard layouts across teams with template variables
 - Creating drill-down experiences from high-level overviews to detailed metrics
+- Implementing dashboards that require multi-environment or multi-service views
+
+## When NOT to Use
+
+- General data visualization or business intelligence reporting (use dedicated BI tools like Tableau, Power BI)
+- Ad-hoc exploratory data analysis without intent to deploy
+- Non-Grafana visualization needs (Kibana, Datadog native dashboards, New Relic dashboards)
+- Simple one-off dashboards that do not require version control or templating
+- Dashboards with no operational or monitoring purpose
+- Cases where the data source is not yet configured or accessible
 
 ## Inputs
 
@@ -40,9 +54,6 @@ Design and deploy Grafana dashboards with best practices for maintainability, re
 - **Optional**: Annotation queries for event correlation (deployments, incidents)
 
 ## Procedure
-
-> See [Extended Examples](references/EXAMPLES.md) for complete configuration files and templates.
-
 
 ### Step 1: Design Dashboard Structure
 
@@ -258,7 +269,35 @@ Create panels for each metric with appropriate visualization types.
   "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
   "targets": [
     {
-# ... (see EXAMPLES.md for complete configuration)
+      "expr": "sum(rate(http_requests_total{job=\"api-service\",environment=\"$environment\",status=~\"5..\"}[$interval])) / sum(rate(http_requests_total{job=\"api-service\",environment=\"$environment\"}[$interval])) * 100",
+      "refId": "A"
+    }
+  ],
+  "fieldConfig": {
+    "defaults": {
+      "unit": "percent",
+      "decimals": 2,
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          {"value": null, "color": "green"},
+          {"value": 0.1, "color": "yellow"},
+          {"value": 1, "color": "red"}
+        ]
+      }
+    }
+  },
+  "options": {
+    "reduceOptions": {
+      "values": false,
+      "calcs": ["lastNotNull"]
+    },
+    "orientation": "auto",
+    "textMode": "value_and_name",
+    "colorMode": "background",
+    "graphMode": "area"
+  }
+}
 ```
 
 **Heatmap panel** (latency distribution):
@@ -270,7 +309,31 @@ Create panels for each metric with appropriate visualization types.
   "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
   "targets": [
     {
-# ... (see EXAMPLES.md for complete configuration)
+      "expr": "sum(rate(http_request_duration_seconds_bucket{job=\"api-service\",environment=\"$environment\",instance=~\"$instance\"}[$interval])) by (le)",
+      "format": "heatmap",
+      "legendFormat": "{{le}}",
+      "refId": "A"
+    }
+  ],
+  "options": {
+    "calculate": true,
+    "calculation": {
+      "xBuckets": {
+        "mode": "size",
+        "value": "1m"
+      }
+    },
+    "color": {
+      "mode": "scheme",
+      "scheme": "Spectral"
+    },
+    "cellGap": 2,
+    "yAxis": {
+      "unit": "s",
+      "decimals": 2
+    }
+  }
+}
 ```
 
 Panel selection guide:
@@ -302,7 +365,38 @@ Organize panels into collapsible rows for logical grouping.
       "type": "row",
       "title": "High-Level Metrics",
       "collapsed": false,
-# ... (see EXAMPLES.md for complete configuration)
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "panels": [
+        {
+          "type": "stat",
+          "title": "Request Rate",
+          "gridPos": {"h": 4, "w": 6, "x": 0, "y": 1},
+          "targets": []
+        },
+        {
+          "type": "stat",
+          "title": "Error Rate",
+          "gridPos": {"h": 4, "w": 6, "x": 6, "y": 1},
+          "targets": []
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Detailed Metrics",
+      "collapsed": true,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5},
+      "panels": [
+        {
+          "type": "timeseries",
+          "title": "Latency by Endpoint",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
+          "targets": []
+        }
+      ]
+    }
+  ]
+}
 ```
 
 Layout best practices:
@@ -333,7 +427,22 @@ Dashboard-level links in JSON:
       "title": "Service Details",
       "type": "link",
       "icon": "external link",
-# ... (see EXAMPLES.md for complete configuration)
+      "url": "/d/service-details?var-service=$service&var-environment=$environment&$__url_time_range",
+      "tooltip": "Detailed metrics for selected service",
+      "targetBlank": false
+    },
+    {
+      "title": "Database Dashboard",
+      "type": "dashboards",
+      "tags": ["database"],
+      "icon": "dashboard",
+      "tooltip": "All database-related dashboards",
+      "asDropdown": true,
+      "includeVars": true,
+      "keepTime": true
+    }
+  ]
+}
 ```
 
 Panel-level data links:
@@ -345,7 +454,17 @@ Panel-level data links:
       "links": [
         {
           "title": "View Logs for ${__field.labels.instance}",
-# ... (see EXAMPLES.md for complete configuration)
+          "url": "/explore?left={\"datasource\":\"Loki\",\"queries\":[{\"refId\":\"A\",\"expr\":\"{instance=\\\"${__field.labels.instance}\\\"}\"}],\"range\":{\"from\":\"${__from}\",\"to\":\"${__to}\"}}",
+          "targetBlank": true
+        },
+        {
+          "title": "View Traces",
+          "url": "/explore?left={\"datasource\":\"Tempo\",\"queries\":[{\"refId\":\"A\",\"query\":\"${__field.labels.trace_id}\"}]}"
+        }
+      ]
+    }
+  }
+}
 ```
 
 Link variables:
@@ -381,7 +500,21 @@ datasources:
   - name: Prometheus
     type: prometheus
     access: proxy
-# ... (see EXAMPLES.md for complete configuration)
+    url: http://prometheus:9090
+    isDefault: true
+    jsonData:
+      timeInterval: "15s"
+      queryTimeout: "60s"
+      httpMethod: POST
+    editable: false
+
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    jsonData:
+      maxLines: 1000
+    editable: false
 ```
 
 Dashboard provisioning (`/etc/grafana/provisioning/dashboards/default.yml`):
@@ -404,7 +537,7 @@ providers:
 
 Store dashboard JSON files in `/var/lib/grafana/dashboards/`:
 
-```bash
+```
 /var/lib/grafana/dashboards/
 ├── api-service/
 │   ├── overview.json
@@ -444,20 +577,69 @@ services:
 - Test with `allowUiUpdates: false` to prevent UI modifications
 - Validate provisioning config: `curl http://localhost:3000/api/admin/provisioning/dashboards/reload -X POST -H "Authorization: Bearer $GRAFANA_API_KEY"`
 
-## Validation
+## Output Contract
 
+A successfully completed Grafana dashboard deliverable must meet these criteria:
+
+### Functional Requirements
 - [ ] Dashboard loads without errors in Grafana UI
-- [ ] All template variables populate with expected values
-- [ ] Variable cascading works (selecting environment filters instances)
-- [ ] Panels display data for configured time ranges
-- [ ] Panel queries use variables correctly (no hardcoded values)
-- [ ] Thresholds highlight problem states appropriately
-- [ ] Legend formatting descriptive and not cluttered
-- [ ] Annotations appear for relevant events
-- [ ] Links navigate to correct dashboards with context preserved
-- [ ] Dashboard provisioned from JSON file (version controlled)
+- [ ] All template variables populate with expected values from data source
+- [ ] Variable cascading works correctly (selecting environment filters instances)
+- [ ] All panels display data for configured time ranges
+- [ ] Panel queries use template variables (no hardcoded environment or instance values)
+- [ ] Thresholds highlight problem states appropriately (green/yellow/red progression)
+
+### Visual Requirements
+- [ ] Legend formatting is descriptive and not cluttered (uses legendFormat)
+- [ ] Annotations appear for relevant events (deployments, alerts)
+- [ ] Links navigate to correct dashboards with context preserved (time range, variables)
 - [ ] Responsive layout works on different screen sizes
 - [ ] Tooltip and hover interactions provide useful context
+
+### Operational Requirements
+- [ ] Dashboard is provisioned from JSON file (version controlled, not manual UI creation)
+- [ ] File structure follows provisioning conventions
+- [ ] Datasource provisioning configuration is in place
+- [ ] Update interval configured appropriately for the use case
+
+## Failure Handling
+
+### Variable Population Failures
+- **Symptom**: Variables show "None" or empty lists
+- **Action**: Test queries directly in data source (Prometheus/Loki); verify metric names and label keys exist; check variable refresh timing settings
+
+### Empty Panel Failures
+- **Symptom**: Panels show "No data" or empty charts
+- **Action**: Verify time range includes data; check metric name spelling; test query in Explore view; confirm aggregation window matches scrape interval
+
+### Layout/Rendering Failures
+- **Symptom**: Panels overlap, rows don't collapse, or layout is broken
+- **Action**: Validate gridPos coordinates are unique and non-overlapping; verify row panels contain valid panel arrays; check y-coordinate progression
+
+### Link Navigation Failures
+- **Symptom**: Dashboard or data links result in 404 or lose context
+- **Action**: URL-encode special characters; verify target dashboard UIDs exist; test with "All" variable selection; confirm includeVars and keepTime settings
+
+### Provisioning Failures
+- **Symptom**: Dashboards not loading on Grafana startup
+- **Action**: Check Grafana logs for provisioning errors; validate JSON syntax; verify file permissions; test manual reload via API; ensure provisioning config paths match volume mounts
+
+### Performance Failures
+- **Symptom**: Dashboard loads slowly or times out
+- **Action**: Reduce query cardinality; add recording rules for expensive aggregations; limit time range; optimize variable queries; check data source response times
+
+## Next Steps
+
+After completing this skill, consider these related workflows:
+
+- **setup-prometheus-monitoring** — Configure Prometheus data sources that feed Grafana dashboards; use when the metrics collection layer needs setup
+- **configure-log-aggregation** — Set up Loki for log panel queries and log-based annotations; use when adding logs to dashboards
+- **define-slo-sli-sla** — Visualize SLO compliance and error budgets with Grafana stat and gauge panels; use when building executive reporting
+- **instrument-distributed-tracing** — Add trace ID links from metrics panels to Tempo trace views; use when implementing observability correlation
+
+## References
+
+See [references/EXAMPLES.md](references/EXAMPLES.md) for complete, production-ready configuration templates.
 
 ## Common Pitfalls
 
@@ -469,10 +651,3 @@ services:
 - **Dashboard drift**: Without provisioning, manual UI changes create version control conflicts. Use `allowUiUpdates: false` in production.
 - **Missing data links**: Data links require exact label names. Use `${__field.labels.labelname}` carefully, verify label exists in query result.
 - **Annotation overload**: Too many annotations clutter the view. Filter annotations by importance or use separate annotation tracks.
-
-## Related Skills
-
-- `setup-prometheus-monitoring` - Configure Prometheus data sources that feed Grafana dashboards
-- `configure-log-aggregation` - Set up Loki for log panel queries and log-based annotations
-- `define-slo-sli-sla` - Visualize SLO compliance and error budgets with Grafana stat and gauge panels
-- `instrument-distributed-tracing` - Add trace ID links from metrics panels to Tempo trace views

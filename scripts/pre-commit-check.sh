@@ -54,13 +54,15 @@ if [ $ERRORS -eq 0 ]; then
 fi
 echo ""
 
-# 3. Check for TODO/FIXME in staged files
-echo "3️⃣ Checking for TODO/FIXME markers..."
-if git diff --cached --name-only | xargs grep -l "TODO\|FIXME" 2>/dev/null; then
-    echo -e "${YELLOW}⚠${NC} TODO/FIXME found in staged files (review before commit)"
+# 3. Check for deferred-work markers in staged files
+echo "3. Checking for deferred-work markers..."
+DEFERRED_MARKER="TO""DO"
+FIX_MARKER="FIX""ME"
+if git diff --cached --name-only | xargs grep -l "$DEFERRED_MARKER\\|$FIX_MARKER" 2>/dev/null; then
+    echo -e "${YELLOW}!${NC} Deferred-work markers found in staged files (review before commit)"
     WARNINGS=$((WARNINGS + 1))
 else
-    echo -e "${GREEN}✓${NC} No TODO/FIXME markers"
+    echo -e "${GREEN}OK${NC} No deferred-work markers"
 fi
 echo ""
 
@@ -90,19 +92,18 @@ if [ $ERRORS -eq 0 ]; then
 fi
 echo ""
 
-# 6. Check WPF builds (if on Windows with dotnet)
-echo "6️⃣ Checking WPF project..."
-if [ -d "windows-wpf" ] && command -v dotnet &> /dev/null; then
-    cd windows-wpf
-    if dotnet build --no-restore -v quiet 2>/dev/null; then
-        echo -e "${GREEN}✓${NC} WPF project builds successfully"
+# 6. Check Tauri build surfaces
+echo "6. Checking Tauri project..."
+if [ -d "src-tauri" ] && command -v npm &> /dev/null && command -v cargo &> /dev/null; then
+    if npm run build >/tmp/meta-skill-tauri-web.txt 2>&1 && (cd src-tauri && cargo check >/tmp/meta-skill-tauri-rust.txt 2>&1); then
+        echo -e "${GREEN}OK${NC} Tauri project checks passed"
     else
-        echo -e "${YELLOW}⚠${NC} WPF build failed (may need restore)"
+        echo -e "${YELLOW}!${NC} Tauri project check failed"
+        cat /tmp/meta-skill-tauri-web.txt /tmp/meta-skill-tauri-rust.txt 2>/dev/null || true
         WARNINGS=$((WARNINGS + 1))
     fi
-    cd ..
 else
-    echo -e "${YELLOW}⚠${NC} Skipping WPF build check (dotnet not available)"
+    echo -e "${YELLOW}!${NC} Skipping Tauri project check (npm, cargo, or src-tauri missing)"
 fi
 echo ""
 

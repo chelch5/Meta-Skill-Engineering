@@ -1,0 +1,5 @@
+{"prompt":"Write me a Python script that connects to BigQuery","expected":"no_trigger","category":"anti-match","notes":"creation, not audit"}
+{"prompt":"Review this SQL file for syntax errors","expected":"no_trigger","category":"anti-match","notes":"SQL-only, no Python orchestration"}
+{"prompt":"How do I set up a Snowflake pipeline?","expected":"no_trigger","category":"anti-match","notes":"wrong warehouse"}
+{"prompt":"Debug why my production pipeline failed yesterday","expected":"no_trigger","category":"anti-match","notes":"post-incident RCA"}
+{"prompt":"Create a new data pipeline for our analytics team","expected":"no_trigger","category":"anti-match","notes":"creation, not audit"}

@@ -244,17 +244,10 @@ public static class AsyncTestHelper
 ### Running Tests
 
 ```bash
-# All tests
-dotnet test MetaSkillStudio.Tests/
-
-# Specific test class
-dotnet test --filter "FullyQualifiedName~MainViewModelTests"
-
-# With coverage
-dotnet test --collect:"XPlat Code Coverage"
-
-# Verbose output
-dotnet test --verbosity normal
+npm run build
+(cd src-tauri && cargo check)
+./scripts/validate-skills.sh
+./scripts/run-evals.sh --dry-run skill-creator
 ```
 
 ### Pre-Commit Testing
@@ -263,12 +256,13 @@ Before committing changes:
 
 1. **Run affected tests:**
    ```bash
-   dotnet test --filter "FullyQualifiedName~{ModifiedClassName}"
+   ./scripts/run-evals.sh --dry-run skill-creator
    ```
 
 2. **Verify no regressions:**
    ```bash
-   dotnet test
+   npm run build
+   (cd src-tauri && cargo check)
    ```
 
 3. **Check for test gaps:**
@@ -285,7 +279,7 @@ Before claiming tests complete:
 - [ ] Async methods tested with async/await (not .Result/.Wait)
 - [ ] INotifyPropertyChanged events verified
 - [ ] Mock services track call counts and parameters
-- [ ] All tests pass (dotnet test returns 0)
+- [ ] All selected validation commands return 0
 - [ ] No test warnings or skipped tests
 
 ---

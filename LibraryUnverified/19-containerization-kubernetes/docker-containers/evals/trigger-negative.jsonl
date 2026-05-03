@@ -1,3 +1,7 @@
 {"input":"Review a component prop API.","expected":"no-trigger"}
 {"input":"Summarize this design document.","expected":"no-trigger"}
 {"input":"Draft interview answers.","expected":"no-trigger"}
+{"input":"Create a Kubernetes deployment for my application","expected":"no-trigger"}
+{"input":"Set up AWS ECS task definitions","expected":"no-trigger"}
+{"input":"Refactor this React component's state management","expected":"no-trigger"}
+{"input":"Configure CI/CD pipeline in GitHub Actions","expected":"no-trigger"}

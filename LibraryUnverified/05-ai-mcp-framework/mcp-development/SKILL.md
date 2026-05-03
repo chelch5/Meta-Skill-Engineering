@@ -1,9 +1,9 @@
 ---
 name: mcp-development
-description: "End-to-end MCP server development lifecycle — from API analysis through implementation, testing, and deployment. Use when building a multi-tool MCP server that wraps an external API or service, planning the tool/resource/prompt surface for a new MCP project, or iterating on an existing MCP server's design."
+description: "Build, iterate, and ship MCP servers. Triggers on: 'build an MCP server', 'create MCP tools for API', 'design MCP server surface', 'MCP server architecture', 'add tools to MCP server', 'MCP server best practices'."
 license: Apache-2.0
 compatibility:
-  clients: [openai-codex, gemini-cli, opencode, github-copilot]
+  clients: [openai-codex, gemini-cli, opencode]
 metadata:
   owner: codex
   domain: mcp-development
@@ -21,14 +21,16 @@ Guide the full development lifecycle of an MCP server — from understanding the
 - Building a new MCP server that wraps an external API or service
 - Planning which tools, resources, and prompts an MCP server should expose
 - Iterating on an existing MCP server (adding tools, improving schemas, fixing patterns)
+- Converting API endpoints into MCP tool/resource/prompt primitives
+- Designing the surface area (which operations become tools vs resources)
 - Need a structured development workflow rather than ad hoc implementation
 
-# Do not use this skill when
+# When NOT to use this skill
 
-- Scaffolding a first-ever MCP server → use `get-started`
-- The task is narrowly about one tool's schema design → use `mcp-tool-design`
-- The task is only about testing → use `mcp-testing-evals`
-- Following a specific SDK's patterns → use `mcp-typescript-sdk` or `mcp-python-fastmcp`
+- Scaffolding a first-ever MCP server from a tutorial template → use framework getting-started guides first
+- The task is narrowly about one tool's schema design in isolation
+- The task is only about testing strategies without implementation
+- Following a specific SDK's patterns without broader server design questions
 
 # Operating procedure
 
@@ -49,7 +51,17 @@ Guide the full development lifecycle of an MCP server — from understanding the
 3. **Pagination helper** — many APIs and MCP `*/list` methods use cursor-based pagination
 4. **Error mapping** — translate API errors to MCP error format:
    - Protocol errors: standard JSON-RPC error codes (-32600 to -32603)
-   - Tool execution errors: `{ isError: true, content: [{ type: "text", text: "..." }] }`
+   - Tool execution errors return structured error objects:
+     ```json
+     {
+       "isError": true,
+       "content": [{
+         "type": "text",
+         "text": "GitHub API returned 403: Token lacks 'repo' scope for this operation. Check token permissions at github.com/settings/tokens."
+       }]
+     }
+     ```
+   - Always include both what went wrong AND what to try next
 
 ## Phase 3 — Implement primitives
 
@@ -116,13 +128,28 @@ Only declare capabilities you actually implement.
 
 # Related skills
 
-- `mcp-tool-design` — deep dive on individual tool design
-- `mcp-resources-prompts` — resource and prompt implementation patterns
-- `mcp-testing-evals` — testing strategy and evaluation creation
-- `mcp-builder` — reference implementation guide from Anthropic
+- `community-skill-harvester` — find existing MCP-related skills or patterns
+- `skill-evaluation` — test and validate MCP server behavior
+
+# References
+
+- Anthropic MCP documentation: https://modelcontextprotocol.io
+- MCP specification: https://spec.modelcontextprotocol.io
+- SDK documentation for TypeScript and Python implementations
 
 # Failure handling
 
-- If the target API has no documentation, use the API's OpenAPI/Swagger spec if available; otherwise explore endpoints manually and document as you go
-- If a tool is too complex for a single call, split into a read step and a write step rather than one tool that does both
-- If tool count exceeds 30, consider splitting into multiple focused MCP servers rather than one monolith
+- **No API documentation available:** Use the API's OpenAPI/Swagger spec if available; otherwise explore endpoints manually with curl/httpie and document behavior as you discover it
+- **Tool too complex for single call:** Split into a read step and a write step rather than one tool that does both; give each step a descriptive name like `github_get_issue` and `github_update_issue`
+- **Tool count exceeds 30:** Consider splitting into multiple focused MCP servers (e.g., `github-issues-server`, `github-repos-server`) rather than one monolith
+- **Inspector tests failing:**
+  - Check that all tools return valid JSON with `isError` flag set correctly
+  - Verify `inputSchema` uses proper JSON Schema types (not TypeScript types)
+  - Ensure `listChanged` capability matches actual implementation
+- **Schema validation errors:**
+  - Zod schemas must use `.describe()` on every field — this becomes the LLM's context
+  - Avoid nested objects deeper than 3 levels; flatten to top-level params with descriptive names
+- **Host connection failures:**
+  - Verify transport matches host expectations (stdio for Claude Desktop, HTTP for custom hosts)
+  - Check that server responds to `initialize` request within timeout (default 30s)
+  - Confirm no extra stdout output before or after JSON-RPC messages

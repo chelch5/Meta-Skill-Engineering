@@ -4,17 +4,17 @@ import net from "node:net";
 import path from "node:path";
 import process from "node:process";
 import {fileURLToPath} from "node:url";
-import {createOpencodeClient} from "../../.opencode/node_modules/@opencode-ai/sdk/dist/client.js";
+import {createOpencodeClient} from "@opencode-ai/sdk";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function parseArgs(argv) {
-  const args = {action: "assistant", prompt: "", promptFile: "", model: ""};
+  const args = {action: "assistant", prompt: "", promptFile: "", model: "", system: "", timeoutSeconds: 30};
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
-    if (arg === "assistant") {
-      args.action = "assistant";
+    if (arg === "assistant" || arg === "prompt" || arg === "agent") {
+      args.action = arg;
       continue;
     }
     if (arg === "--prompt") {
@@ -29,6 +29,16 @@ function parseArgs(argv) {
     }
     if (arg === "--model") {
       args.model = argv[i + 1] ?? "";
+      i += 1;
+      continue;
+    }
+    if (arg === "--system") {
+      args.system = argv[i + 1] ?? "";
+      i += 1;
+      continue;
+    }
+    if (arg === "--timeout-seconds") {
+      args.timeoutSeconds = Number.parseInt(argv[i + 1] ?? "30", 10);
       i += 1;
     }
   }
@@ -185,7 +195,8 @@ function normalizeModelSelection(repoModel, providersPayload) {
   };
 
   if (repoModel?.includes("/")) {
-    const [providerID, modelID] = repoModel.split("/", 2);
+    const [providerID, ...modelParts] = repoModel.split("/");
+    const modelID = modelParts.join("/");
     const explicit = resolvePair(providerID, modelID);
     if (explicit) {
       return explicit;
@@ -301,27 +312,36 @@ async function abortSession(client, sessionId) {
   }
 }
 
-async function promptWithCandidate(client, baseUrl, prompt, candidate) {
+async function promptWithCandidate(client, baseUrl, prompt, candidate, options = {}) {
   const session = await client.session.create({
     body: {title: `Meta Skill Studio Assistant (${candidate.providerID})`},
   });
+  const controller = new AbortController();
+  const body = {
+    agent: options.agent ?? "general",
+    model: candidate,
+    system:
+      options.system ||
+      "You are the embedded Meta Skill Studio assistant. Stay grounded in this repository, prefer concrete next actions, and help the user operate the repo-owned skills, library, and studio workflows safely.",
+    parts: [{type: "text", text: prompt}],
+  };
+  if (options.disableTools) {
+    body.tools = {};
+  }
 
   const promptPromise = client.session
     .prompt({
       path: {id: session.data.id},
-      body: {
-        agent: "general",
-        model: candidate,
-        system:
-          "You are the embedded Meta Skill Studio assistant. Stay grounded in this repository, prefer concrete next actions, and help the user operate the repo-owned skills, library, and studio workflows safely.",
-        tools: {},
-        parts: [{type: "text", text: prompt}],
-      },
+      body,
+      signal: controller.signal,
     })
     .then((result) => ({kind: "result", result}))
     .catch((error) => ({kind: "error", error: error instanceof Error ? error.message : String(error)}));
 
-  for (let i = 0; i < 30; i += 1) {
+  const timeoutSeconds = Number.isFinite(options.timeoutSeconds)
+    ? Math.max(5, options.timeoutSeconds)
+    : 30;
+  for (let i = 0; i < timeoutSeconds; i += 1) {
     const outcome = await Promise.race([
       promptPromise,
       sleep(1000).then(() => null),
@@ -338,27 +358,32 @@ async function promptWithCandidate(client, baseUrl, prompt, candidate) {
     }
 
     if (outcome?.kind === "error") {
+      controller.abort();
       await abortSession(client, session.data.id);
       return {ok: false, error: outcome.error};
     }
 
     const status = await readSessionStatus(baseUrl, session.data.id);
     if (status?.type === "retry" && typeof status.message === "string") {
+      controller.abort();
       await abortSession(client, session.data.id);
       return {ok: false, error: status.message};
     }
 
     if (status?.type === "error" && typeof status.message === "string") {
+      controller.abort();
       await abortSession(client, session.data.id);
       return {ok: false, error: status.message};
     }
   }
 
+  controller.abort();
   await abortSession(client, session.data.id);
+  await Promise.race([promptPromise, sleep(1000)]);
   return {ok: false, error: "Timed out waiting for the assistant response."};
 }
 
-async function runAssistant(prompt, preferredModel) {
+async function runAssistant(prompt, preferredModel, options = {}) {
   const server = await startServer();
   const {baseUrl, child} = server;
   const client = createOpencodeClient({baseUrl, throwOnError: true});
@@ -369,7 +394,7 @@ async function runAssistant(prompt, preferredModel) {
     const failures = [];
 
     for (const candidate of candidates) {
-      const attempt = await promptWithCandidate(client, baseUrl, prompt, candidate);
+      const attempt = await promptWithCandidate(client, baseUrl, prompt, candidate, options);
       if (attempt.ok) {
         console.log(
           JSON.stringify({
@@ -400,10 +425,32 @@ if (!prompt) {
 
 try {
   if (args.action !== "assistant") {
+    if (args.action === "prompt") {
+      await runAssistant(prompt, args.model?.trim() || null, {
+        disableTools: true,
+        system: args.system,
+        timeoutSeconds: args.timeoutSeconds,
+      });
+      process.exit(0);
+    }
+    if (args.action === "agent") {
+      await runAssistant(prompt, args.model?.trim() || null, {
+        disableTools: false,
+        timeoutSeconds: args.timeoutSeconds,
+        system:
+          args.system ||
+          "You are an autonomous Meta Skill Engineering agent. Work only inside this repository unless instructed otherwise, use repository skills and tests, and produce concrete file changes plus validation evidence.",
+      });
+      process.exit(0);
+    }
     throw new Error(`Unsupported SDK bridge action: ${args.action}`);
   }
 
-  await runAssistant(prompt, args.model?.trim() || null);
+  await runAssistant(prompt, args.model?.trim() || null, {
+    disableTools: true,
+    system: args.system,
+    timeoutSeconds: args.timeoutSeconds,
+  });
 } catch (error) {
   console.error(
     JSON.stringify({

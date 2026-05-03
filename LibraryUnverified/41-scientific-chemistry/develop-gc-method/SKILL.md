@@ -1,15 +1,16 @@
 ---
 name: develop-gc-method
-description: >
-  Develop a gas chromatography method from scratch: define analytical objectives,
-  select column chemistry, optimize temperature programming, choose carrier gas
-  and detector, and validate initial system performance for target analytes in
-  a given matrix.
+description: |
+  Create or refine a gas chromatography analytical method. Use when the user asks
+  to "develop a GC method", "optimize GC separation", "set up GC analysis for
+  [compounds]", or when they have target analytes and need column selection,
+  temperature programming, carrier gas choice, detector configuration, or method
+  validation for volatile/semi-volatile compounds.
 license: MIT
-allowed-tools: Read Grep Glob WebFetch WebSearch
+allowed-tools: Read, Grep, Glob, WebFetch, WebSearch
 metadata:
   author: Philipp Thoss
-  version: "1.0"
+  version: "1.1"
   domain: chromatography
   complexity: advanced
   language: natural
@@ -20,29 +21,25 @@ metadata:
 
 Systematic development of a gas chromatography method covering column selection, temperature program optimization, carrier gas and detector choice, and initial performance verification for volatile and semi-volatile analytes.
 
-## When to Use
+## When to use
 
-- Starting a new GC analysis for volatile or semi-volatile compounds
-- Adapting a published method to a different instrument or matrix
-- Replacing an existing method that no longer meets performance requirements
-- Developing a method for compounds with known boiling points and polarities
-- Transitioning from a packed-column method to a capillary method
+Use this skill when:
+- User asks to develop, create, or optimize a GC method
+- User has target analytes (volatile or semi-volatile compounds) and needs separation conditions
+- User needs to select column chemistry, temperature program, carrier gas, or detector for GC
+- User is adapting a published GC method to a different instrument or matrix
+- User needs to replace an existing GC method that no longer meets performance requirements
+- User is transitioning from packed-column to capillary GC
 
-## Inputs
+## When NOT to use
 
-### Required
-
-- **Target analytes**: List of compounds with CAS numbers, molecular weights, and boiling points
-- **Sample matrix**: Description of the sample type (e.g., air, water extract, solvent solution, biological fluid)
-- **Detection limits**: Required LOD/LOQ for each analyte
-
-### Optional
-
-- **Reference method**: Published method (EPA, ASTM, pharmacopeial) to use as a starting point
-- **Available columns**: Inventory of columns already on hand
-- **Instrument configuration**: GC model, available detectors, autosampler type
-- **Throughput requirements**: Maximum acceptable run time per sample
-- **Regulatory framework**: GLP, GMP, EPA, or other compliance context
+Do not use this skill when:
+- User needs HPLC or LC-MS method development (use develop-hplc-method instead)
+- User is troubleshooting an existing method (use troubleshoot-separation instead)
+- User needs formal ICH Q2 validation documentation (use validate-analytical-method instead)
+- User is analyzing non-volatile, thermally labile, or high molecular weight compounds (>1000 Da)
+- User only needs to run samples using an existing validated method (no development needed)
+- User needs preparative-scale separation or purification (this is analytical method development)
 
 ## Procedure
 
@@ -159,29 +156,93 @@ Choose column dimensions and stationary phase based on analyte polarity and sepa
 
 **On failure:** If tailing is observed, check for active sites (re-condition column, trim 0.5 m from inlet end, replace liner). If RSD exceeds limits, investigate autosampler precision and injection technique. If resolution is insufficient, return to Step 3 to refine the temperature program.
 
-## Validation
+## Output contract
 
-- [ ] All target analytes are separated with Rs >= 1.5 for critical pairs
-- [ ] Retention time RSD < 1.0% over 6 replicate injections
-- [ ] Peak area RSD < 2.0% over 6 replicate injections
-- [ ] Peak tailing factors within 0.8-1.5 for all analytes
-- [ ] Blank injection shows no carryover above 0.1% of working concentration
-- [ ] Matrix blank shows no interferents at target retention windows
-- [ ] Total run time meets throughput requirements
-- [ ] Method parameters are fully documented (column, temps, flows, detector settings)
+After completing this skill, deliver:
 
-## Common Pitfalls
+1. **Method specification document** containing:
+   - List of all target analytes with CAS numbers, molecular weights, and boiling points
+   - Sample matrix description and expected interferents
+   - Required detection limits and quantitation ranges
+   - Resolution requirements for critical pairs
+   - Regulatory and throughput constraints
 
-- **Ignoring column bleed temperature limits**: Operating above the maximum isothermal temperature of the stationary phase causes elevated baseline, ghost peaks, and accelerated column degradation. Always check the column specification sheet.
-- **Oversized injection volumes**: Injecting too much solvent causes fronting peaks and poor resolution for early eluters. Match injection volume to column capacity (typically 0.5-2 uL for 0.25 mm ID columns in split mode).
-- **Wrong liner for the injection mode**: Splitless injections require a single-taper or double-taper deactivated liner; split injections use a liner with glass wool. Mismatched liners cause poor reproducibility.
-- **Neglecting septum and liner maintenance**: Septum coring and liner contamination are the most common sources of ghost peaks and tailing. Replace septa every 50-100 injections and liners on a documented schedule.
-- **Skipping the van Deemter optimization**: Running at the manufacturer's default flow rate instead of the measured optimum wastes efficiency, especially when switching carrier gases.
-- **Insufficient column conditioning**: New columns must be conditioned (ramped to maximum temperature under carrier gas flow, no detector) to remove manufacturing residues before analytical use.
+2. **Column configuration** with justification:
+   - Stationary phase (e.g., DB-5, DB-WAX)
+   - Column dimensions (length, ID, film thickness)
+   - Guard column or retention gap if used
 
-## Related Skills
+3. **Temperature program** specifying:
+   - Initial temperature and hold time
+   - Ramp rate(s) and any isothermal holds
+   - Final temperature and hold time
+   - Total run time
 
-- `develop-hplc-method` -- liquid chromatography method development for non-volatile or thermally labile analytes
-- `interpret-chromatogram` -- reading and interpreting GC and HPLC chromatograms
-- `troubleshoot-separation` -- diagnosing and fixing peak shape, retention, and resolution problems
-- `validate-analytical-method` -- formal ICH Q2 validation of the developed GC method
+4. **Carrier gas configuration**:
+   - Gas type (He, H2, or N2) with justification
+   - Flow rate and calculated/measured linear velocity
+
+5. **Detector configuration**:
+   - Detector type (FID, TCD, ECD, NPD, MS, etc.)
+   - Temperature and gas flow settings
+   - Sensitivity/selectivity rationale
+
+6. **System suitability validation results**:
+   - Retention time RSD < 1.0% (6 replicates)
+   - Peak area RSD < 2.0% (< 5.0% for trace-level)
+   - Resolution Rs >= 1.5 for all critical pairs
+   - Peak tailing factor 0.8-1.5 for all analytes
+   - Blank and matrix blank results
+
+## Failure handling
+
+If the method development fails at any stage:
+
+1. **Missing analyte data**: If boiling points or physical properties are unavailable, use WebFetch or WebSearch to retrieve chemical data from PubChem, ChemSpider, or manufacturer SDS documents. If online sources fail, estimate from structural analogs or run a scouting analysis on a mid-polarity column.
+
+2. **Co-elution/critical pairs unresolved**:
+   - Revisit column selection and choose a more selective stationary phase
+   - Implement a multi-ramp temperature program with slower ramp rates in problem regions
+   - Plan a confirmation column with orthogonal selectivity (e.g., non-polar primary, polar confirmatory)
+
+3. **Poor peak shape (tailing)**:
+   - Check for active sites: re-condition column, trim 0.5 m from inlet end, replace liner
+   - Verify liner type matches injection mode (split vs. splitless)
+   - Replace contaminated septum (every 50-100 injections)
+
+4. **Poor precision (high RSD)**:
+   - Investigate autosampler precision and injection technique
+   - Check for sample degradation or evaporation during analysis
+   - Verify consistent injection volumes
+
+5. **Insufficient detector sensitivity**:
+   - Consider sample concentration (larger injection volume, solvent evaporation)
+   - Switch to more sensitive/selective detector (MS-SIM, ECD for halogenated compounds)
+   - Optimize detector gas flows per manufacturer specifications
+
+6. **Efficiency below expectations**:
+   - Generate van Deemter curve (plate height vs. linear velocity) using 5-7 flow rates
+   - Measure actual linear velocity with unretained compound (e.g., methane on FID)
+   - Verify column is conditioned and not degraded
+
+7. **Column bleed or ghost peaks**:
+   - Check operating temperature against column maximum isothermal limit
+   - Condition new columns before analytical use (ramp to max temp under carrier flow)
+   - Replace worn septum and contaminated liners
+
+## Next steps
+
+After completing GC method development:
+
+- `validate-analytical-method` -- Perform formal ICH Q2 validation (linearity, accuracy, precision, LOD/LOQ, robustness)
+- `troubleshoot-separation` -- Diagnose and fix issues if method performance degrades or unexpected peaks appear
+- `interpret-chromatogram` -- Analyze chromatograms and identify unknown peaks
+- `develop-hplc-method` -- Switch to liquid chromatography if analytes are non-volatile or thermally labile
+
+## References
+
+- Grob, R.L. and Barry, E.F. (eds.) *Modern Practice of Gas Chromatography*, 4th ed., Wiley (2004)
+- Jennings, W. and Mittlefehldt, E. *Analytical Gas Chromatography*, 2nd ed., Academic Press (1997)
+- US EPA Method 8260: Volatile Organic Compounds by Gas Chromatography/Mass Spectrometry
+- US EPA Method 8270: Semivolatile Organic Compounds by Gas Chromatography/Mass Spectrometry
+- ICH Q2(R1): Validation of Analytical Procedures

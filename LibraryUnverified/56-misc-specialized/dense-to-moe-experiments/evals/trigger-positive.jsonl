@@ -1,3 +1,10 @@
-{"input":"The user or repo work clearly points at dense-to-moe experiments","expected":"dense-to-moe-experiments","category":"AI / LLM Training, Architecture, and Research"}
-{"input":"this task clearly needs dense-to-moe experiments","expected":"dense-to-moe-experiments","category":"AI / LLM Training, Architecture, and Research"}
-{"input":"a plan, ticket, or repo state would benefit from explicit guardrails around dense-to-moe experiments","expected":"dense-to-moe-experiments","category":"AI / LLM Training, Architecture, and Research"}
+{"input":"I need to upcycle my dense 7B parameter transformer into a Mixture-of-Experts model by splitting the FFN layers","expected":"dense-to-moe-experiments","category":"AI / LLM Training, Architecture, and Research"}
+{"input":"How do I initialize experts when converting a dense LLM to MoE? Should I copy weights or use split+perturb?","expected":"dense-to-moe-experiments","category":"AI / LLM Training, Architecture, and Research"}
+{"input":"Implement top-2 routing with load-balancing loss for my MoE transformer conversion","expected":"dense-to-moe-experiments","category":"AI / LLM Training, Architecture, and Research"}
+{"input":"My MoE model has expert collapse — 90% of tokens are routed to only 2 experts out of 8. How do I fix this?","expected":"dense-to-moe-experiments","category":"AI / LLM Training, Architecture, and Research"}
+{"input":"Design a continued pretraining schedule after upcycling my dense model to 8x7B MoE configuration","expected":"dense-to-moe-experiments","category":"AI / LLM Training, Architecture, and Research"}
+{"input":"Compare my dense baseline against MoE variant with same active parameter count — what metrics should I track?","expected":"dense-to-moe-experiments","category":"AI / LLM Training, Architecture, and Research"}
+{"input":"Should I use expert-choice routing or top-k routing for my dense-to-MoE conversion?","expected":"dense-to-moe-experiments","category":"AI / LLM Training, Architecture, and Research"}
+{"input":"Add GShard-style auxiliary loss to prevent expert collapse in my MoE upcycling experiment","expected":"dense-to-moe-experiments","category":"AI / LLM Training, Architecture, and Research"}
+{"input":"My all-to-all communication is dominating MoE training time — what optimizations should I try?","expected":"dense-to-moe-experiments","category":"AI / LLM Training, Architecture, and Research"}
+{"input":"Implement hash-based routing for deterministic expert selection in my MoE model","expected":"dense-to-moe-experiments","category":"AI / LLM Training, Architecture, and Research"}

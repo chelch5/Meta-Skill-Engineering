@@ -1,14 +1,15 @@
 ---
 name: adaptic
-description: >
-  Master skill composing the 5-step synoptic cycle for panoramic synthesis
-  across multiple domains. Orchestrates meditate, expand-awareness, observe,
-  awareness, integrate-gestalt, and express-insight into a coherent process
-  that produces unified understanding rather than sequential compromise. Use
-  when a problem genuinely spans 3+ domains and the interactions between
-  domains matter more than depth in any one, when sequential analysis feels
-  like compromise rather than integration, or before major architectural
-  decisions affecting multiple stakeholders.
+description: >-
+  Apply the 5-step synoptic cycle for multi-domain panoramic synthesis when a
+  problem spans 3+ domains and cross-domain interactions matter more than depth
+  in any single domain. Produces unified emergent understanding through Clear
+  (meditate), Open (expand awareness), Perceive (cross-domain patterns),
+  Integrate (gestalt formation), and Express (communicated insight). Use when
+  sequential analysis produces compromise rather than integration, domain
+  experts disagree on fundamentals, or before major architectural decisions with
+  multiple stakeholder concerns. Do not use for single-domain problems,
+  well-understood trade-offs, or wellness/self-care contexts.
 license: MIT
 allowed-tools: Read Write Grep Glob
 metadata:
@@ -59,92 +60,158 @@ settings:
 
 ### Step 1: Clear — Empty the Workspace
 
-Run the `meditate` skill to clear prior context, assumptions, and single-domain bias.
+Apply the `meditate` pattern to clear prior context, assumptions, and single-domain bias.
 
-1. Execute the full meditate procedure: prepare, anchor, observe distractions, close
-2. Pay special attention to domain bias — the tendency to frame the problem through whichever domain was most recently active
-3. Clear any premature solutions that arrived before the full picture was visible
-4. If `depth: light` is set, abbreviate to a brief context-clearing pause rather than the full meditation
+1. Prepare: Acknowledge current context and set aside recent problem-solving mode
+2. Anchor: Establish a neutral, receptive stance toward the problem
+3. Observe distractions: Notice if any domain framing or premature solutions are asserting themselves
+4. Close: Explicitly release domain bias — state "No domain has priority" before proceeding
+5. If `depth: light` is set, abbreviate to a 1-2 sentence context-clearing pause rather than the full meditation
+
+**Quality gate:** State explicitly which domain (if any) you were most recently working in, and confirm you have released that framing.
 
 **Expected:** The workspace is empty. No domain has priority. No solution has been pre-selected. The agent is in a neutral, receptive state ready to hold multiple perspectives simultaneously.
 
-**On failure:** If a particular domain keeps asserting itself as "the real problem," name that bias explicitly: "I notice I am framing this as primarily a [domain] problem." Naming the bias loosens its grip. If clearing fails entirely, the problem may genuinely be single-domain — reconsider whether the synoptic cycle is needed.
+**On failure:**
+- **Symptom:** A particular domain keeps asserting itself as "the real problem."
+- **Action:** Name that bias explicitly: "I notice I am framing this as primarily a [domain] problem." Naming the bias loosens its grip.
+- **Decision rule:** If the same domain re-asserts 3+ times after naming, the problem may genuinely be single-domain — stop and reconsider whether synoptic treatment is needed.
+- **Symptom:** You find yourself proposing solutions before completing all 5 steps.
+- **Action:** Record the premature solution, set it aside with the note "pre-synoptic proposal — validate after integration," and return to Step 1.4.
 
 ### Step 2: Open — Enter Panoramic Mode
 
-Run the `expand-awareness` skill to shift from narrow focus to wide-field perception.
+Apply the `expand-awareness` pattern to shift from narrow focus to wide-field perception.
 
-1. Inventory all domains relevant to the problem — do not pre-filter or rank them
-2. For each domain, note its core concerns, constraints, and values without evaluating
-3. Soften the focus: hold all domains in awareness simultaneously rather than cycling through them one at a time
-4. Resist the pull to "start solving" — this step is purely about opening the field of view
-5. If domains were provided explicitly in the inputs, use those as the starting set but remain open to discovering additional relevant domains
+1. List all domains relevant to the problem — minimum 3 domains required; do not pre-filter or rank them
+2. For each domain, note in 1 sentence: (a) core concerns, (b) key constraints, (c) primary values
+3. State explicitly: "I am holding [domain A], [domain B], [domain C] in simultaneous awareness" — listing the domains together confirms panoramic mode is active
+4. Resist the pull to "start solving" — this step is purely about opening the field of view; if you catch yourself evaluating trade-offs, you have narrowed focus
+5. If domains were provided explicitly in the inputs, use those as the starting set but remain open to discovering 1-2 additional relevant domains
+
+**Quality gate:** You can name 3+ relevant domains without describing any one in depth. You have not yet made any evaluative judgment about which domain matters most.
 
 **Expected:** A panoramic field is open. All relevant domains are held in awareness simultaneously. The agent can sense the full landscape without zooming into any single domain. The feeling is spacious rather than overwhelming.
 
-**On failure:** If the domain list feels incomplete, ask: "What perspective is missing that would change the picture?" If simultaneous awareness collapses into sequential scanning (domain A, then B, then C), slow down — the goal is to hold the whole field, not to tour its parts. If more than 7 domains are active, group related domains into clusters to reduce cognitive load while maintaining breadth.
+**On failure:**
+- **Symptom:** The domain list feels incomplete or shallow.
+- **Action:** Ask explicitly: "What perspective is missing that would change the picture?" If no answer emerges after 2 attempts, proceed with the current set and flag uncertainty in Step 5.
+- **Symptom:** Simultaneous awareness collapses into sequential scanning (domain A, then B, then C).
+- **Action:** Slow down and restate all domains in a single sentence: "I hold together [A's concerns about X], [B's constraints on Y], and [C's values around Z]." If collapse recurs 2+ times, the domains may be too dissimilar for synoptic treatment.
+- **Symptom:** More than 7 domains are active.
+- **Action:** Group related domains into 3-5 clusters (e.g., "technical domains," "business domains," "user domains") to reduce cognitive load while maintaining breadth.
 
 ### Step 3: Perceive — Notice Cross-Domain Patterns
 
-While maintaining panoramic awareness, run `observe` and `awareness` to notice patterns, tensions, and resonances *across* all visible domains.
+While maintaining panoramic awareness, apply the `observe` and `awareness` patterns to notice patterns, tensions, and resonances *across* all visible domains.
 
-1. Hold the panoramic field open from Step 2 — do not narrow focus
-2. Run `observe` to notice what is actually present: what patterns repeat across domains? what tensions exist between domains? what resonances connect seemingly unrelated concerns?
-3. Run `awareness` to notice what is *not* being seen: which domains are being subtly ignored? where are blind spots? what assumptions are operating below the surface?
-4. Record cross-domain observations without interpreting them yet:
-   - **Tensions**: where domains pull in opposite directions
-   - **Resonances**: where domains reinforce or echo each other
-   - **Gaps**: where no domain addresses a concern that the whole picture reveals
-   - **Surprises**: where a domain contributes something unexpected to the picture
-5. If `depth: deep` is set, extend this step — cycle through observe and awareness multiple times, allowing subtler patterns to surface
+1. Hold the panoramic field open from Step 2 — do not narrow focus; if you catch yourself analyzing one domain deeply, you have lost panoramic mode
+2. Apply `observe` to notice what is actually present across the field:
+   - What patterns repeat across 2+ domains?
+   - What tensions exist where domains pull in opposite directions?
+   - What resonances connect seemingly unrelated concerns?
+3. Apply `awareness` to notice what is *not* being seen:
+   - Which domains are being subtly ignored?
+   - What blind spots exist where the problem is not being addressed?
+   - What assumptions are operating below the surface?
+4. Record exactly 4 cross-domain observations using these labels:
+   - **Tensions** (min. 1): where domains pull in opposite directions — these are the integration points
+   - **Resonances** (min. 1): where domains reinforce or echo each other — these are the alignment points
+   - **Gaps** (min. 1): where no domain addresses a concern that the whole picture reveals — these are the innovation opportunities
+   - **Surprises** (min. 1): where a domain contributes something unexpected to the picture — these are the emergent insights
+5. If `depth: deep` is set, extend this step — cycle through observe and awareness 2-3 times, allowing subtler patterns to surface
 
-The critical discipline: perceive across all domains simultaneously, not each domain in turn. Sequential perception loses the cross-domain patterns that are the entire point of the synoptic cycle.
+**Critical discipline:** Perceive across all domains simultaneously, not each domain in turn. The test: your observations should reference 2+ domains in each item (e.g., "Domain A's speed concern creates tension with Domain B's safety requirement"). Sequential perception loses the cross-domain patterns that are the entire point of the synoptic cycle.
+
+**Quality gate:** All 4 observation categories (Tensions, Resonances, Gaps, Surprises) are populated with at least 1 item each. Each item references 2+ domains explicitly.
 
 **Expected:** A rich set of cross-domain observations — tensions, resonances, gaps, and surprises. These observations span the boundaries between domains rather than living within any single one. The agent has noticed something that would not be visible from any single domain's perspective.
 
-**On failure:** If observations are all within single domains ("in domain A, I notice X"), the panoramic field has collapsed. Return to Step 2 and re-open. If no cross-domain patterns emerge, the problem may not require synoptic treatment — it may be genuinely decomposable into independent domain problems. If the perceive step produces an overwhelming number of observations, prioritize tensions (they are where integration happens).
+**On failure:**
+- **Symptom:** Observations are all within single domains ("in domain A, I notice X").
+- **Action:** The panoramic field has collapsed. Return to Step 2 and re-open. After 2 failed attempts, the problem may be genuinely decomposable — consider whether sequential domain analysis would suffice.
+- **Symptom:** No cross-domain patterns emerge after 2 cycles of observe/awareness.
+- **Action:** The problem may not require synoptic treatment — it may be genuinely decomposable into independent domain problems. Document: "No cross-domain tensions detected after 2 perception cycles. Recommendation: treat as independent domain problems."
+- **Symptom:** Overwhelming number of observations (15+ items).
+- **Action:** Prioritize exactly 3 tensions (they are where integration happens). Set aside other observations for potential inclusion in Step 4 if relevant to tension resolution.
 
 ### Step 4: Integrate — Form the Emergent Whole
 
-Run the `integrate-gestalt` skill to synthesize cross-domain observations into a unified understanding.
+Apply the `integrate-gestalt` pattern to synthesize cross-domain observations into a unified understanding.
 
-1. Map the tensions identified in Step 3 — do not resolve them prematurely; hold them as creative constraints
-2. Find the figure: what unified understanding emerges when all observations are held together? This is not a compromise or average — it is a new pattern that includes but transcends the individual domain perspectives
-3. Test the whole: does the integrated understanding honor each domain's core concerns? Does it resolve tensions or merely paper over them?
-4. Name the insight in one clear statement — if it cannot be stated simply, the integration is not yet complete
-5. Verify that the insight is genuinely emergent: could it have been reached by analyzing domains sequentially? If yes, the synoptic cycle added no value and sequential analysis would have sufficed
+1. Map the tensions identified in Step 3 — list each tension explicitly with the form: "[Domain A's X] vs [Domain B's Y]"
+2. Hold tensions as creative constraints — do not resolve them prematurely by averaging or compromise
+3. Find the figure: what unified understanding emerges when all observations are held together? This is not a compromise or average — it is a new pattern that includes but transcends the individual domain perspectives
+4. Test the whole against 3 criteria:
+   - Does the integrated understanding honor each domain's core concerns? (Yes/No for each domain)
+   - Does it resolve tensions or merely paper over them? (Resolved/Deferred/Unaddressed for each tension)
+   - Can it be stated in one clear sentence? If no, integration is incomplete
+5. Name the insight in one clear statement — maximum 2 sentences. If it cannot be stated simply, the integration is not yet complete
+6. Verify emergence: state explicitly why this insight could NOT have been reached by analyzing domains sequentially
+
+**Quality gate:** The insight is stated in 1-2 sentences. All domains are explicitly listed as "honored" or with noted exceptions. The emergence test is answered with specific reasoning, not "it just feels integrated."
 
 **Expected:** A single integrated understanding that holds all domains simultaneously. The insight feels like discovery rather than construction — it emerged from the whole rather than being assembled from parts. Each domain's core concerns are honored, and the tensions between domains are resolved rather than compromised.
 
-**On failure:** If integration produces "a little of each domain" rather than a unified whole, the gestalt has not formed. Return to Step 3 and look for the tensions that are being avoided — integration happens *through* tension, not around it. If no gestalt forms after extended effort, decompose: find the 2-3 domains with the strongest tensions and integrate those first, then expand.
+**On failure:**
+- **Symptom:** Integration produces "a little of each domain" rather than a unified whole.
+- **Action:** The gestalt has not formed. Return to Step 3 and look for the tensions that are being avoided — integration happens *through* tension, not around it. Specifically, check if you are averaging instead of synthesizing.
+- **Symptom:** No gestalt forms after 2 attempts at integration.
+- **Action:** Decompose: identify the 2-3 domains with the strongest tensions (from Step 3) and integrate those first, then expand to include remaining domains.
+- **Symptom:** The emergence test fails — you cannot explain why sequential analysis would not have sufficed.
+- **Action:** The synoptic cycle may not be adding value. Document this finding and recommend whether to proceed with the integrated insight or revert to sequential analysis.
 
 ### Step 5: Express — Communicate the Integrated Understanding
 
-Run the `express-insight` skill to communicate the synthesis to the intended audience.
+Apply the `express-insight` pattern to communicate the synthesis to the intended audience.
 
-1. Assess the audience: what domains are they familiar with? what framing will make the integrated insight accessible?
+1. Assess the audience: what domains are they familiar with? what framing will make the integrated insight accessible? Record in 1-2 sentences.
 2. Choose the expression form (or use the one specified in inputs):
-   - **Narrative**: for audiences that need to understand the journey from parts to whole
-   - **Diagram**: for audiences that need to see structural relationships
-   - **Table**: for audiences that need to compare domain perspectives systematically
-   - **Recommendation**: for audiences that need an actionable decision
-3. Express the integrated understanding with transparency: show which domains contributed, where tensions were resolved, and what the emergent insight adds beyond any single perspective
-4. Invite challenge: explicitly note which aspects of the integration are strongest and which are most speculative
+   - **Narrative**: for audiences that need to understand the journey from parts to whole — structure as: context → tension → integration → insight
+   - **Diagram**: for audiences that need to see structural relationships — use a simple visual showing domain nodes and integration edges
+   - **Table**: for audiences that need to compare domain perspectives systematically — columns: Domain | Concern | How Integrated | Status
+   - **Recommendation**: for audiences that need an actionable decision — lead with the decision, support with integration evidence
+3. Express the integrated understanding with required transparency elements:
+   - State which domains contributed (list them)
+   - State where tensions were resolved (reference Step 3 tensions)
+   - State what the emergent insight adds beyond any single perspective
+4. Invite challenge: explicitly note which aspect of the integration is strongest and which is most speculative
+5. Final check: the expression should center on the integrated insight from Step 4, with domain details as supporting evidence
+
+**Quality gate:** The expression references the Step 4 insight statement directly. All 3 transparency elements (contributing domains, tension resolution, emergent value) are present. One aspect is flagged as "strongest" and one as "most speculative."
 
 **Expected:** A clear, well-formed expression of the integrated understanding that is accessible to the intended audience. The expression shows its work — the audience can see how domain perspectives contributed to the whole. The form matches the audience's needs.
 
-**On failure:** If the expression feels like a list of domain perspectives rather than an integrated whole, the insight from Step 4 has been lost in translation. Return to the one-statement summary from Step 4 and build the expression outward from that center. If the audience framing is wrong, ask: "Who needs this and what decision does it inform?"
+**On failure:**
+- **Symptom:** The expression feels like a list of domain perspectives rather than an integrated whole.
+- **Action:** The insight from Step 4 has been lost in translation. Return to the one-statement summary from Step 4 and rebuild the expression outward from that center, ensuring the insight statement appears verbatim in the output.
+- **Symptom:** The audience framing is wrong or unclear.
+- **Action:** Ask explicitly: "Who needs this output and what decision does it inform?" If no clear audience/decision emerges, default to Narrative form and flag that audience clarification is needed.
 
 ## Validation
 
-- [ ] Step 1 (Clear) was executed — prior context and domain bias were explicitly released
-- [ ] Step 2 (Open) produced a panoramic field holding 3+ domains simultaneously
-- [ ] Step 3 (Perceive) identified cross-domain patterns (not just within-domain observations)
-- [ ] Step 4 (Integrate) produced a single emergent insight that transcends any individual domain
-- [ ] Step 5 (Express) communicated the insight in a form appropriate to the audience
-- [ ] The final output could not have been produced by sequential single-domain analysis
-- [ ] Each domain's core concerns are honored in the integrated understanding
-- [ ] Tensions between domains were resolved through integration, not compromise
+Use these checkpoints to verify synoptic cycle completion:
+
+### Step Completion Checklist
+- [ ] **Step 1 (Clear)**: Explicitly named the most recently active domain and confirmed its bias was released
+- [ ] **Step 2 (Open)**: Listed 3+ relevant domains with 1-sentence summaries of (concerns, constraints, values) for each
+- [ ] **Step 3 (Perceive)**: Recorded 4 observations (Tensions, Resonances, Gaps, Surprises), each referencing 2+ domains
+- [ ] **Step 4 (Integrate)**: Produced a 1-2 sentence insight statement that all domains are listed as "honored"
+- [ ] **Step 5 (Express)**: Output contains the Step 4 insight verbatim and all 3 transparency elements (domains, tensions, emergent value)
+
+### Quality Gates
+- [ ] **Cross-domain test**: Every observation in Step 3 references at least 2 domains explicitly
+- [ ] **Emergence test**: Can explain in 1 sentence why sequential analysis would not have produced this insight
+- [ ] **Integration test**: Tensions are listed as "resolved" not "compromised" or "deferred"
+- [ ] **Expression test**: The insight statement appears verbatim in the final output, not fragmented across paragraphs
+- [ ] **No-regression test**: If asked "what about [domain X's concern]?" the output already addresses it
+
+### Failure Recovery
+If any quality gate fails:
+1. Identify which step the failure originates from (e.g., cross-domain test fails → Step 3 issue)
+2. Return to that step and re-execute with the quality gate criteria in mind
+3. After maximum 2 recovery attempts, document the limitation and proceed with partial integration
+4. In final output, explicitly note: "Synoptic integration incomplete — [specific domain/tension] remains unresolved"
 
 ## Common Pitfalls
 

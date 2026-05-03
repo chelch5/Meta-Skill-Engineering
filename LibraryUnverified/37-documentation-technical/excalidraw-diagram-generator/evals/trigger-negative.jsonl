@@ -1,0 +1,7 @@
+{"prompt":"Edit the existing user-workflow.excalidraw file to add a new step","expected":"no_trigger","category":"anti-match","notes":"trig_010: Editing existing file, not creating new diagram"}
+{"prompt":"Convert this Mermaid diagram to Excalidraw format","expected":"no_trigger","category":"anti-match","notes":"trig_011: Format conversion, not natural language to diagram"}
+{"prompt":"What does a diamond shape mean in flowcharts?","expected":"no_trigger","category":"anti-match","notes":"trig_012: Notation explanation question"}
+{"prompt":"Export this diagram as a PNG file","expected":"no_trigger","category":"anti-match","notes":"trig_013: Export request, not diagram creation"}
+{"prompt":"Create a diagram in Draw.io for the system architecture","expected":"no_trigger","category":"anti-match","notes":"trig_014: Wrong tool specified (Draw.io, not Excalidraw)"}
+{"prompt":"Analyze this code and visualize the class hierarchy","expected":"no_trigger","category":"anti-match","notes":"trig_015: Requires code analysis first, not direct diagram generation"}
+{"prompt":"Show me how to create a flowchart","expected":"no_trigger","category":"anti-match","notes":"trig_016: Instructional request, not diagram creation"}

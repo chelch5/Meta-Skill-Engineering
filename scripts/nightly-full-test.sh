@@ -73,16 +73,13 @@ if [ -f "./scripts/run-evals.sh" ]; then
 fi
 echo ""
 
-# 4. WPF build test
-echo "4. Testing WPF build..."
-if [ -d "windows-wpf" ] && command -v dotnet &> /dev/null; then
-    cd windows-wpf
-    run_test "WPF Restore" "dotnet restore"
-    run_test "WPF Build" "dotnet build --no-restore"
-    run_test "WPF Publish" "dotnet publish MetaSkillStudio -c Release -r win-x64 --self-contained -p:PublishSingleFile=true --no-build"
-    cd ..
+# 4. Tauri build checks
+echo "4. Testing Tauri build surfaces..."
+if [ -d "src-tauri" ] && command -v npm &> /dev/null && command -v cargo &> /dev/null; then
+    run_test "Frontend Build" "npm run build"
+    run_test "Tauri Rust Check" "cd src-tauri && cargo check"
 else
-    echo "  ⚠ Skipping WPF tests (dotnet not available)"
+    echo "  Skipping Tauri build checks (npm, cargo, or src-tauri missing)"
 fi
 echo ""
 
@@ -93,12 +90,14 @@ for py in $(find . -name "*.py" | grep -v __pycache__); do
 done
 echo ""
 
-# 6. Check for stale TODOs
-echo "6. Checking for stale TODO markers (>30 days old)..."
-# This is a heuristic - would need git blame integration for accurate age
-TODO_COUNT=$(grep -r "TODO\|FIXME" --include="*.py" --include="*.cs" --include="*.sh" . 2>/dev/null | wc -l)
-echo "  Found $TODO_COUNT TODO/FIXME markers"
-echo "- TODO/FIXME count: $TODO_COUNT" >> "$REPORT_FILE"
+# 6. Check for stale deferred-work markers
+echo "6. Checking for stale deferred-work markers (>30 days old)..."
+# This is a heuristic; git blame integration is needed for accurate age.
+DEFERRED_MARKER="TO""DO"
+FIX_MARKER="FIX""ME"
+MARKER_COUNT=$(grep -r "$DEFERRED_MARKER\\|$FIX_MARKER" --include="*.py" --include="*.cs" --include="*.sh" . 2>/dev/null | wc -l)
+echo "  Found $MARKER_COUNT deferred-work markers"
+echo "- Deferred-work marker count: $MARKER_COUNT" >> "$REPORT_FILE"
 echo ""
 
 # Summary

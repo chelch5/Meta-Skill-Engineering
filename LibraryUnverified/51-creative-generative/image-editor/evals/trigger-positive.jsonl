@@ -1,3 +1,10 @@
-{"input":"The user or repo work clearly points at image editor","expected":"image-editor","category":"Docs, Artifacts, and Media Skills"}
-{"input":"this task clearly needs image editor","expected":"image-editor","category":"Docs, Artifacts, and Media Skills"}
-{"input":"a plan, ticket, or repo state would benefit from explicit guardrails around image editor","expected":"image-editor","category":"Docs, Artifacts, and Media Skills"}
+{"input":"Resize these product photos to 800px width for the website","expected":"image-editor","category":"image-processing"}
+{"input":"Convert all PNG images in this folder to JPEG format","expected":"image-editor","category":"image-processing"}
+{"input":"Create 200x200 thumbnails from these high-res images","expected":"image-editor","category":"image-processing"}
+{"input":"Add a watermark to the bottom-right corner of these photos","expected":"image-editor","category":"image-processing"}
+{"input":"Strip all EXIF metadata from these images before publishing","expected":"image-editor","category":"image-processing"}
+{"input":"Rotate these scanned documents 90 degrees clockwise","expected":"image-editor","category":"image-processing"}
+{"input":"Optimize these JPEGs for web - they're too large","expected":"image-editor","category":"image-processing"}
+{"input":"Crop these images to 16:9 aspect ratio for the slideshow","expected":"image-editor","category":"image-processing"}
+{"input":"Batch convert HEIC files from iPhone to PNG","expected":"image-editor","category":"image-processing"}
+{"input":"Resize, compress, and convert these TIFFs to web-ready JPEGs","expected":"image-editor","category":"image-processing"}

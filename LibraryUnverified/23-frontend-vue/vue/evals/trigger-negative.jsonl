@@ -1,3 +1,3 @@
-{"input":"Debug a PostgreSQL migration.","expected":"no-trigger"}
-{"input":"Threat-model this auth service.","expected":"no-trigger"}
-{"input":"Rank these competitors in a market.","expected":"no-trigger"}
+{"input":"Build a React dashboard with TypeScript and hooks","expected":"no-trigger"}
+{"input":"Create a SvelteKit app with server-side rendering","expected":"no-trigger"}
+{"input":"Design a PostgreSQL database schema for user authentication","expected":"no-trigger"}

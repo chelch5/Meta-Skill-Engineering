@@ -1,3 +1,12 @@
-{"input":"The work involves models, inference, training, evaluation, or LLM system design","expected":"pretraining-pipeline","category":"AI / LLM Training, Architecture, and Research"}
-{"input":"this task clearly needs pretraining pipeline","expected":"pretraining-pipeline","category":"AI / LLM Training, Architecture, and Research"}
-{"input":"a plan, ticket, or repo state would benefit from explicit guardrails around pretraining pipeline","expected":"pretraining-pipeline","category":"AI / LLM Training, Architecture, and Research"}
+{"input":"Set up an accelerate config for pretraining a 7B parameter model on 8 A100s","expected":"pretraining-pipeline","category":"distributed training setup"}
+{"input":"Configure DeepSpeed ZeRO-3 for a model that doesn't fit on single GPU VRAM","expected":"pretraining-pipeline","category":"memory optimization"}
+{"input":"Implement warmup + cosine decay learning rate schedule for LLM pretraining","expected":"pretraining-pipeline","category":"LR scheduling"}
+{"input":"How do I compute the effective batch size for 2M tokens with gradient accumulation?","expected":"pretraining-pipeline","category":"batch size calculation"}
+{"input":"Design checkpointing strategy for multi-day pretraining run with async saves","expected":"pretraining-pipeline","category":"checkpointing"}
+{"input":"Set up wandb monitoring for loss curves, gradient norms, and MFU during training","expected":"pretraining-pipeline","category":"monitoring"}
+{"input":"My training loss spiked 4x suddenly, how do I recover?","expected":"pretraining-pipeline","category":"failure recovery"}
+{"input":"Getting CUDA OOM at step 500 with FSDP, what should I enable?","expected":"pretraining-pipeline","category":"OOM recovery"}
+{"input":"Write torch.distributed training loop for LLM pretraining from scratch","expected":"pretraining-pipeline","category":"training loop"}
+{"input":"Debug why MFU dropped from 45% to 20% mid-training on my A100 cluster","expected":"pretraining-pipeline","category":"performance debugging"}
+{"input":"Resume training from checkpoint but loss is different than before save","expected":"pretraining-pipeline","category":"checkpoint debugging"}
+{"input":"Tokenize 500GB corpus for pretraining with efficient streaming","expected":"pretraining-pipeline","category":"data preparation"}

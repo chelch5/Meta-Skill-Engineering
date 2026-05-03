@@ -1,0 +1,8 @@
+{"prompt":"Create a runbook for high database connection pool errors","expected":"trigger","category":"core","notes":"Explicit request to create runbook for specific incident type"}
+{"prompt":"Document the incident response procedure for API 500 errors","expected":"trigger","category":"core","notes":"Explicit request to document incident response procedure"}
+{"prompt":"Write an on-call playbook for Redis cache failures","expected":"trigger","category":"core","notes":"On-call playbook creation is within skill scope"}
+{"prompt":"I need escalation documentation for when the payment service goes down","expected":"trigger","category":"core","notes":"Escalation documentation request matches skill scope"}
+{"prompt":"How should we respond to high memory alerts? Create an incident response guide","expected":"trigger","category":"core","notes":"Request to create incident response guide for specific alert type"}
+{"prompt":"Document how to handle Kafka consumer lag incidents","expected":"trigger","category":"core","notes":"Request to document incident handling procedures"}
+{"prompt":"Create runbook templates for our microservices","expected":"trigger","category":"core","notes":"Runbook template creation is within skill scope"}
+{"prompt":"How do I standardize incident response across teams?","expected":"trigger","category":"core","notes":"Standardization request aligns with skill's When to Use"}

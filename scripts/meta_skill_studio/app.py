@@ -450,7 +450,7 @@ class StudioCore:
             "result": result,
         }
         if payload:
-            data["result"]["legacy_payload"] = payload
+            data["result"]["extra_payload"] = payload
         run_path.write_text(json.dumps(data, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
         return run_path
 

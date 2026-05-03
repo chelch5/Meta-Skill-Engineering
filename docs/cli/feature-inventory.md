@@ -7,7 +7,7 @@ This inventory records the **actual suite surface** for plan 13. It is the audit
 - **Repo-owned root skills** are the 17 top-level packages with `SKILL.md`.
 - **`LibraryUnverified/`, `LibraryWorkbench/`, and `Library/`** are library tiers, not additions to the root inventory.
 - **The Python Studio CLI** is the authoritative headless execution surface.
-- **TUI, tkinter GUI, and WPF** are convenience shells layered on the same workflow truth.
+- **TUI, tkinter GUI, and Tauri** are convenience shells layered on the same workflow truth.
 
 ## Repo-owned workflow inventory
 
@@ -26,7 +26,7 @@ This inventory records the **actual suite surface** for plan 13. It is the audit
 
 ### Shared backend features
 
-These are backed by `scripts/meta-skill-studio.py` plus `scripts/meta_skill_studio/app.py`, so they are reachable without WPF:
+These are backed by `scripts/meta-skill-studio.py` plus `scripts/meta_skill_studio/app.py`, so they are reachable without Tauri:
 
 - skill creation and improvement
 - structural validation and eval execution
@@ -38,22 +38,21 @@ These are backed by `scripts/meta-skill-studio.py` plus `scripts/meta_skill_stud
 - run artifact persistence under `.meta-skill-studio/runs/`
 - orchestrator pipeline execution via `skill-orchestrator/scripts/run_pipeline.py`
 
-### WPF convenience-shell features
+### Tauri convenience-shell features
 
 These remain useful, but they are **not** the authoritative workflow contract:
 
-| WPF-only or WPF-centric feature | Status |
+| Tauri UI feature | Status |
 | --- | --- |
 | Navigation rail, shell layout, assistant panel chrome, menu structure | Convenience UI only |
 | Dashboard cards, inline analytics cards, model pickers, selection affordances | Convenience UI over shared backend/runtime data |
-| Windows installer and published executable bundle | Windows delivery layer only |
+| Linux and Windows desktop bundles | Delivery layer only |
 
 ### Non-authoritative or intentionally limited surfaces
 
 | Surface | Disposition |
 | --- | --- |
 | `scripts/run-meta-skill-cycle.sh` | Experimental orchestration helper; not part of the authoritative CLI contract |
-| `windows-build/` launcher path | Legacy/auxiliary packaging path; not the authoritative execution contract |
 | `scripts/meta_skill_studio/opencode_sdk_bridge.mjs` | Assistant-chat bridge only; not the workflow authority for create/improve/evaluate/library operations |
 
 ## Coverage notes from the plan-13 hardening pass

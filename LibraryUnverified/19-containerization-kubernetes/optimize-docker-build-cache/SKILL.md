@@ -1,12 +1,12 @@
 ---
 name: optimize-docker-build-cache
 description: >
-  Optimize Docker build times using layer caching, multi-stage builds,
-  BuildKit features, and dependency-first copy patterns. Applicable to R,
-  Node.js, and Python projects. Use when Docker builds are slow due to
-  repeated package installations, when rebuilds reinstall all dependencies
-  on every code change, when image sizes are unnecessarily large, or when
-  CI/CD pipeline builds are a bottleneck.
+  Optimize an existing Dockerfile for faster build times and smaller images
+  by reordering layers by change frequency, separating dependency installation
+  from code copies, implementing multi-stage builds, and enabling BuildKit
+  features. Use when Docker builds reinstall packages on every code change,
+  when image sizes exceed 500MB without clear need, or when CI builds take
+  more than 2 minutes due to repeated dependency installation.
 license: MIT
 allowed-tools: Read Write Edit Bash Grep Glob
 metadata:
@@ -20,26 +20,50 @@ metadata:
 
 # Optimize Docker Build Cache
 
-Reduce Docker build times through effective layer caching and build optimization.
+Reduce Docker build times and image sizes by restructuring Dockerfile layer order
+and using caching features effectively.
 
-## When to Use
+## Purpose
 
-- Docker builds are slow due to repeated package installations
-- Rebuilds reinstall all dependencies on every code change
-- Image sizes are unnecessarily large
-- CI/CD pipeline builds are a bottleneck
+Make Docker builds faster for iterative development by ensuring dependency layers
+are cached independently of code changes, and reduce production image sizes by
+separating build-time dependencies from runtime.
 
-## Inputs
+## When to use
 
-- **Required**: Existing Dockerfile to optimize
-- **Optional**: Target build time improvement
-- **Optional**: Target image size reduction
+Use this skill when:
+
+- Docker builds reinstall all dependencies when only source code (not dependency
+  files) has changed
+- Production Docker images exceed 500MB and include build tools (compilers,
+  dev headers) not needed at runtime
+- CI pipeline builds take longer than 2 minutes and spend most time in
+  `apt-get install`, `npm ci`, `pip install`, or `renv::restore()`
+- The same Dockerfile is used for both development and production without
+  optimization
+
+## When NOT to use
+
+Do not use this skill when:
+
+- The project has no Dockerfile yet (use `create-dockerfile` instead)
+- The project uses a language runtime without explicit dependency lockfiles
+  (Python without requirements.txt/poetry.lock, R without renv.lock)
+- Build times are under 30 seconds and already acceptable
+- The image is a one-off build not intended for iterative development
 
 ## Procedure
 
-### Step 1: Order Layers by Change Frequency
+### Step 1: Audit and Reorder Layers by Change Frequency
 
-Place least-changing layers first:
+**Action:** Read the existing Dockerfile and verify the layer order follows this sequence:
+
+1. Base image (`FROM`) - rarely changes
+2. System dependencies (`RUN apt-get`) - change occasionally
+3. Application dependencies (`COPY lockfile`, then `RUN install`) - change when deps update
+4. Source code (`COPY . .`) - changes frequently
+
+**Example - R Project:**
 
 ```dockerfile
 # 1. Base image (rarely changes)
@@ -60,30 +84,53 @@ RUN R -e "renv::restore()"
 COPY . .
 ```
 
-**Key principle**: Docker caches each layer. When a layer changes, all subsequent layers are rebuilt. Dependency installation should come before source code copy.
-
-**Expected:** The Dockerfile layers are ordered from least-changing (base image, system deps) to most-changing (source code), with dependency lockfiles copied before the full source.
-
-**On failure:** If builds still reinstall dependencies on every code change, verify that `COPY . .` comes after the dependency installation `RUN` command, not before.
-
-### Step 2: Separate Dependency Installation from Code
-
-**Bad** (rebuilds packages on every code change):
+**Example - Python Project:**
 
 ```dockerfile
+FROM python:3.11-slim
+
+# System deps first
+RUN apt-get update && apt-get install -y gcc && rm -rf /var/lib/apt/lists/*
+
+# Copy ONLY requirements first
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Source code last
 COPY . .
-RUN R -e "renv::restore()"
 ```
 
-**Good** (only rebuilds packages when lockfile changes):
+**Expected outcome:** After reordering, modifying a single source file and rebuilding should complete in under 10 seconds (cache hit on dependency layers) rather than reinstalling all packages.
+
+**On failure - dependencies still reinstalling:**
+1. Run `docker build --no-cache -t debug .` to verify the build works without cache
+2. Run `docker build -t test .` immediately after
+3. Check output for `#6 [3/5] RUN ...` - the layer numbers should match between builds
+4. If layer hashes differ, identify which `COPY` or `RUN` instruction triggers the change
+5. Move that instruction later in the Dockerfile, after dependency installation
+
+### Step 2: Isolate Dependency Installation in Dedicated Layer
+
+**Action:** Modify Dockerfile to copy ONLY dependency lockfiles before running install commands, then copy remaining source files afterward.
+
+**Before (rebuilds packages on every code change):**
 
 ```dockerfile
+# BAD - Any file change invalidates this layer
+COPY . .
+RUN R -e "renv::restore()"  # Re-runs on every build
+```
+
+**After (only rebuilds when lockfile changes):**
+
+```dockerfile
+# GOOD - Copy only lockfile first
 COPY renv.lock renv.lock
-RUN R -e "renv::restore()"
-COPY . .
+RUN R -e "renv::restore()"  # Cached unless renv.lock changes
+COPY . .  # Source changes don't affect layer above
 ```
 
-Same pattern for Node.js:
+**Node.js pattern:**
 
 ```dockerfile
 COPY package.json package-lock.json ./
@@ -91,19 +138,42 @@ RUN npm ci
 COPY . .
 ```
 
-**Expected:** Dependency lockfile (`renv.lock`, `package-lock.json`, `requirements.txt`) is copied and installed in a separate layer before the full source code `COPY . .`.
+**Python pattern:**
 
-**On failure:** If the lockfile copy fails, ensure the file exists in the build context and is not excluded by `.dockerignore`.
+```dockerfile
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+```
 
-### Step 3: Use Multi-Stage Builds
+**Verification:** After implementing, run two builds:
+1. `docker build -t test1 .` (initial build)
+2. Modify any source file (not lockfile)
+3. `docker build -t test2 .` (should show `CACHED` for dependency layer)
 
-Separate build dependencies from runtime:
+**Expected outcome:** The `RUN install` instruction should display as `CACHED` in build output when only source files changed. Build time should drop from minutes to seconds for code-only changes.
+
+**On failure - lockfile not found:**
+1. Verify lockfile exists: `ls -la renv.lock` (or `package-lock.json`, `requirements.txt`)
+2. Check `.dockerignore` does not exclude the lockfile
+3. Verify lockfile path in COPY matches actual location
+4. Run `docker build --progress=plain .` to see exact error
+5. If using monorepo, ensure COPY path accounts for subdirectory (e.g., `COPY backend/requirements.txt ./`)
+
+### Step 3: Implement Multi-Stage Build for Smaller Production Images
+
+**Action:** Split the Dockerfile into a `builder` stage (with compile tools) and a `runtime` stage (minimal runtime only).
+
+**Use when:** Production images exceed 500MB or include compilers, dev headers, or build tools not needed at runtime.
+
+**R Multi-Stage Example:**
 
 ```dockerfile
 # Build stage - includes dev tools
 FROM rocker/r-ver:4.5.0 AS builder
 RUN apt-get update && apt-get install -y \
-    libcurl4-openssl-dev libssl-dev build-essential
+    libcurl4-openssl-dev libssl-dev build-essential \
+    && rm -rf /var/lib/apt/lists/*
 COPY renv.lock .
 RUN R -e "install.packages('renv'); renv::restore()"
 
@@ -118,15 +188,45 @@ WORKDIR /app
 CMD ["Rscript", "main.R"]
 ```
 
-**Expected:** The Dockerfile has a builder stage with dev tools and a runtime stage with only production dependencies. The final image is significantly smaller than a single-stage build.
+**Python Multi-Stage Example:**
 
-**On failure:** If `COPY --from=builder` fails to find libraries, verify the install path matches between stages. Use `docker build --target builder .` to debug the build stage independently.
+```dockerfile
+# Build stage
+FROM python:3.11 AS builder
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --user -r requirements.txt
 
-### Step 4: Combine RUN Commands
+# Runtime stage
+FROM python:3.11-slim
+WORKDIR /app
+COPY --from=builder /root/.local /root/.local
+COPY . .
+ENV PATH=/root/.local/bin:$PATH
+CMD ["python", "app.py"]
+```
 
-Each `RUN` creates a layer. Combine related commands:
+**Verification:** Compare sizes before and after:
+```bash
+docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
+```
 
-**Bad** (3 layers, apt cache persists):
+**Expected outcome:** Multi-stage images should be 50-80% smaller than single-stage builds. A Python app with numpy/pandas should drop from ~1GB to ~200MB.
+
+**On failure - COPY --from=builder cannot find files:**
+1. Debug the builder stage independently: `docker build --target builder -t debug-builder .`
+2. Inspect the builder: `docker run --rm debug-builder ls -la /usr/local/lib/R/site-library`
+3. Verify the exact path in builder matches COPY source path
+4. For Python, check pip install location with `docker run debug-builder pip show pandas | grep Location`
+5. Adjust COPY path accordingly (common paths: `/root/.local`, `/usr/local/lib/python3.11/site-packages`, `/usr/local/lib/R/site-library`)
+
+### Step 4: Combine Related RUN Commands and Clean Package Caches
+
+**Action:** Merge consecutive `RUN` commands that perform related operations into single chained commands, and clean package manager caches within the same layer.
+
+**Principle:** Each `RUN` creates a layer that persists in the image. Package caches (`/var/lib/apt/lists/*`, `/var/cache/apt`, pip cache) consume space without benefit in the final image.
+
+**Before (3 layers, apt cache persists in image):**
 
 ```dockerfile
 RUN apt-get update
@@ -134,7 +234,7 @@ RUN apt-get install -y curl git
 RUN rm -rf /var/lib/apt/lists/*
 ```
 
-**Good** (1 layer, clean cache):
+**After (1 layer, no cache residue):**
 
 ```dockerfile
 RUN apt-get update && apt-get install -y \
@@ -143,38 +243,120 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 ```
 
-**Expected:** Related `apt-get` or package install commands are combined into single `RUN` instructions, each ending with cache cleanup (`rm -rf /var/lib/apt/lists/*`).
+**Python cache cleanup pattern:**
 
-**On failure:** If a combined `RUN` command fails midway, temporarily split it to identify the failing command, then recombine after fixing.
+```dockerfile
+RUN pip install --no-cache-dir -r requirements.txt
+```
 
-### Step 5: Use .dockerignore
+**Verification:** Check layer count and cache presence:
+```bash
+# Count layers
+docker history myimage:latest | wc -l
 
-Prevent unnecessary files from entering the build context:
+# Check for apt cache in image
+docker run --rm myimage:latest ls -la /var/lib/apt/lists/
+# Should be empty or minimal
+```
+
+**Expected outcome:** Image size should decrease by 20-50MB per combined apt operation. Layer count in `docker history` should decrease.
+
+**On failure - combined RUN command fails:**
+1. Read the error output to identify failing subcommand
+2. Temporarily split to debug: replace `&&` with separate `RUN` lines
+3. Fix the underlying issue
+4. Recombine into single RUN after successful builds
+5. For apt failures, try `apt-get update --fix-missing` or check package names with `apt-cache search <name>`
+
+### Step 5: Create or Update .dockerignore
+
+**Action:** Create a `.dockerignore` file in the project root (same directory as Dockerfile) to exclude files that should not be copied into the build context.
+
+**Why:** The build context includes all files in the Dockerfile's directory, sent to the Docker daemon before building. Large contexts slow down every build, even with caching.
+
+**Common patterns to exclude:**
 
 ```
+# Version control
 .git
+.gitignore
+.gitattributes
+
+# IDE/editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Language-specific
 .Rproj.user
 .Rhistory
 .RData
 renv/library
 renv/cache
-node_modules
-docs/
+node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+
+# Build artifacts
+dist/
+build/
 *.tar.gz
+*.zip
+*.egg-info/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Environment and secrets
 .env
+.env.local
+.env.*.local
+*.pem
+*.key
 ```
 
-**Expected:** A `.dockerignore` file exists in the project root excluding `.git`, `node_modules`, `renv/library`, build artifacts, and environment files. Build context size is noticeably smaller.
+**Verification:** Check context size before and after:
+```bash
+# See context being sent to daemon
+docker build --progress=plain . 2>&1 | head -20
+# Look for "Sending build context to Docker daemon"
 
-**On failure:** If needed files are missing in the container, check `.dockerignore` for overly broad patterns. Use `docker build` verbose output to verify which files are sent to the daemon.
+# For large contexts, you may see size in MB
+```
 
-### Step 6: Enable BuildKit
+**Expected outcome:** Build context size should be under 10MB for most projects. `docker build` should show "Sending build context" under 50MB.
+
+**On failure - needed files not in container:**
+1. Check if file is listed in `.dockerignore`: `grep filename .dockerignore`
+2. Check for overly broad patterns like `*.txt` or `docs/` that might match needed files
+3. Use exception syntax `!needed-file.txt` to include specific files
+4. Verify file is in correct location relative to Dockerfile
+5. Use `docker run --rm myimage ls -la /app/` to inspect what actually got copied
+
+### Step 6: Enable BuildKit for Advanced Features
+
+**Action:** Enable Docker BuildKit to unlock parallel builds, better caching, and cache mount features.
+
+**Enable for single build:**
 
 ```bash
 DOCKER_BUILDKIT=1 docker build -t myimage .
 ```
 
-Or in `docker-compose.yml`:
+**Enable persistently (recommended):**
+
+Add to `~/.bashrc`, `~/.zshrc`, or shell profile:
+```bash
+export DOCKER_BUILDKIT=1
+```
+
+**For docker-compose:**
 
 ```yaml
 services:
@@ -184,51 +366,214 @@ services:
       dockerfile: Dockerfile
 ```
 
-With `COMPOSE_DOCKER_CLI_BUILD=1` and `DOCKER_BUILDKIT=1` environment variables.
+With environment variables:
+```bash
+export COMPOSE_DOCKER_CLI_BUILD=1
+export DOCKER_BUILDKIT=1
+docker-compose build
+```
 
-BuildKit enables:
-- Parallel stage builds
-- Better cache management
-- `--mount=type=cache` for persistent package caches
+**BuildKit features gained:**
+- Parallel stage execution in multi-stage builds
+- Persistent cache mounts across builds (`--mount=type=cache`)
+- Better layer caching algorithms
+- Concurrent layer building
 
-**Expected:** Builds run with BuildKit enabled (indicated by `#1 [internal] load build definition` style output). Multi-stage builds execute stages in parallel where possible.
+**Verification - BuildKit is active:**
+```bash
+DOCKER_BUILDKIT=1 docker build -t test . 2>&1 | head -5
+```
 
-**On failure:** If BuildKit is not active, verify the environment variables are exported before the build command. On older Docker versions, upgrade Docker Engine to 18.09+ for BuildKit support.
+Look for BuildKit-style output:
+```
+#1 [internal] load build definition from Dockerfile
+#2 [internal] load .dockerignore
+#3 [internal] load metadata for docker.io/library/python:3.11
+```
 
-### Step 7: Use Cache Mounts for Package Managers
+Non-BuildKit output shows "Step 1/5 : FROM..." format instead.
+
+**Expected outcome:** Build output shows `#N [stage]` format. Multi-stage builds show concurrent progress bars for independent stages.
+
+**On failure - BuildKit not available:**
+1. Check Docker version: `docker --version` (needs 18.09+)
+2. Verify environment variable is exported: `echo $DOCKER_BUILDKIT`
+3. For older Docker, upgrade or skip steps requiring `--mount=type=cache`
+4. Some Docker Desktop versions have BuildKit enabled by default; check Settings > Build engine
+5. If using Docker in CI (GitHub Actions, GitLab CI), verify the runner's Docker version in job logs
+
+### Step 7: Use BuildKit Cache Mounts for Package Managers
+
+**Action:** Add `--mount=type=cache` to RUN instructions that install packages, enabling persistent package caches that survive layer invalidation.
+
+**Use when:** Package installation takes longer than 30 seconds and packages change infrequently. Most valuable for R, Python, and Node.js projects with many dependencies.
+
+**R packages with persistent cache:**
 
 ```dockerfile
-# R packages with persistent cache
 RUN --mount=type=cache,target=/usr/local/lib/R/site-library \
-    R -e "install.packages('dplyr')"
+    R -e "renv::restore()"
+```
 
-# npm with persistent cache
+**npm with persistent cache:**
+
+```dockerfile
 RUN --mount=type=cache,target=/root/.npm \
     npm ci
 ```
 
-**Expected:** Subsequent builds reuse cached packages from the mount, dramatically reducing install times even when the layer is invalidated. Cache persists across builds.
+**Python with pip cache:**
 
-**On failure:** If `--mount=type=cache` is not recognized, ensure BuildKit is enabled (`DOCKER_BUILDKIT=1`). The syntax requires BuildKit and is not supported by the legacy builder.
+```dockerfile
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -r requirements.txt
+```
+
+**How it works:** The cache mount creates a persistent volume that stores packages between builds. Even if the Dockerfile layer is invalidated (e.g., lockfile changed), the package cache remains and speeds up re-installation.
+
+**Verification:** Compare build times with and without cache mount:
+```bash
+# First build - establishes cache
+DOCKER_BUILDKIT=1 docker build -t test1 .
+
+# Second build - should reuse cache
+DOCKER_BUILDKIT=1 docker build -t test2 .
+# Look for cache mount reuse in output
+```
+
+**Expected outcome:** Package installation reuses downloaded packages from cache mount, reducing install time by 60-90% on subsequent builds. Full `npm ci` can drop from 2 minutes to 15 seconds.
+
+**On failure - mount syntax not recognized:**
+1. Verify BuildKit is enabled: `DOCKER_BUILDKIT=1` (see Step 6)
+2. Check Docker version: `docker version` (requires 18.09+ for basic BuildKit, 20.10+ for all mount features)
+3. Syntax must be exactly: `RUN --mount=type=cache,target=/path` (note the comma, not space)
+4. Common target paths:
+   - npm: `/root/.npm`
+   - pip: `/root/.cache/pip`
+   - R: `/usr/local/lib/R/site-library`
+   - apt: `/var/cache/apt`
+5. If still failing, remove `--mount` and proceed with basic layer caching (Step 1-2)
 
 ## Validation
 
-- [ ] Rebuilds after code-only changes are significantly faster
-- [ ] Dependency installation layer is cached when lockfile hasn't changed
-- [ ] `.dockerignore` excludes unnecessary files
-- [ ] Image size is reduced compared to unoptimized build
-- [ ] Multi-stage build (if used) separates build and runtime dependencies
+Validate each optimization with specific measurements:
 
-## Common Pitfalls
+### Cache Performance Validation
 
-- **Copying all files before installing deps**: Invalidates the dependency cache on every code change
-- **Forgetting `.dockerignore`**: Large build contexts slow down every build
-- **Too many layers**: Each `RUN`, `COPY`, `ADD` creates a layer. Combine where logical.
-- **Not cleaning apt cache**: Always end apt-get installs with `&& rm -rf /var/lib/apt/lists/*`
-- **Platform-specific caches**: Cache layers are platform-specific. CI runners may not benefit from local caches.
+**Test 1: Code-only change caching**
+1. Run initial build: `docker build -t baseline .`
+2. Modify any source file (not lockfile): `echo "# comment" >> main.py`
+3. Rebuild and measure: `time docker build -t test .`
+4. **Pass if:** Build completes in under 15 seconds and `docker history` shows dependency layer as `CACHED`
 
-## Related Skills
+**Test 2: Dependency layer caching**
+1. Run full build: `docker build -t pre .`
+2. Touch lockfile without changing content: `touch renv.lock`
+3. Rebuild: `docker build -t post .`
+4. **Pass if:** Dependency installation re-runs (not cached), but completes faster with cache mounts if enabled
 
-- `create-r-dockerfile` - initial Dockerfile creation
-- `setup-docker-compose` - compose build configuration
-- `containerize-mcp-server` - apply optimizations to MCP server builds
+### Size Validation
+
+**Measure image size reduction:**
+```bash
+# Before optimization
+docker images myapp:unoptimized --format "{{.Size}}"
+
+# After optimization
+docker images myapp:optimized --format "{{.Size}}"
+```
+
+**Pass if:** Multi-stage builds show 40%+ size reduction. Single-stage optimized builds show 10-20% reduction from cache cleanup.
+
+### Context Size Validation
+
+```bash
+docker build --progress=plain . 2>&1 | grep "Sending build context"
+```
+
+**Pass if:** Context is under 50MB. Large projects with data files should be under 100MB.
+
+### Multi-Stage Validation
+
+```bash
+docker build --target builder -t builder-stage .
+docker run --rm builder-stage which gcc  # Should find compiler
+docker run --rm myapp:latest which gcc   # Should NOT find compiler
+```
+
+**Pass if:** Runtime image lacks build tools but application runs successfully.
+
+## Failure handling
+
+### Scenario: Dependencies reinstall on every build
+
+**Symptoms:** Code changes trigger full package reinstall (2+ minute builds).
+
+**Diagnosis:**
+1. Check layer order: `docker history myimage:latest | head -10`
+2. Verify dependency COPY comes before source COPY in Dockerfile
+3. Verify lockfile exists: `ls renv.lock package-lock.json requirements.txt`
+
+**Resolution:**
+- Reorder Dockerfile (Step 1)
+- Ensure `COPY . .` comes after dependency installation
+- Add lockfile to version control if missing
+
+### Scenario: Multi-stage COPY fails
+
+**Symptoms:** `COPY --from=builder` errors with "file not found".
+
+**Diagnosis:**
+```bash
+docker build --target builder -t debug .
+docker run --rm debug ls -la /path/to/expected/files
+```
+
+**Resolution:**
+- Verify paths match between builder install location and COPY source
+- Common R path: `/usr/local/lib/R/site-library`
+- Common Python path: `/root/.local` or `/usr/local/lib/python*/site-packages`
+
+### Scenario: Image size not reduced
+
+**Symptoms:** Multi-stage image is nearly same size as single-stage.
+
+**Diagnosis:**
+```bash
+docker history myimage:latest | grep -E "(apt-get|install)"
+```
+
+**Resolution:**
+- Ensure `rm -rf /var/lib/apt/lists/*` is in same RUN as apt-get install
+- Remove dev packages (build-essential, gcc, -dev headers) from runtime stage
+- Verify COPY --from=builder doesn't copy build artifacts unintentionally
+
+### Scenario: Cache mounts not working
+
+**Symptoms:** Package installation takes same time on every build.
+
+**Diagnosis:**
+1. Verify BuildKit: `docker build --progress=plain . 2>&1 | head -3`
+2. Check for `#1 [internal]` style output (BuildKit) vs "Step 1" (legacy)
+
+**Resolution:**
+- Export `DOCKER_BUILDKIT=1` before build
+- Verify Docker version 18.09+
+- Check mount syntax has comma not space: `--mount=type=cache,target=/path`
+
+### Platform-specific cache notes
+
+Cache layers are platform-specific (Linux vs macOS vs Windows). CI runners may not
+benefit from locally-built caches. For CI optimization, consider:
+- Registry-based cache: `--cache-from` flag
+- Dedicated CI cache mounts in GitHub Actions/GitLab CI
+- BuildKit inline cache: `--build-arg BUILDKIT_INLINE_CACHE=1`
+
+## Next steps
+
+After optimizing the Dockerfile:
+
+1. **Implement CI/CD caching** - Use `skill: setup-ci-cache` for GitHub Actions or GitLab CI registry caching
+2. **Add health checks** - Use `skill: container-health-check` to verify containers start correctly
+3. **Security scanning** - Use `skill: scan-container-image` to check for vulnerabilities in optimized images
+4. **Docker Compose setup** - Use `skill: setup-docker-compose` for multi-service local development with optimized builds

@@ -1,0 +1,13 @@
+{"prompt":"Create a flowchart for user registration process","expected":"trigger","category":"core","notes":"trig_001: Explicit diagram creation request with flowchart keyword"}
+{"prompt":"Generate an Excalidraw file showing the relationship between User, Post, and Comment","expected":"trigger","category":"core","notes":"trig_002: Explicit Excalidraw file generation request"}
+{"prompt":"Make a mind map about machine learning concepts","expected":"trigger","category":"core","notes":"trig_003: Mind map creation request"}
+{"prompt":"Draw the system architecture of our microservices","expected":"trigger","category":"core","notes":"trig_004: Architecture diagram request with draw keyword"}
+{"prompt":"Visualize the data flow from API to database","expected":"trigger","category":"core","notes":"trig_005: Data flow visualization request"}
+{"prompt":"Create a class diagram for the e-commerce domain model","expected":"trigger","category":"core","notes":"trig_006: Class diagram creation request"}
+{"prompt":"Diagram the sequence of API calls for user authentication","expected":"trigger","category":"core","notes":"trig_007: Sequence diagram request"}
+{"prompt":"Create an ER diagram for the database schema","expected":"trigger","category":"core","notes":"trig_008: ER diagram creation request"}
+{"prompt":"Make a swimlane diagram for the order processing workflow","expected":"trigger","category":"core","notes":"trig_009: Business flow/swimlane request"}
+{"prompt":"diagram the workflow of user onboarding","expected":"trigger","category":"core","notes":"trig_017: Lowercase 'diagram' used as verb with workflow keyword"}
+{"prompt":"I need a visual representation of the payment process","expected":"trigger","category":"core","notes":"trig_018: Visual representation request for process"}
+{"prompt":"Can you draw me a network topology diagram?","expected":"trigger","category":"core","notes":"trig_019: Draw request for network topology"}
+{"prompt":"Make an excalidraw diagram of the CI/CD pipeline","expected":"trigger","category":"core","notes":"trig_020: Explicit excalidraw mention with diagram request"}

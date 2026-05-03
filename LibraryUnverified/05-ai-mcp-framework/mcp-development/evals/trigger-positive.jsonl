@@ -1,3 +1,8 @@
-{"input":"Building, debugging, securing, or packaging an MCP server or MCP tool surface","expected":"mcp-development","category":"MCP Skills"}
-{"input":"this task clearly needs mcp development","expected":"mcp-development","category":"MCP Skills"}
-{"input":"a plan, ticket, or repo state would benefit from explicit guardrails around mcp development","expected":"mcp-development","category":"MCP Skills"}
+{"input":"Build an MCP server that wraps the Stripe API","expected":"mcp-development","category":"MCP Skills"}
+{"input":"Create MCP tools for this REST API","expected":"mcp-development","category":"MCP Skills"}
+{"input":"Design the MCP server surface for our internal API","expected":"mcp-development","category":"MCP Skills"}
+{"input":"MCP server architecture for GitHub integration","expected":"mcp-development","category":"MCP Skills"}
+{"input":"Add new tools to our existing MCP server","expected":"mcp-development","category":"MCP Skills"}
+{"input":"MCP server best practices for authentication","expected":"mcp-development","category":"MCP Skills"}
+{"input":"Convert these API endpoints to MCP tools and resources","expected":"mcp-development","category":"MCP Skills"}
+{"input":"Building, debugging, or packaging an MCP server","expected":"mcp-development","category":"MCP Skills"}

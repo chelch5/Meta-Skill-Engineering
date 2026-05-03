@@ -1,20 +1,28 @@
 ---
 name: study-hebrew-letters
-description: >
-  Study the twenty-two Hebrew letters as mystical symbols. Covers
-  letter forms, numerical values, elemental/planetary/zodiacal
-  correspondences, Sefer Yetzirah attributions, and contemplative
-  letter meditation techniques. Use when studying a specific letter's
-  mystical dimensions beyond its linguistic function, learning the
-  Sefer Yetzirah classification of mothers, doubles, and simples,
-  needing correspondences for a letter's element, planet, or zodiac
-  sign, practicing Hebrew letter visualization or chanting meditation,
-  or studying Tree of Life paths and their assigned letters.
+description: |
+  Study individual Hebrew letters as mystical symbols within Kabbalistic and esoteric traditions.
+
+  **Use when** the user explicitly asks to:
+  - Study a specific Hebrew letter's symbolic meaning, form, or numerical value
+  - Learn the Sefer Yetzirah classification system (mothers/doubles/simples)
+  - Understand letter correspondences to elements, planets, zodiac, or Tree of Life paths
+  - Practice Hebrew letter meditation, visualization, or chanting
+  - Connect a Hebrew letter to esoteric correspondences (tarot, colors, sounds)
+
+  **Do NOT use when**:
+  - The user wants to translate or transliterate Hebrew text linguistically
+  - The user asks for gematria calculations or word-number conversions
+  - The user seeks general meditation guidance without letter focus
+  - The user asks about the Tree of Life paths without mentioning letters
+  - The task is about biblical interpretation or Hebrew language grammar
+
+  **Trigger**: User names a specific Hebrew letter (Aleph, Beth, Gimel, etc.) or explicitly asks about letter symbolism, correspondences, or meditation within Kabbalistic frameworks.
 license: MIT
 allowed-tools: Read
 metadata:
   author: Philipp Thoss
-  version: "1.0"
+  version: "1.1"
   domain: esoteric
   complexity: intermediate
   language: natural
@@ -25,14 +33,50 @@ metadata:
 
 Study the twenty-two Hebrew letters as mystical symbols — examining their visual forms, numerical values, Sefer Yetzirah classifications (mother, double, simple), elemental/planetary/zodiacal correspondences, paths on the Tree of Life, and contemplative letter meditation practices.
 
-## When to Use
+## When to Use / When NOT to Use
 
-- You want to study a specific Hebrew letter's mystical dimensions beyond its linguistic function
-- You are learning the Sefer Yetzirah's classification of letters into mothers, doubles, and simples
-- You need the correspondences (element, planet, zodiac, path) for a specific letter
-- You want to practice Hebrew letter meditation (visualization, chanting, contemplation)
-- You are studying the paths of the Tree of Life and need to understand the letter assigned to a path
-- You are exploring how letter form (shape, open/closed, final form) carries symbolic meaning
+### Use This Skill When:
+
+**Explicit Letter Study:**
+- User names a specific Hebrew letter by name ("Tell me about Aleph") or character ("What does ש mean esoterically?")
+- User asks to study a letter's symbolic meaning, visual form, or mystical dimensions
+- User wants to learn the Sefer Yetzirah classification system (mothers, doubles, simples) applied to specific letters
+
+**Correspondence Study:**
+- User requests correspondences for a specific letter (element, planet, zodiac sign, Tree of Life path)
+- User asks how a letter connects to tarot, colors, or sounds within esoteric frameworks
+- User wants to know which letter corresponds to a specific path on the Tree of Life
+
+**Contemplative Practice:**
+- User requests Hebrew letter meditation, visualization, or chanting guidance
+- User asks how to "work with" a letter spiritually or contemplatively
+- User wants step-by-step instructions for letter-based contemplative exercises
+
+### Do NOT Use This Skill When:
+
+**Linguistic or Translation Tasks:**
+- User wants to translate Hebrew text or words into English (or vice versa)
+- User asks for Hebrew word pronunciation or grammatical rules
+- User needs Hebrew transliteration for writing Hebrew in Latin characters
+
+**Gematria Calculations:**
+- User asks for the numerical value of a Hebrew word or phrase
+- User wants to calculate gematria equivalencies between words
+- User asks "What words equal [number]?" without letter context
+→ Route to: `apply-gematria`
+
+**Tree of Life Without Letter Focus:**
+- User asks about Tree of Life paths, sephiroth, or general Kabbalistic cosmology without mentioning Hebrew letters
+→ Route to: `read-tree-of-life`
+
+**General Meditation:**
+- User requests meditation guidance without specific Hebrew letter context
+→ Route to: `meditate` or `meditate-guidance`
+
+**Biblical or Religious Study:**
+- User asks about biblical interpretation using Hebrew letters
+- User seeks rabbinic commentary or Talmudic discussion about letters
+- User asks about Hebrew letter evolution in paleography or history
 
 ## Inputs
 
@@ -42,6 +86,15 @@ Study the twenty-two Hebrew letters as mystical symbols — examining their visu
 - **Optional**: Connection to a path on the Tree of Life
 
 ## Procedure
+
+**Routing Guide:** Follow Steps 1-5 in sequence. Each step builds on the previous. You may not skip steps except where failure handling explicitly allows an alternative. Check Validation criteria at the end of each step before proceeding.
+
+**Step Transitions:**
+- After Step 1: User must confirm or correct the letter identification before proceeding to Step 2.
+- After Step 2: If the user asks about a different letter's form, return to Step 1 for that letter rather than inventing form analysis for the current letter.
+- After Step 3: If numerical analysis triggers questions about word gematria rather than single letters, route to `apply-gematria` instead of continuing to Step 4.
+- After Step 4: If the user indicates they do not want to practice meditation, skip Step 5 and close with a summary.
+- After Step 5: Check End-of-Skill Routing rules before closing.
 
 ### Step 1: Select and Identify the Letter
 
@@ -95,9 +148,13 @@ Categories (Sefer Yetzirah Chapter 3-5):
 4. Note its primary attribution: element (mothers), planet (doubles), or zodiac sign (simples)
 5. If the user requested the full system, present the complete table before focusing on a specific letter
 
-**Expected:** The letter is identified with its number, category, and primary correspondence. The user understands where it sits within the three-fold classification system.
+**Expected:** The letter is identified with its name, numerical value, Sefer Yetzirah category (mother/double/simple), and primary correspondence (element, planet, or zodiac sign).
 
-**On failure:** If the user names a letter ambiguously (e.g., "Chet" vs. "Cheth" vs. "Het"), confirm by providing the standard value and asking the user to verify.
+**Failure Handling:**
+- **Ambiguous letter name**: If the user names a letter with variant spelling (e.g., "Chet" vs "Cheth" vs "Het", "Caf" vs "Kaf"), present the standard Hebrew character, numerical value, and ask: "Are you referring to [Name] (א/ב/ג)?" Proceed only after confirmation.
+- **Invalid input**: If the user provides a letter not in the Hebrew alphabet, respond: "[X] is not one of the twenty-two Hebrew letters. Please specify a letter from Aleph (א) through Tav (ת)."
+- **Unclear request**: If the user asks about "Hebrew letter symbolism" without specifying a letter, respond with the full classification table and ask: "Which specific letter would you like to study? I can guide you through any of the twenty-two."
+- **System request**: If the user asks for "the Sefer Yetzirah system" or "all letter classifications" without focusing on a single letter, present the complete table from Step 1 and ask which letter they want to explore in depth.
 
 ### Step 2: Examine the Letter's Form
 
@@ -137,9 +194,12 @@ These internal compositions reveal deeper symbolic layers.
 4. If the letter is traditionally described as a composite of other letters, note the composition
 5. Mention any traditional names for the letter's shape (e.g., Bet = "house," Daleth = "door," Ayin = "eye")
 
-**Expected:** The user sees the letter not just as an alphabet character but as a visual symbol carrying meaning in its form. The shape itself teaches.
+**Expected:** The user understands the letter's visual symbolism — its openness/closure, orientation, composite structure, and any final form variations.
 
-**On failure:** If form analysis feels subjective, ground it in traditional sources (Sefer ha-Bahir, Otiot de-Rabbi Akiva) where available. Where tradition is silent, present the observation as suggestion rather than doctrine.
+**Failure Handling:**
+- **Subjective interpretations**: If form analysis lacks traditional grounding, clearly distinguish: "Traditional sources do not explicitly assign meaning to this feature; the following observation is interpretive: [observation]" vs "Sefer ha-Bahir teaches: [explicit teaching]".
+- **Letters without extensive form teachings**: For letters with minimal traditional form analysis, focus on the shape's literal characteristics and invite the user's contemplation rather than inventing symbolism.
+- **Conflicting descriptions**: If different sources describe a letter's form differently, present the variation and note that letter form analysis has multiple valid perspectives within the tradition.
 
 ### Step 3: Note Numerical Value and Position
 
@@ -154,9 +214,17 @@ Study the letter's number and its significance in gematria and on the Tree.
    - Is it a sephira number? A significant traditional number?
    - Does it relate to the letter's meaning?
 
-**Expected:** The numerical dimension of the letter is established — both its value and its position on the Tree. The user can connect this letter to gematria analysis and sephirotic study.
+**Expected:** The letter's numerical value (gematria), ordinal position (1-22), full spelling (milui), and Tree of Life path assignment are clearly stated.
 
-**On failure:** If the Tree of Life path attribution is contested (different systems assign different letters to different paths), present the major systems (GRA, Golden Dawn) side by side rather than choosing one.
+**Failure Handling:**
+- **Contested path attributions**: If Tree of Life letter-to-path assignments differ between systems (e.g., GRA vs Golden Dawn vs other Kabbalistic schools), present both systems in parallel columns with clear labels:
+  ```
+  GRA system: Path [X] connects [Sephira A] to [Sephira B]
+  Golden Dawn system: Path [Y] connects [Sephira C] to [Sephira D]
+  ```
+  Then ask which system the user is working with, or proceed with the system most commonly associated with their stated tradition preference.
+- **Missing milui data**: If the letter's full spelling yields a complex gematria calculation, show the calculation step-by-step to ensure accuracy.
+- **Numerical confusion**: If the user asks about a number without connecting it to a letter (e.g., "what about 72?"), note: "72 is a significant Kabbalistic number but not a single Hebrew letter value. Would you like gematria analysis for words totaling 72, or shall we return to letter study?" Route to `apply-gematria` if they confirm.
 
 ### Step 4: Study Correspondences
 
@@ -196,9 +264,20 @@ Notes on Tradition Differences:
 4. For simple letters: state zodiac sign, month, direction, and human faculty
 5. Note Hermetic additions (tarot, color) separately from Jewish Kabbalistic attributions
 
-**Expected:** A comprehensive correspondence map for the letter. The user sees how the letter connects to cosmology, the body, the calendar, and the symbolic landscape.
+**Expected:** A complete correspondence map for the letter covering its Sefer Yetzirah category, primary attribution (element/planet/zodiac), direction, month, human faculty, tarot path (if requested), and opposites (for doubles).
 
-**On failure:** If correspondences conflict between sources, present both and note the recension. Do not silently choose one tradition over another.
+**Failure Handling:**
+- **Conflicting correspondences**: When sources disagree (e.g., Short vs Long vs GRA Sefer Yetzirah recensions), present the options in a table with source labels. Example:
+  ```
+  | Recension | Planet Attribution |
+  |-----------|-------------------|
+  | Short     | Saturn            |
+  | Long      | Jupiter           |
+  | GRA       | Moon              |
+  ```
+  Then ask: "Which recension are you working with? I can provide full correspondences based on your choice."
+- **Missing tradition preference**: If the user did not specify a tradition preference earlier and asks for correspondences, present the Short Recension as the baseline (most widely cited), then note: "These correspondences follow the Short Recension. If you prefer the GRA, Long, or Saadia version, or Hermetic/Golden Dawn attributions, I can provide those instead."
+- **Hermetic-only requests**: If the user asks specifically for tarot/colors without Jewish Kabbalistic context, present Hermetic correspondences but explicitly label: "The following attributions come from the Golden Dawn Hermetic tradition and are not part of historical Jewish Kabbalah:" and still provide the Sefer Yetzirah baseline for completeness.
 
 ### Step 5: Practice Letter Meditation
 
@@ -256,18 +335,75 @@ CLOSING (2 minutes):
 5. For simple letters, connect the zodiacal quality to the contemplation (e.g., Heh/Aries — initiative, beginning)
 6. Close with integration: what did the letter communicate?
 
-**Expected:** The user has engaged the letter through multiple modes — sight (form), sound (chanting), and meaning (contemplation). The letter has become experiential rather than purely intellectual.
+**Expected:** The user completes at least one phase of the meditation protocol (visualization, sound, or contemplation) and reports an insight, sensation, or question from the practice.
 
-**On failure:** If visualization is difficult, substitute writing: draw the letter slowly and deliberately, multiple times, as a meditative act. Physical engagement with the form can substitute for mental visualization.
+**Failure Handling:**
+- **Difficulty with visualization**: If the user reports "I can't visualize" or similar, immediately offer the writing alternative: "If mental visualization is difficult, draw the letter slowly and deliberately on paper instead. Let your hand trace each stroke with full attention. This physical engagement with the form achieves the same contemplative purpose."
+- **Sound discomfort**: If the user is unable to vocalize (environment unsuitable, physical constraint), provide a silent-breath alternative specific to the letter's category:
+  - Mothers: Breathe with awareness of the element (air=breath itself, water=flowing breath, fire=heated rapid breath)
+  - Doubles: Alternate forceful breath (representing hard sound) and soft breath
+  - Simples: Steady rhythmic breathing matching the letter's zodiac quality
+- **Short time available**: If the user indicates limited time, offer abbreviated protocols:
+  - **5-minute version**: One minute each of visualization, sound, contemplation
+  - **3-minute version**: Combined phase — visualize while silently intoning
+- **Journaling alternative**: For users who prefer writing to meditation, offer: "Would you like to journal about this letter instead? I can provide prompts about its form, correspondences, and what it might teach."
+- **Early termination**: If the user wants to exit meditation before completion, validate their experience: "Even brief contemplation is valuable. What arose for you during the time you spent?" Capture any insight and close gracefully.
+
+**End-of-Skill Routing:**
+- If the user asks to study **another Hebrew letter**: Loop back to Step 1 with the new letter.
+- If the user asks about **gematria or word values**: Route to `apply-gematria`.
+- If the user asks about **Tree of Life paths without letter focus**: Route to `read-tree-of-life`.
+- If the user asks about **general meditation practices**: Route to `meditate` or `meditate-guidance`.
+- If the user has **no further questions**: Close with a summary of what was studied and suggest next steps for deeper practice.
 
 ## Validation
 
-- [ ] The letter was identified with its name, value, and Sefer Yetzirah category
-- [ ] The letter's visual form was examined for symbolic meaning
-- [ ] Numerical value and Tree of Life path assignment were stated
-- [ ] Correspondences were presented with tradition sources noted
-- [ ] A contemplative exercise was offered (meditation, chanting, or journaling)
-- [ ] Tradition differences were acknowledged where attributions conflict
+Validate completion by checking each criterion. **Do not mark complete unless all that apply are satisfied.**
+
+### Step 1 — Identification (Required for all sessions)
+- [ ] Specific Hebrew letter named with Hebrew character (e.g., "Aleph — א")
+- [ ] Numerical value stated in standard gematria
+- [ ] Sefer Yetzirah category identified (Mother/Double/Simple)
+- [ ] Primary correspondence stated (element for mothers, planet for doubles, zodiac for simples)
+
+### Step 2 — Form Analysis (Required)
+- [ ] Visual shape described using shape symbolism framework (open/closed, vertical/horizontal, angular/curved)
+- [ ] Final form described if applicable (Kaf, Mem, Nun, Peh, Tzadi)
+- [ ] Composite structure noted if traditionally described (e.g., Aleph = two Yods + Vav)
+- [ ] Interpretations labeled as traditional or interpretive
+
+### Step 3 — Numerical Dimensions (Required)
+- [ ] Standard gematria value confirmed
+- [ ] Ordinal position (1-22) stated
+- [ ] Full spelling (milui) and its gematria calculated if relevant
+- [ ] Tree of Life path assignment provided (with system noted if multiple exist)
+
+### Step 4 — Correspondences (Required)
+- [ ] Correspondence template completed for the specific letter
+- [ ] Sefer Yetzirah category-specific attributes provided (element, planet, or zodiac)
+- [ ] Direction stated (for simples)
+- [ ] Hebrew month stated (for simples)
+- [ ] Human faculty stated (for simples)
+- [ ] Opposite pair stated (for doubles)
+- [ ] Source tradition labeled for each correspondence (Jewish/Hermetic/GRA/etc.)
+
+### Step 5 — Contemplative Practice (Required unless user declines)
+- [ ] Meditation protocol offered with clear phases (visualization/sound/contemplation)
+- [ ] Duration options provided (5/15/30 minute versions)
+- [ ] Category-specific guidance given (mothers emphasize elements, doubles emphasize polarity, simples emphasize zodiac)
+- [ ] Alternative offered if visualization is difficult (writing, silent breathing, journaling)
+- [ ] Closing integration question asked ("What did the letter communicate?")
+
+### Conflict Handling (Required when applicable)
+- [ ] If attributions differ between recensions, all major options presented with labels
+- [ ] If user asked about Hermetic correspondences, Jewish Kabbalistic baseline still provided for context
+- [ ] No tradition presented as the single "correct" version without qualification
+
+### Routing Check (Before closing)
+- [ ] If user asks about another Hebrew letter: confirmed intent to loop to Step 1
+- [ ] If user asks about gematria: routing to `apply-gematria` confirmed
+- [ ] If user asks about Tree of Life paths without letters: routing to `read-tree-of-life` confirmed
+- [ ] If user indicates completion: provided summary and suggested next practice steps
 
 ## Common Pitfalls
 
@@ -278,9 +414,16 @@ CLOSING (2 minutes):
 - **Rushing through all 22**: Each letter deserves sustained attention. Studying one letter deeply is more valuable than surveying all twenty-two superficially
 - **Forgetting the body**: Sefer Yetzirah assigns letters to body parts and senses. The letters are not disembodied abstractions but are mapped onto the human form
 
-## Related Skills
+## Next Steps (Related Skills)
 
-- `read-tree-of-life` — Each letter corresponds to a path on the Tree; understanding the path context deepens letter study
-- `apply-gematria` — The letter's numerical value participates in gematria analysis; understanding the letter enriches gematria interpretation
-- `meditate` — General meditation framework supporting the contemplative exercises in letter study
-- `meditate-guidance` — If guiding another person through letter meditation rather than practicing independently
+Route to these skills based on user follow-up requests:
+
+| If User Asks... | Route To | Trigger Condition |
+|----------------|----------|-------------------|
+| "Now calculate the gematria of [word]" or "What words equal 26?" | `apply-gematria` | User shifts from single-letter study to word/phrase numerical analysis |
+| "Tell me about the paths on the Tree of Life" without letter focus | `read-tree-of-life` | User wants path/sephiroth context beyond letter assignments |
+| "How do I meditate in general?" or "Guide me through a basic meditation" | `meditate` | User wants meditation without Hebrew letter specificity |
+| "How do I guide someone else through this letter meditation?" | `meditate-guidance` | User needs instruction on teaching/facilitating letter meditation for others |
+| "Now study [different Hebrew letter]" | Loop to Step 1 of this skill | User wants to continue with another letter — stay within this skill |
+
+**Escalation Note:** If the user asks questions that blend multiple skills (e.g., "What's the gematria of the letter Aleph's name?"), handle the letter study portion here, then offer: "Would you like me to analyze the full gematria of the word 'Aleph' (Aleph-Lamed-Peh = 111)?" If they confirm, route to `apply-gematria`.

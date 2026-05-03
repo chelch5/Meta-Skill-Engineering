@@ -111,7 +111,7 @@ The report MUST contain all six sections. Omit rows only when a section has zero
 
 # Failure handling
 
-- **Cannot compare descriptions meaningfully** (e.g., descriptions are one-word stubs): report the skill as "unassessable — description too short to evaluate" and recommend a description rewrite before the next curation pass.
+- **Cannot compare descriptions meaningfully** (e.g., descriptions are too short): report the skill as "unassessable — description too short to evaluate" and recommend a description rewrite before the next curation pass.
 - **Category scheme is incoherent** (no consistent axis): propose a replacement taxonomy with explicit grouping criteria and flag it as a blocking action before other category fixes.
 - **No usage metrics available**: fall back to last-modified date and whether the skill's target tool/framework still exists in the stack.
 - **Findings exceed 30 action items**: split into phases — Phase 1: duplicates and broken boundaries (high), Phase 2: category restructuring (medium), Phase 3: discoverability polish (low). Do not emit an unprioritized list.

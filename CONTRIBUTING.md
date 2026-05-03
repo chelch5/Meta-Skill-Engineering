@@ -6,7 +6,7 @@ Thank you for your interest in contributing to the Meta Skill Studio project.
 
 1. Clone the repository
 2. Read `AGENTS.md` for working rules and skill package conventions
-3. Install the .NET SDK (8.0+) and Node.js for building the WPF app
+3. Install Node.js, Rust, and the Tauri prerequisites for your operating system
 
 ## Skill Package Structure
 
@@ -21,15 +21,15 @@ Every skill package must contain a `SKILL.md` file following the structure defin
 7. Next steps
 8. References (optional)
 
-## Building the Windows App
+## Building the Desktop App
 
-See `windows-wpf/README.md` for build instructions, runtime dependencies, and publish steps.
+Use `npm run build` and `cargo check` from `src-tauri/` for local desktop validation.
 
 ## Conventions
 
 - Keep documentation factual and direct
-- Follow existing code style in the WPF project (C# / XAML / MVVM)
-- Run `dotnet build` and `dotnet test` before submitting changes
+- Follow existing TypeScript, Rust, and skill-package style
+- Run `npm run build`, `cargo check`, and the relevant skill/eval validation before submitting changes
 - Update `CHANGELOG.md` for user-facing changes
 
 ## Reporting Issues

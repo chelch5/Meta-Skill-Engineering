@@ -75,10 +75,10 @@ graph TB
         AGENTS["AGENTS.md<br/>Working rules & contracts"]
         README["README.md<br/>Overview & entry points"]
         PLAN["PLAN.md<br/>Remediation tracking"]
-        CI["copilot-instructions.md<br/>Project-level Copilot config"]
+        CI["opencode-instructions.md<br/>Project-level OpenCode config"]
     end
 
-    subgraph skills["🧩 12 Active Skill Packages"]
+    subgraph skills["🧩 17 Active Skill Packages"]
         direction TB
         SC[skill-creator]
         SI[skill-improver]
@@ -313,7 +313,7 @@ flowchart TD
 
         SI_P2["Phase 2: Diagnose Weakness<br/>━━━━━━━━━━━━━━━━<br/>Eval-driven diagnosis table:<br/>Precision < 80% → overtriggering<br/>Recall < 80% → undertriggering<br/>Behavior < 80% → wrong format<br/>Usefulness < 3/5 → weak output<br/>Structural < 8/10 → package rot"]
 
-        SI_P2H["Heuristic fallback<br/>(if no eval data available)"]
+        SI_P2H["Structural diagnosis<br/>(when no eval data exists yet)"]
 
         SI_P3["Phase 3-6: Implement & Self-Review"]
         SI_P7["Phase 7: Verify<br/>./scripts/run-baseline-comparison.sh<br/>5 quality gates"]
@@ -637,11 +637,11 @@ flowchart TD
 
 ## 10. Extension Tooling & Auto-Validation
 
-How the Copilot CLI extension integrates with the repo.
+How the OpenCode CLI extension integrates with the repo.
 
 ```mermaid
 flowchart TD
-    subgraph agent["🤖 Copilot CLI Agent"]
+    subgraph agent["🤖 OpenCode Agent"]
         EDIT["Agent edits a SKILL.md<br/>(edit or create tool)"]
         MANUAL["Agent calls tool manually"]
     end

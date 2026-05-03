@@ -38,7 +38,7 @@ Maintain the repo-owned skill packages, skill creation/improvement workflows, an
 ## Runtime and Studio Integration
 
 - Treat OpenCode as the canonical AI runtime for Meta Skill Studio surfaces and repo automation that needs an agent runtime.
-- Repository-level OpenCode defaults live in `.opencode/opencode.json`; do not introduce parallel runtime-selection guidance for Codex, Gemini, Copilot, or other CLIs in active docs/UI.
+- Repository-level OpenCode defaults live in `.opencode/opencode.json`; do not introduce parallel runtime-selection guidance for other AI CLIs in active docs/UI.
 - `.opencode/skills/` is an OpenCode mirror for selected repo-owned skills, not the authoritative root inventory.
 - `LibraryUnverified/` and `LibraryWorkbench/` are corpus/library areas, not repo-owned root skill packages.
 
@@ -47,16 +47,15 @@ Maintain the repo-owned skill packages, skill creation/improvement workflows, an
 - The authoritative headless execution surface is `scripts/meta-skill-studio.py --mode cli`.
 - `scripts/meta_skill_studio/app.py` (`StudioCore`) is the shared workflow backend that UI shells must align to.
 - `docs/cli/action-contract.md` is the published CLI contract; `docs/cli/feature-inventory.md` is the audit baseline.
-- TUI, tkinter GUI, and `windows-wpf/` are convenience shells layered on the same workflow truth, not competing contracts.
+- Tauri, TUI, and tkinter GUI are convenience shells layered on the same workflow truth, not competing contracts.
 - `scripts/meta_skill_studio/opencode_sdk_bridge.mjs` is an assistant-chat helper, not the authoritative workflow surface.
 - Archive `skill-fault` evidence is ingested through `python scripts/meta-skill-studio.py --mode cli --action ingest-skill-fault --packet <packet.json>` and must produce tracked `tasks/pipelines/` disposition artifacts without promoting unverified skills.
 
-## WPF Release Validation
+## Tauri Release Validation
 
-- For `windows-wpf/` changes, `dotnet build` and `dotnet test` are not enough to claim completion.
-- Before marking WPF work complete, run `windows-wpf\build-release.ps1` and confirm the publish smoke test passes.
-- The smoke test must launch `windows-wpf\publish\MetaSkillStudio.exe`, verify it stays alive briefly, and fail on any matching `.NET Runtime`, `Application Error`, or `Windows Error Reporting` events.
-- Treat startup XAML/resource failures as blocking release issues even when compile and unit tests pass.
+- For `src/` or `src-tauri/` changes, run `npm run build` and `cargo check` from `src-tauri/`.
+- Before marking packaged desktop work complete, run `npm run tauri -- build --debug --no-bundle` on Linux or the equivalent platform build on Windows.
+- Treat startup, contract, or resource failures as blocking release issues even when the headless CLI passes.
 
 ## Commands
 
@@ -64,19 +63,20 @@ Maintain the repo-owned skill packages, skill creation/improvement workflows, an
 ./scripts/validate-skills.sh
 ./scripts/run-evals.sh
 ./scripts/pre-commit-check.sh
+npm run build
+(cd src-tauri && cargo check)
 ```
 
 ```powershell
 python scripts/meta-skill-studio.py --mode cli
 python scripts/validate_cli_contract.py
-windows-wpf\build-release.ps1
 ```
 
 ## Completion evidence
 
 - List changed skill packages, scripts, docs, or Studio surfaces.
 - Include relevant validation commands and results.
-- For WPF work, include `windows-wpf\build-release.ps1` and smoke-test result.
+- For Tauri work, include `npm run build`, `cargo check`, and relevant app launch/build evidence.
 - State whether the root skill inventory count changed; do not change it without repo evidence.
 
 ## Skill Package Shape
@@ -162,7 +162,7 @@ skill-catalog-curation → skill-lifecycle-management
 | `scripts/meta-skill-studio.py` | Authoritative CLI/TUI/GUI entrypoint |
 | `scripts/validate_cli_contract.py` | CLI/docs contract drift check used by `validate-skills.sh` |
 | `scripts/validate-skills.sh` | Structural validator for repo-owned root skills |
-| `scripts/run-evals.sh` | JSONL eval runner |
+| `scripts/run-evals.sh` | OpenCode SDK-backed JSONL eval runner |
 | `scripts/pre-commit-check.sh` | Local pre-commit checks |
 | `scripts/nightly-full-test.sh` | Nightly-oriented repository test wrapper |
 | `scripts/regression-alert.sh` | Regression alert helper |

@@ -1,78 +1,132 @@
 ---
 name: winui-app
-description: "Bootstrap, develop, and design modern WinUI 3 desktop applications with C# and the Windows App SDK using official Microsoft guidance, WinUI Gallery patterns, Windows App SDK samples, and CommunityToolkit components. Use when creating a brand new app, preparing a machine for WinUI, reviewing, refactoring, planning, troubleshooting, environment-checking, or setting up WinUI 3 XAML, controls, navigation, windowing, theming, accessibility, responsiveness, performance, deployment, or related Windows app design and development work."
-license: Apache-2.0
-compatibility:
-  clients: [openai-codex, gemini-cli, opencode, github-copilot]
-metadata:
-  owner: codex
-  domain: winui-app
-  maturity: curated
-  risk: low
-  tags: [winui, windows, desktop, csharp]
+description: Create, develop, and refine WinUI 3 desktop applications using C# and the Windows App SDK. Triggers on requests to bootstrap new WinUI projects, set up development environments, implement WinUI controls and navigation, apply Fluent Design theming, or troubleshoot WinUI-specific build and runtime issues.
 ---
 
 > Source: https://github.com/openai/skills/tree/main/skills/.curated skills/.curated/winui-app
 
-# WinUI App
+## Purpose
 
-Use this skill for WinUI 3 and Windows App SDK work that needs grounded setup guidance, app bootstrap, modern Windows UX decisions, or concrete implementation patterns.
+Provide grounded, step-by-step guidance for building modern Windows desktop applications with WinUI 3 and the Windows App SDK. This skill bridges Microsoft Learn documentation, WinUI Gallery patterns, and CommunityToolkit components into concrete implementation decisions for C#-first WinUI development.
 
-## Required Flow
+## When to use
 
-1. Classify the task as environment/setup, new-app bootstrap, design, implementation, review, or troubleshooting.
-2. If the task is about preparing a machine for WinUI, auditing readiness, or creating a brand new app, start with the bundled setup-and-scaffold flow in this skill before broader design, implementation, or troubleshooting work:
-   - Pick the app name when the request is for a new app.
-   - Use the exact name the user gave when it is already a safe folder name.
-   - If the user did not give a name, derive a short PascalCase name from the request and state what you chose.
-   - Create the project in the user's current workspace unless they asked for another location.
-   - Do not use `--force` unless the user explicitly asked to overwrite existing files.
-   - Run the bundled WinGet configuration from the skill directory so the relative path stays exactly `config.yaml`:
+Use this skill when the request involves:
 
-```powershell
-winget configure -f config.yaml --accept-configuration-agreements --disable-interactivity
-```
+- **New project creation**: Bootstrapping a brand new WinUI 3 application (packaged or unpackaged)
+- **Environment setup**: Installing or verifying WinUI prerequisites (Visual Studio, Windows SDK, .NET, Developer Mode)
+- **Control implementation**: Adding or modifying WinUI controls, navigation shells, command surfaces, or page layouts
+- **Design system work**: Applying Mica/Acrylic materials, Fluent typography, responsive layouts, or light/dark theming
+- **Troubleshooting**: Diagnosing WinUI-specific build failures (MSB3073, XamlCompiler.exe), startup crashes, or packaging issues
+- **Architecture decisions**: Choosing between packaged vs unpackaged deployment, navigation patterns, or shell composition
+- **Review and remediation**: Auditing existing WinUI code for accessibility, performance, or platform alignment
 
-   - Treat the configuration as intended to enable Developer Mode, install or update Visual Studio Community 2026, and install the Managed Desktop, Universal, and Windows App SDK C# components needed for WinUI development.
-   - Assess the configuration result before continuing. Continue on success. If it fails, inspect the output instead of guessing. If the `winui` template is already available and the toolchain is usable, note the partial failure and continue. If prerequisites are still missing, stop and report the blocker clearly.
-   - Verify the template is available before scaffolding:
+## When NOT to use
 
-```powershell
-dotnet new list winui
-```
+Do not use this skill when:
 
-   - For diagnostics-only environment requests, explain that the bundled bootstrap may change the machine and get confirmation before running it. If the user declines changes, use the manual verification guidance in `references/foundation-environment-audit-and-remediation.md` and summarize readiness under `present`, `missing`, `uncertain`, and `recommended optional tools`.
-   - For a brand new app, scaffold with `dotnet new winui -o <name>`. Add template options only when the user asked for them. Supported options: `-f|--framework net10.0|net9.0|net8.0`, `-slnx|--use-slnx`, `-cpm|--central-pkg-mgmt`, `-mvvm|--use-mvvm`, `-imt|--include-mvvm-toolkit`, `-un|--unpackaged`, `-nsf|--no-solution-file`, `--force`. Do not invent unsupported flags. If the user asks for packaged behavior, pass `--unpackaged false`. Otherwise keep the template default.
-   - Verify a new scaffold by confirming the expected project file exists and running `dotnet build` against the generated `.csproj`.
-   - Launch a newly scaffolded app through the correct path for its actual packaging model and confirm there is a real top-level window instead of relying only on the launcher process exit code.
-3. Read `references/_sections.md`, then load only the reference files that match the task.
-4. Make the packaging model explicit before creating or refactoring the app. Default to packaged for Store-like product workflows and Visual Studio deploy/F5 flows. Default to unpackaged when the user expects repeatable CLI build-and-run loops or direct `.exe` launches after each change.
-5. When the task is an opaque XAML compiler failure such as `MSB3073` or `XamlCompiler.exe`, read `references/foundation-template-first-recovery.md` and simplify back toward the current `dotnet new winui` scaffold for the chosen packaging model before inventing custom recovery structure.
-6. For any work that creates or changes a WinUI app, make a complete but minimal edit set, then build the app and run it before responding to the user. Do this by default even when the user did not explicitly ask for verification. If a running app instance locks the output while more work remains, stop it, rebuild, relaunch, and continue verification. When the work is complete and launch verification succeeds, leave the final verified app instance running for the user unless they explicitly asked you not to.
-7. Treat launch verification as incomplete until the app shows objective success signals such as a responsive top-level window, expected window title, or other clear startup behavior. A spawned process by itself is not enough.
-8. Prefer Microsoft Learn for requirements, API expectations, and platform guidance.
-9. Prefer WinUI Gallery for concrete control usage, shell composition, and design details.
-10. Prefer WindowsAppSDK-Samples for scenario-level APIs such as windowing, lifecycle, notifications, deployment, and custom controls.
-11. Build toward WinUI and Fluent guidance first. Treat native WinUI shells, controls, interactions, and control chrome as the default implementation path.
-12. For grouped command surfaces such as document actions, editor formatting, view toggles, or page-level toolbars, favor a native `CommandBar` or other stock WinUI command surface before building a custom row with `Grid`, `StackPanel`, `Border`, or ad hoc button groupings.
-13. Do not invent app-specific controls, bespoke component libraries, or custom chrome to replace stock WinUI behavior unless the user explicitly asks for that customization, the existing product design system already requires it, or a verified platform gap leaves no clean native option.
-14. When customization is needed, first compose, template, or restyle built-in WinUI controls and system resources before adding CommunityToolkit dependencies or authoring a new custom control.
-15. Use CommunityToolkit only when built-in WinUI controls or helpers do not cover the need cleanly.
-16. Support both light and dark mode by default. Treat single-theme output as an exception that requires an explicit user request or an existing product constraint.
-17. Use theme-aware resources, system brushes, and WinUI styling hooks instead of hard-coded light-only or dark-only colors when building or revising UI.
-18. Make scroll ownership explicit for collection layouts. When a page already scrolls vertically, do not assume a nested `GridView` or other scroll-owning collection will still render a horizontal poster rail correctly.
-19. Do not add extra `Border` wrappers around sections, lists, or cards unless the border is doing distinct work that the contained control or parent surface does not already provide. Avoid "double-card" compositions where a section `Border` wraps child items that already render as cards.
-20. Treat responsiveness as a shell-plus-page problem, not only a control-resize problem. Plan explicit wide, medium, and phone-width behavior for navigation, padding, content density, and footer/tool regions, and simplify or hide nonessential UI as width shrinks.
+- The request involves WPF, Windows Forms, UWP (non-WinUI 3), or cross-platform frameworks (MAUI, Avalonia, Uno)
+- The task is general C# development without WinUI-specific concerns (use general coding assistance)
+- The request is for backend services, web APIs, or non-Windows platforms
+- The task involves Windows system administration or registry changes unrelated to WinUI development
+- The project is already a mature, established codebase with strong conventions that should be preserved as-is (follow existing patterns instead)
 
-## Common Routes
+## Procedure
+
+1. **Classify the task** as environment/setup, new-app bootstrap, design/implementation, review, or troubleshooting.
+
+2. **For environment setup or new-app bootstrap** (first priority - use bundled workflow):
+   - Pick the app name when the request is for a new app. Derive a short PascalCase name if none given.
+   - Create the project in the user's current workspace unless another location was specified.
+   - Run the bundled WinGet configuration:
+     ```powershell
+     winget configure -f config.yaml --accept-configuration-agreements --disable-interactivity
+     ```
+   - Verify the template is available: `dotnet new list winui`
+   - For diagnostics-only environment requests, explain the bundled bootstrap may change the machine and get confirmation. If declined, use `references/foundation-environment-audit-and-remediation.md` for manual verification.
+   - Scaffold with: `dotnet new winui -o <name>`
+   - Supported template options only: `-f|--framework net10.0|net9.0|net8.0`, `-slnx|--use-slnx`, `-cpm|--central-pkg-mgmt`, `-mvvm|--use-mvvm`, `-imt|--include-mvvm-toolkit`, `-un|--unpackaged`, `-nsf|--no-solution-file`, `--force`. Do not invent unsupported flags.
+   - Verify the scaffold by confirming the `.csproj` exists and running `dotnet build`.
+   - Launch the app through the correct packaged/unpackaged path and confirm a real top-level window appears.
+
+3. **For design, implementation, or troubleshooting** (after setup is verified):
+   - Read `references/_sections.md`, then load only the reference files matching the task.
+   - Make the packaging model explicit before creating or refactoring. Default to packaged for Store workflows; unpackaged for CLI build-and-run loops.
+   - For opaque XAML compiler failures (MSB3073, XamlCompiler.exe), read `references/foundation-template-first-recovery.md` and simplify toward the template scaffold before custom recovery.
+
+4. **For any work that creates or changes a WinUI app**:
+   - Make complete but minimal edits, then build and run the app before responding.
+   - Do this by default even when not explicitly requested.
+   - If a running app instance locks output while more work remains, stop it, rebuild, relaunch, and continue.
+   - Leave the final verified app instance running unless the user explicitly asked not to.
+   - Treat launch verification as incomplete until the app shows objective success: responsive top-level window, expected title, or clear startup behavior. A spawned process alone is not sufficient.
+
+5. **Design and implementation principles**:
+   - Prefer Microsoft Learn for API expectations and platform guidance.
+   - Prefer WinUI Gallery for concrete control usage and design details.
+   - Prefer WindowsAppSDK-Samples for scenario-level APIs (windowing, lifecycle, notifications).
+   - Build toward WinUI and Fluent guidance first. Treat native WinUI shells and controls as the default path.
+   - For grouped command surfaces, favor native `CommandBar` before custom button groupings.
+   - Do not invent bespoke component libraries or custom chrome to replace stock WinUI behavior unless explicitly requested or required by existing design system.
+   - When customization is needed, first compose, template, or restyle built-in WinUI controls before adding CommunityToolkit dependencies.
+   - Use CommunityToolkit only when built-in WinUI controls do not cover the need cleanly.
+   - Support both light and dark mode by default. Use theme-aware resources and system brushes instead of hard-coded colors.
+   - Make scroll ownership explicit for collection layouts. Do not assume nested scroll-owning collections will render correctly within scrolling pages.
+   - Avoid extra `Border` wrappers unless doing distinct work the contained control does not provide.
+   - Treat responsiveness as a shell-plus-page problem, not just control-resize. Plan explicit wide, medium, and phone-width behavior.
+
+## Output contract
+
+Every interaction with this skill produces:
+
+- **Verified code changes**: All WinUI code edits are accompanied by successful build and launch verification
+- **Explicit packaging model**: Clear documentation of whether the app is packaged or unpackaged, with rationale
+- **Reference citations**: Guidance is anchored to Microsoft Learn, WinUI Gallery, or WindowsAppSDK-Samples sources
+- **Working application**: A running WinUI app instance (left active unless user requested otherwise) demonstrating the implemented functionality
+- **Environment status**: For setup tasks, clear report of present/missing/uncertain prerequisites with next steps
+
+## Failure handling
+
+### Environment failures
+- If `winget configure` fails but the `winui` template is available and toolchain is usable, note the partial failure and continue
+- If prerequisites remain missing after setup flow, stop and report the blocker clearly without inventing alternate install recipes
+- If `config.yaml` is missing, state this clearly and fall back to official Microsoft workflow instead of pretending the bundled path exists
+
+### Build and XAML failures
+- For `MSB3073` or `XamlCompiler.exe` errors, simplify toward the `dotnet new winui` template scaffold before structural changes
+- Run a clean build once if diagnostics appear stale before deeper surgery
+- Restore complex startup pieces incrementally after a clean build succeeds
+- Prefer restoring template-generated shared-resource state over moving styles inline as the long-term fix
+
+### Launch and runtime failures
+- Separate environment problems from app-code startup crashes
+- Inspect startup path (`App.xaml`, merged dictionaries, converters, `MainWindow`) if the app exits before showing a window
+- Compare current app against fresh `dotnet new winui` scaffold for startup or manifest issues
+- Guard package-identity assumptions when using unpackaged startup (e.g., `Windows.Storage.ApplicationData.Current` can fail)
+- Fail closed on ambiguous launch results. If the app did not clearly open, continue debugging instead of declaring success
+
+### User-decline scenarios
+- If user declines machine changes for audit-only requests, use manual verification from `references/foundation-environment-audit-and-remediation.md` and summarize readiness under: present, missing, uncertain, recommended optional tools
+- Keep uncertain signals explicit instead of implying success
+
+## Next steps
+
+After completing WinUI work:
+
+- **For new projects**: Consider reading `references/testing-debugging-and-review-checklists.md` for a final review pass
+- **For design refinements**: Reference `references/performance-diagnostics-and-responsiveness.md` if the app handles large collections or needs responsiveness tuning
+- **For deployment preparation**: Read `references/windows-app-sdk-lifecycle-notifications-and-deployment.md` for lifecycle and packaging decisions
+- **For accessibility audit**: Reference `references/accessibility-input-and-localization.md` before considering the app production-ready
+
+## References
 
 | Request | Read first |
 | --- | --- |
 | Check whether this PC can build WinUI apps | `references/foundation-environment-audit-and-remediation.md` |
 | Install missing WinUI prerequisites | `references/foundation-environment-audit-and-remediation.md` |
 | Start a new packaged or unpackaged app | `references/foundation-setup-and-project-selection.md` |
-| Recover from opaque XAML compiler or startup failures while staying anchored to the template scaffold | `references/foundation-template-first-recovery.md` |
-| Build, run, or verify that a WinUI app actually launched | `references/build-run-and-launch-verification.md` |
+| Recover from XAML compiler or startup failures | `references/foundation-template-first-recovery.md` |
+| Build, run, or verify that a WinUI app launched | `references/build-run-and-launch-verification.md` |
 | Review app structure, pages, resources, and bindings | `references/foundation-winui-app-structure.md` |
 | Choose shell, navigation, title bar, or multi-window patterns | `references/shell-navigation-and-windowing.md` |
 | Choose controls or responsive layout patterns | `references/controls-layout-and-adaptive-ui.md` |
@@ -83,23 +137,11 @@ dotnet new list winui
 | Handle lifecycle, notifications, or deployment | `references/windows-app-sdk-lifecycle-notifications-and-deployment.md` |
 | Run a review checklist | `references/testing-debugging-and-review-checklists.md` |
 
-## Environment Rules
-
-- Do not guess whether the machine is ready for WinUI development. Verify it.
-- Use the bundled setup-and-scaffold flow in this skill for fresh setup, remediation, and first-project scaffolding instead of delegating to another skill.
-- Treat `config.yaml` in this skill directory as the bundled bootstrap source of truth.
-- Treat uncertain environment signals as uncertain, not as success.
-- If the task is audit-only and the user declines machine changes, use the manual verification guidance in `references/foundation-environment-audit-and-remediation.md` and keep uncertain signals explicit instead of implying success.
-- If `config.yaml` is missing, say so clearly and fall back to the official Microsoft workflow instead of pretending the bundled path exists.
-- Keep environment readiness, packaging choice, and application startup verification as separate checks. Passing one does not prove the others.
-- Fail closed on ambiguous launch results. If the app did not clearly open, keep debugging.
-- After creating or editing a WinUI app, do not stop at a successful build. Launch the app, confirm objective startup behavior, and leave the final verified app instance running before returning control to the user unless they explicitly say not to run it.
-
-## Reference Rules
+### Reference rules
 
 - Keep C# as the primary path. Mention C++ or C++/WinRT only when the difference is material.
 - Preserve the conventions of an existing codebase instead of forcing a generic sample structure onto it.
-- Treat WinUI design guidance and native controls as the baseline. Do not drift into bespoke component systems or app-specific replacements for standard controls unless the user explicitly requests them or the existing codebase already depends on them.
-- Support light and dark mode by default for app UI work unless the user explicitly asks for a single-theme result or the product already enforces one.
+- Treat WinUI design guidance and native controls as the baseline. Do not drift into bespoke component systems unless explicitly requested or required by existing codebase.
+- Support light and dark mode by default unless explicitly asked for single-theme result or product already enforces one.
 - Favor built-in WinUI controls and system styling hooks before adding CommunityToolkit dependencies, custom controls, or app-specific surface systems.
 - Put detailed control, theming, shell, scrolling, responsiveness, packaging, and recovery guidance in the matching reference files instead of duplicating those rules here.

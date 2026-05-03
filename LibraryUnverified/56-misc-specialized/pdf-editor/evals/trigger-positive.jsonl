@@ -1,3 +1,8 @@
-{"input":"The user or repo work clearly points at pdf editor","expected":"pdf-editor","category":"Docs, Artifacts, and Media Skills"}
-{"input":"this task clearly needs pdf editor","expected":"pdf-editor","category":"Docs, Artifacts, and Media Skills"}
-{"input":"a plan, ticket, or repo state would benefit from explicit guardrails around pdf editor","expected":"pdf-editor","category":"Docs, Artifacts, and Media Skills"}
+{"input":"Merge these three quarterly reports into one PDF","expected":"pdf-editor","category":"Docs, Artifacts, and Media Skills"}
+{"input":"Split this 50-page document into separate PDFs by chapter","expected":"pdf-editor","category":"Docs, Artifacts, and Media Skills"}
+{"input":"Rotate all pages in the scanned PDF 90 degrees clockwise","expected":"pdf-editor","category":"Docs, Artifacts, and Media Skills"}
+{"input":"Add a 'DRAFT' watermark to every page of the contract PDF","expected":"pdf-editor","category":"Docs, Artifacts, and Media Skills"}
+{"input":"Fill out the form fields in this W-4 PDF with employee data","expected":"pdf-editor","category":"Docs, Artifacts, and Media Skills"}
+{"input":"Redact the social security numbers from these tax documents","expected":"pdf-editor","category":"Docs, Artifacts, and Media Skills"}
+{"input":"Update the PDF metadata to change the author and title fields","expected":"pdf-editor","category":"Docs, Artifacts, and Media Skills"}
+{"input":"Rearrange the pages so page 5 comes first, then page 1-4","expected":"pdf-editor","category":"Docs, Artifacts, and Media Skills"}

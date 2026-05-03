@@ -1,17 +1,15 @@
 ---
 name: test-cli-application
 description: >
-  Write integration tests for a Node.js CLI application using the built-in
-  node:test module. Covers the exec helper pattern, output assertions,
-  filesystem state verification, cleanup hooks, JSON output parsing, error
-  case testing, and state restoration after destructive tests. Use when
-  adding tests to an existing CLI, testing a new command, verifying adapter
-  behavior across frameworks, or setting up CI for a CLI tool.
+  Triggers when asked to write integration tests for a Node.js CLI application,
+  add tests to an existing CLI, verify CLI commands work correctly, or set up
+  CI testing for CLI tools. Use when the project uses Node.js 18+ and you need
+  subprocess-based integration testing with the built-in node:test module.
 license: MIT
 allowed-tools: Read Write Edit Bash Grep Glob
 metadata:
   author: Philipp Thoss
-  version: "1.0"
+  version: "1.1"
   domain: cli
   complexity: intermediate
   language: TypeScript
@@ -27,24 +25,36 @@ metadata:
 
 Write integration tests for a Node.js CLI using the built-in `node:test` module with `execSync`.
 
-## When to Use
+## Purpose
 
-- Adding tests to an existing CLI application
-- Testing a newly created command
-- Verifying adapter/plugin behavior across target frameworks
-- Setting up CI that validates CLI correctness
-- Catching regressions after refactoring CLI internals
+This skill provides a complete testing pattern for CLI applications that runs the actual CLI binary as a subprocess, validates outputs via regex matching, manages filesystem state with cleanup hooks, and handles error cases and JSON outputs. The resulting tests are self-contained, require no external test runners, and can run in CI environments.
 
-## Inputs
+## When to use
 
-- **Required**: Path to the CLI entry point (e.g., `cli/index.js`)
-- **Required**: Commands to test
-- **Optional**: Framework adapters to test (dry-run mode)
-- **Optional**: Cleanup requirements (files/symlinks created by tests)
+- User asks to add tests to an existing CLI application
+- User asks to test a newly created CLI command
+- User asks to verify adapter or plugin behavior across target frameworks
+- User asks to set up CI validation for CLI correctness
+- User asks to catch regressions after refactoring CLI internals
+- User asks to test CLI output formats (human-readable, JSON, dry-run)
+- User asks to verify error handling in CLI commands
+- User asks to test CLI lifecycle operations (install, update, uninstall)
+
+## When NOT to use
+
+- The target is a library or API with no CLI entry point (use unit testing instead)
+- The project uses Node.js below version 18 (node:test is not available)
+- Testing requires mocking internal functions rather than subprocess execution
+- The CLI is written in a language other than JavaScript/TypeScript
+- Tests need to verify GUI behavior or interactive terminal features
+- Testing involves external services that cannot be mocked or stubbed
+- The goal is performance benchmarking rather than functional correctness
 
 ## Procedure
 
 ### Step 1: Set Up Test Infrastructure
+
+Read the CLI entry point to determine the correct path:
 
 ```javascript
 import { describe, it, before, after } from 'node:test';
@@ -74,7 +84,7 @@ Key design decisions:
 
 **Expected:** A test file that imports from `node:test` and has a working `run()` helper.
 
-**On failure:** If `node:test` is not available, your Node.js version is below 18. Upgrade or use a polyfill.
+**On failure:** If `node:test` is not available, your Node.js version is below 18. Upgrade Node.js to version 18 or later, or use a polyfill like `node-test-polyfill`.
 
 ### Step 2: Write Smoke Tests
 
@@ -120,7 +130,7 @@ Smoke test patterns:
 
 **Expected:** Smoke tests confirm the CLI is functional and data is loaded.
 
-**On failure:** If registry counts change frequently, use `\d+` instead of hardcoded numbers.
+**On failure:** If registry counts change frequently, use `\d+` regex patterns instead of hardcoded numbers. If `--help` output changes, update the assertion strings to match the new command names.
 
 ### Step 3: Write Lifecycle Tests
 
@@ -168,7 +178,7 @@ Cleanup rules:
 
 **Expected:** Tests run in sequence within the describe block, cleanup runs even on failure.
 
-**On failure:** If tests run in parallel (non-default in node:test), force sequential with `{ concurrency: 1 }`.
+**On failure:** If tests run in parallel (non-default in node:test), force sequential execution by adding `{ concurrency: 1 }` as the second argument to `describe()`.
 
 ### Step 4: Write Dry-Run Tests for Each Adapter
 
@@ -182,10 +192,10 @@ describe('adapter: cursor (dry-run)', () => {
   });
 });
 
-describe('adapter: copilot (dry-run)', () => {
-  it('targets .github/ path', () => {
-    const out = run('install commit-changes --framework copilot --dry-run');
-    assert.match(out, /\.github/i);
+describe('adapter: opencode (dry-run)', () => {
+  it('targets .opencode/ path', () => {
+    const out = run('install commit-changes --framework opencode --dry-run');
+    assert.match(out, /\.opencode/i);
   });
 });
 ```
@@ -197,7 +207,7 @@ This pattern scales to any number of adapters. Each test:
 
 **Expected:** One describe block per adapter, each with at least a path assertion.
 
-**On failure:** If the adapter doesn't exist in the project, the test will fail with "Unknown framework." This is correct — adapter tests should only exist for implemented adapters.
+**On failure:** If the adapter doesn't exist in the project, the test will fail with "Unknown framework." This is correct — adapter tests should only exist for implemented adapters. Remove tests for adapters that don't exist yet.
 
 ### Step 5: Write Error Case Tests
 
@@ -234,7 +244,7 @@ Error testing patterns:
 
 **Expected:** All error paths produce non-zero exit codes and helpful messages.
 
-**On failure:** `execSync` throws on non-zero exit. The error's `stderr` or `stdout` contains the message. Check `error.stdout` if `assert.throws` regex doesn't match.
+**On failure:** `execSync` throws on non-zero exit. The error's `stderr` or `stdout` contains the message. If `assert.throws` regex doesn't match, check `error.stdout` in addition to `error.message`.
 
 ### Step 6: Write JSON Output Tests
 
@@ -266,7 +276,7 @@ JSON testing gotchas:
 
 **Expected:** JSON output is parseable and contains expected keys.
 
-**On failure:** If `JSON.parse` fails, the command may be mixing human text with JSON. Either fix the command to output pure JSON in `--json` mode, or extract the JSON substring.
+**On failure:** If `JSON.parse` fails, the command may be mixing human text with JSON. Either fix the command to output pure JSON in `--json` mode, or extract the JSON substring by finding the first `{` character.
 
 ### Step 7: Handle Cleanup and State Restoration
 
@@ -307,29 +317,69 @@ State restoration rules:
 
 **Expected:** The test suite leaves the project in the same state it found it.
 
-**On failure:** If CI reports leftover files after test runs, add the cleanup to `after()`. Use `git status` after test runs to detect leaked state.
+**On failure:** If CI reports leftover files after test runs, add the cleanup to `after()`. Use `git status` after test runs to detect leaked state. If cleanup fails silently, add assertions to verify files were actually removed.
 
-## Validation
+## Output contract
 
-- [ ] Test file runs with `node --test cli/test/cli.test.js`
-- [ ] All tests pass (0 failures)
-- [ ] Smoke tests cover `--version`, `--help`, and registry loading
-- [ ] Lifecycle tests verify create → verify → delete with cleanup
-- [ ] At least one adapter dry-run test exists per implemented adapter
-- [ ] Error cases test non-zero exit codes with message matching
-- [ ] JSON output tests parse actual output (not mocked)
-- [ ] After hooks restore all state modified by tests
+When this skill completes successfully, the following deliverables are produced:
 
-## Common Pitfalls
+- **Test file created**: A `.test.js` file in the project's test directory containing:
+  - `node:test` imports and `execSync` helper
+  - Smoke tests covering `--version`, `--help`, and registry loading
+  - Lifecycle tests with proper `after()` cleanup hooks
+  - Adapter dry-run tests for each implemented framework adapter
+  - Error case tests using `assert.throws` with message regex
+  - JSON output tests that parse and validate structure
+  - State restoration hooks for any modified filesystem state
 
-- **Hardcoded counts that break**: Registry totals change as content is added. Use `\d+` regex or read the count dynamically instead of asserting `329 skills`.
-- **Tests that depend on execution order**: `node:test` runs suites in declaration order by default, but tests within a suite may not. Use lifecycle suites (create → verify → delete) within a single `describe` to guarantee order.
-- **Missing cleanup on test failure**: If a test fails mid-lifecycle, `after()` still runs. But if you throw in `before()`, subsequent tests and `after()` may not run. Keep `before()` minimal.
-- **Interactive prompts hanging tests**: Commands with confirmation prompts will hang `execSync`. Either pipe `echo y |` or ensure `--yes` is always passed in tests.
-- **Testing with real installs in CI**: Tests that create files in `.claude/skills/` or `.agents/skills/` modify the working tree. CI may fail on "dirty working directory" checks. Always clean up.
+- **Validation checklist**:
+  - [ ] Test file runs successfully with `node --test cli/test/cli.test.js`
+  - [ ] All tests pass with 0 failures
+  - [ ] Smoke tests confirm CLI starts and basic commands work
+  - [ ] Lifecycle tests verify create → verify → delete sequences
+  - [ ] Cleanup hooks execute and restore project state
+  - [ ] Error tests confirm non-zero exit codes and helpful messages
+  - [ ] JSON tests parse output without errors
+  - [ ] Running tests leaves no uncommitted files (`git status` shows clean)
 
-## Related Skills
+## Failure handling
 
-- `scaffold-cli-command` — build the commands that these tests verify
-- `build-cli-plugin` — build the adapters tested in Step 4
-- `design-cli-output` — output patterns that tests assert against
+When this skill encounters problems, follow these recovery procedures:
+
+**Node.js version below 18**
+- Error: `Cannot find module 'node:test'` or similar
+- Resolution: Check Node.js version with `node --version`. Upgrade to Node.js 18 or later. If upgrade is not possible, use the `node-test-polyfill` package or switch to an alternative test runner like Vitest or Jest with subprocess testing.
+
+**Tests hang or timeout**
+- Symptom: `execSync` timeout after 10 seconds
+- Resolution: The CLI command likely has an interactive prompt. Add `--yes` flag to auto-confirm prompts, or use `--dry-run` mode. For commands that always prompt, pipe input: `echo "y" | node cli/index.js command`.
+
+**Registry counts cause flaky tests**
+- Symptom: Tests pass locally but fail in CI due to changing numbers
+- Resolution: Replace hardcoded counts with regex patterns like `/\d+ domains/` or read the actual count dynamically from the CLI output before asserting.
+
+**Cleanup doesn't restore state**
+- Symptom: `git status` shows uncommitted files after tests
+- Resolution: Verify `after()` hooks are in the correct `describe` block. Add explicit assertions in tests to verify cleanup worked. For symlinks, check if the target exists before trying to recreate it.
+
+**Parallel test execution breaks sequencing**
+- Symptom: Lifecycle tests fail intermittently
+- Resolution: Add `{ concurrency: 1 }` as the second argument to `describe()` for lifecycle test suites. This forces sequential execution within that suite.
+
+**Error message regex doesn't match**
+- Symptom: `assert.throws` fails even though the CLI shows the expected message
+- Resolution: Check `error.stdout` in addition to `error.message`. Some CLIs write errors to stdout instead of stderr. Adjust the regex or check the correct stream.
+
+**JSON parsing fails**
+- Symptom: `JSON.parse` throws `Unexpected token`
+- Resolution: The CLI may prefix JSON with human-readable text. Extract JSON by finding the first `{` character: `const jsonStart = out.indexOf('{'); const data = JSON.parse(out.slice(jsonStart));`
+
+## Next steps
+
+After completing this skill, consider these follow-up actions:
+
+- **scaffold-cli-command** — Build additional CLI commands that these tests can verify
+- **build-cli-plugin** — Create more framework adapters to extend the adapter test coverage in Step 4
+- **design-cli-output** — Improve output patterns that the tests assert against
+- **skill-testing-harness** — Set up automated test running in CI/CD pipelines
+- **skill-evaluation** — Validate that these tests provide meaningful coverage and catch regressions

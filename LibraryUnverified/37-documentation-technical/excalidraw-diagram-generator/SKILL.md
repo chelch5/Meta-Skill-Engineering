@@ -1,144 +1,98 @@
 ---
 name: excalidraw-diagram-generator
-description: 'Generate Excalidraw diagrams from natural language descriptions. Use when asked to "create a diagram", "make a flowchart", "visualize a process", "draw a system architecture", "create a mind map", or "generate an Excalidraw file". Supports flowcharts, relationship diagrams, mind maps, and system architecture diagrams. Outputs .excalidraw JSON files that can be opened directly in Excalidraw.'
+description: 'Generate Excalidraw diagrams from natural language descriptions. Use when users explicitly request diagrams, flowcharts, mind maps, system architecture diagrams, ER diagrams, class diagrams, sequence diagrams, data flow diagrams, or business swimlane flows to be created as .excalidraw files. Triggers on phrases like "create a diagram", "make a flowchart", "generate an Excalidraw file", "draw system architecture", "visualize this process", or "create a mind map". Does NOT trigger on requests to edit existing diagrams, convert between diagram formats, explain diagram notation, or create diagrams in other tools (Mermaid, PlantUML, Draw.io).'
 ---
 
 # Excalidraw Diagram Generator
 
-A skill for generating Excalidraw-format diagrams from natural language descriptions. This skill helps create visual representations of processes, systems, relationships, and ideas without manual drawing.
+Generate Excalidraw-format diagrams from natural language descriptions. Create visual representations of processes, systems, relationships, and ideas as `.excalidraw` JSON files ready to open in Excalidraw.
 
-## When to Use This Skill
+## Purpose
+
+Transform text descriptions into structured visual diagrams using the Excalidraw format. Supports technical documentation, system design, process visualization, and concept mapping without manual drawing.
+
+## When to use
 
 Use this skill when users request:
 
-- "Create a diagram showing..."
-- "Make a flowchart for..."
-- "Visualize the process of..."
-- "Draw the system architecture of..."
-- "Generate a mind map about..."
-- "Create an Excalidraw file for..."
-- "Show the relationship between..."
-- "Diagram the workflow of..."
+- **Explicit creation requests**: "Create a diagram", "Make a flowchart", "Generate an Excalidraw file"
+- **Visualization requests**: "Visualize the process", "Draw the system architecture", "Show the relationship between"
+- **Specific diagram types**: "Create a mind map", "Diagram the workflow", "Draw a class diagram"
+- **Entity relationships**: "Show how User relates to Post and Comment", "Map the database schema"
 
 **Supported diagram types:**
-- 📊 **Flowcharts**: Sequential processes, workflows, decision trees
-- 🔗 **Relationship Diagrams**: Entity relationships, system components, dependencies
-- 🧠 **Mind Maps**: Concept hierarchies, brainstorming results, topic organization
-- 🏗️ **Architecture Diagrams**: System design, module interactions, data flow
-- 📈 **Data Flow Diagrams (DFD)**: Data flow visualization, data transformation processes
-- 🏊 **Business Flow (Swimlane)**: Cross-functional workflows, actor-based process flows
-- 📦 **Class Diagrams**: Object-oriented design, class structures and relationships
-- 🔄 **Sequence Diagrams**: Object interactions over time, message flows
-- 🗃️ **ER Diagrams**: Database entity relationships, data models
+
+| Type | Use Case | Trigger Keywords |
+|------|----------|------------------|
+| Flowchart | Sequential processes, workflows, decision trees | "workflow", "process", "steps", "flow" |
+| Relationship Diagram | Entity connections, dependencies, associations | "relationship", "dependencies", "structure" |
+| Mind Map | Concept hierarchies, brainstorming organization | "mind map", "concepts", "breakdown", "ideas" |
+| Architecture Diagram | System design, module interactions | "architecture", "system", "components" |
+| Data Flow Diagram (DFD) | Data movement, transformation processes | "data flow", "data processing" |
+| Business Flow (Swimlane) | Cross-functional workflows, actor processes | "business process", "swimlane", "actors" |
+| Class Diagram | Object-oriented design, class structures | "class diagram", "OOP", "inheritance" |
+| Sequence Diagram | Object interactions, message flows over time | "sequence", "interaction", "messages" |
+| ER Diagram | Database entity relationships | "ER diagram", "database", "entity" |
+
+## When NOT to use
+
+Do NOT use this skill when:
+
+- **Editing existing diagrams**: User wants to modify an existing `.excalidraw` file → Use file editing tools directly
+- **Format conversion**: User wants to convert Mermaid/PlantUML to Excalidraw → Requires different approach
+- **Tool-specific output**: User requests output for Draw.io, Lucidchart, or other tools → Use appropriate tool format
+- **Notation explanation**: User asks "What does this arrow mean?" or "Explain UML notation" → Answer directly without diagram generation
+- **Code visualization**: User wants to visualize code structure → Use code analysis tools first
+- **Image/PDF export**: User wants to export an existing diagram → Use Excalidraw's built-in export
 
 ## Prerequisites
 
-- Clear description of what should be visualized
-- Identification of key entities, steps, or concepts
-- Understanding of relationships or flow between elements
+Before generating a diagram, ensure you have:
 
-## Step-by-Step Workflow
+1. **Clear subject matter**: The entities, steps, or concepts to visualize
+2. **Relationship understanding**: How elements connect or flow (for non-trivial diagrams)
+3. **Output location**: Where to save the `.excalidraw` file
 
-### Step 1: Understand the Request
+If information is incomplete, ask clarifying questions before proceeding.
 
-Analyze the user's description to determine:
-1. **Diagram type** (flowchart, relationship, mind map, architecture)
-2. **Key elements** (entities, steps, concepts)
-3. **Relationships** (flow, connections, hierarchy)
-4. **Complexity** (number of elements)
+## Procedure
 
-### Step 2: Choose the Appropriate Diagram Type
+### 1. Analyze the request
 
-| User Intent | Diagram Type | Example Keywords |
-|-------------|--------------|------------------|
-| Process flow, steps, procedures | **Flowchart** | "workflow", "process", "steps", "procedure" |
-| Connections, dependencies, associations | **Relationship Diagram** | "relationship", "connections", "dependencies", "structure" |
-| Concept hierarchy, brainstorming | **Mind Map** | "mind map", "concepts", "ideas", "breakdown" |
-| System design, components | **Architecture Diagram** | "architecture", "system", "components", "modules" |
-| Data flow, transformation processes | **Data Flow Diagram (DFD)** | "data flow", "data processing", "data transformation" |
-| Cross-functional processes, actor responsibilities | **Business Flow (Swimlane)** | "business process", "swimlane", "actors", "responsibilities" |
-| Object-oriented design, class structures | **Class Diagram** | "class", "inheritance", "OOP", "object model" |
-| Interaction sequences, message flows | **Sequence Diagram** | "sequence", "interaction", "messages", "timeline" |
-| Database design, entity relationships | **ER Diagram** | "database", "entity", "relationship", "data model" |
+Extract from user input:
+- **Diagram type**: Match to supported types using trigger keywords
+- **Key elements**: List all entities, steps, or concepts to include
+- **Relationships**: Identify connections, flow direction, or hierarchy
+- **Complexity estimate**: Count elements; if >20, propose simplification
 
-### Step 3: Extract Structured Information
+### 2. Select diagram type
 
-**For Flowcharts:**
-- List of sequential steps
-- Decision points (if any)
-- Start and end points
+Match user intent to type using the table in "When to use". If ambiguous, ask:
+> "Do you want a flowchart showing sequential steps, or a relationship diagram showing connections?"
 
-**For Relationship Diagrams:**
-- Entities/nodes (name + optional description)
-- Relationships between entities (from → to, with label)
+### 3. Extract structured information
 
-**For Mind Maps:**
-- Central topic
-- Main branches (3-6 recommended)
-- Sub-topics for each branch (optional)
+**Flowcharts:** List sequential steps, decision points (diamonds), start/end points.
 
-**For Data Flow Diagrams (DFD):**
-- Data sources and destinations (external entities)
-- Processes (data transformations)
-- Data stores (databases, files)
-- Data flows (arrows showing data movement from left-to-right or from top-left to bottom-right)
-- **Important**: Do not represent process order, only data flow
+**Relationship Diagrams:** Identify entities and connections (from → to, with labels).
 
-**For Business Flow (Swimlane):**
-- Actors/roles (departments, systems, people) - displayed as header columns
-- Process lanes (vertical lanes under each actor)
-- Process boxes (activities within each lane)
-- Flow arrows (connecting process boxes, including cross-lane handoffs)
+**Mind Maps:** Define central topic, 3-6 main branches, optional sub-topics.
 
-**For Class Diagrams:**
-- Classes with names
-- Attributes with visibility (+, -, #)
-- Methods with visibility and parameters
-- Relationships: inheritance (solid line + white triangle), implementation (dashed line + white triangle), association (solid line), dependency (dashed line), aggregation (solid line + white diamond), composition (solid line + filled diamond)
-- Multiplicity notations (1, 0..1, 1..*, *)
+**Architecture Diagrams:** Identify components, layers, and interaction patterns.
 
-**For Sequence Diagrams:**
-- Objects/actors (arranged horizontally at top)
-- Lifelines (vertical lines from each object)
-- Messages (horizontal arrows between lifelines)
-- Synchronous messages (solid arrow), asynchronous messages (dashed arrow)
-- Return values (dashed arrows)
-- Activation boxes (rectangles on lifelines during execution)
-- Time flows from top to bottom
+**Data Flow Diagrams:** List external entities, processes, data stores, and data flows (left-to-right direction).
 
-**For ER Diagrams:**
-- Entities (rectangles with entity names)
-- Attributes (listed inside entities)
-- Primary keys (underlined or marked with PK)
-- Foreign keys (marked with FK)
-- Relationships (lines connecting entities)
-- Cardinality: 1:1 (one-to-one), 1:N (one-to-many), N:M (many-to-many)
-- Junction/associative entities for many-to-many relationships (dashed rectangles)
+**Business Flow (Swimlane):** Define actors/roles as columns, activities within each lane.
 
-### Step 4: Generate the Excalidraw JSON
+**Class Diagrams:** List classes with attributes (+, -, #), methods, and relationships (inheritance, association, aggregation, composition).
 
-Create the `.excalidraw` file with appropriate elements:
+**Sequence Diagrams:** Identify objects/actors, message sequence, synchronous vs asynchronous flows.
 
-**Available element types:**
-- `rectangle`: Boxes for entities, steps, concepts
-- `ellipse`: Alternative shapes for emphasis
-- `diamond`: Decision points
-- `arrow`: Directional connections
-- `text`: Labels and annotations
+**ER Diagrams:** Define entities, attributes, primary/foreign keys, cardinality (1:1, 1:N, N:M).
 
-**Key properties to set:**
-- **Position**: `x`, `y` coordinates
-- **Size**: `width`, `height`
-- **Style**: `strokeColor`, `backgroundColor`, `fillStyle`
-- **Font**: `fontFamily: 5` (Excalifont - **required for all text elements**)
-- **Text**: Embedded text for labels
-- **Connections**: `points` array for arrows
+### 4. Generate Excalidraw JSON
 
-**Important**: All text elements must use `fontFamily: 5` (Excalifont) for consistent visual appearance.
-
-### Step 5: Format the Output
-
-Structure the complete Excalidraw file:
+Create diagram elements with these properties:
 
 ```json
 {
@@ -146,7 +100,23 @@ Structure the complete Excalidraw file:
   "version": 2,
   "source": "https://excalidraw.com",
   "elements": [
-    // Array of diagram elements
+    {
+      "id": "shape_1",
+      "type": "rectangle",
+      "x": 100,
+      "y": 100,
+      "width": 200,
+      "height": 100
+    },
+    {
+      "id": "text_1",
+      "type": "text",
+      "x": 130,
+      "y": 135,
+      "text": "Start",
+      "fontFamily": 5,
+      "fontSize": 20
+    }
   ],
   "appState": {
     "viewBackgroundColor": "#ffffff",
@@ -156,458 +126,163 @@ Structure the complete Excalidraw file:
 }
 ```
 
-### Step 6: Save and Provide Instructions
+**Critical formatting rules:**
+- All text elements MUST use `"fontFamily": 5` (Excalifont)
+- Use consistent colors: primary `#a5d8ff`, secondary `#b2f2bb`, important `#ffd43b`, warning `#ffc9c9`
+- Spacing: 200-300px horizontal, 100-150px vertical between elements
+- Font size: 16-24px for readability
+- Element IDs must be unique (use timestamp + random: `Date.now().toString(36) + Math.random().toString(36).substr(2)`)
 
-1. Save as `<descriptive-name>.excalidraw`
-2. Inform user how to open:
-   - Visit https://excalidraw.com
-   - Click "Open" or drag-and-drop the file
-   - Or use Excalidraw VS Code extension
+### 5. Layout elements
 
-## Best Practices
+**Flowcharts**: Left-to-right or top-to-bottom flow.
 
-### Element Count Guidelines
-
-| Diagram Type | Recommended Count | Maximum |
-|--------------|-------------------|---------|
-| Flowchart steps | 3-10 | 15 |
-| Relationship entities | 3-8 | 12 |
-| Mind map branches | 4-6 | 8 |
-| Mind map sub-topics per branch | 2-4 | 6 |
-
-### Layout Tips
-
-1. **Start positions**: Center important elements, use consistent spacing
-2. **Spacing**: 
-   - Horizontal gap: 200-300px between elements
-   - Vertical gap: 100-150px between rows
-3. **Colors**: Use consistent color scheme
-   - Primary elements: Light blue (`#a5d8ff`)
-   - Secondary elements: Light green (`#b2f2bb`)
-   - Important/Central: Yellow (`#ffd43b`)
-   - Alerts/Warnings: Light red (`#ffc9c9`)
-4. **Text sizing**: 16-24px for readability
-5. **Font**: Always use `fontFamily: 5` (Excalifont) for all text elements
-6. **Arrow style**: Use straight arrows for simple flows, curved for complex relationships
-
-### Complexity Management
-
-**If user request has too many elements:**
-- Suggest breaking into multiple diagrams
-- Focus on main elements first
-- Offer to create detailed sub-diagrams
-
-**Example response:**
-```
-"Your request includes 15 components. For clarity, I recommend:
-1. High-level architecture diagram (6 main components)
-2. Detailed diagram for each subsystem
-
-Would you like me to start with the high-level view?"
-```
-
-## Example Prompts and Responses
-
-### Example 1: Simple Flowchart
-
-**User:** "Create a flowchart for user registration"
-
-**Agent generates:**
-1. Extract steps: "Enter email" → "Verify email" → "Set password" → "Complete"
-2. Create flowchart with 4 rectangles + 3 arrows
-3. Save as `user-registration-flow.excalidraw`
-
-### Example 2: Relationship Diagram
-
-**User:** "Diagram the relationship between User, Post, and Comment entities"
-
-**Agent generates:**
-1. Entities: User, Post, Comment
-2. Relationships: User → Post ("creates"), User → Comment ("writes"), Post → Comment ("contains")
-3. Save as `user-content-relationships.excalidraw`
-
-### Example 3: Mind Map
-
-**User:** "Mind map about machine learning concepts"
-
-**Agent generates:**
-1. Center: "Machine Learning"
-2. Branches: Supervised Learning, Unsupervised Learning, Reinforcement Learning, Deep Learning
-3. Sub-topics under each branch
-4. Save as `machine-learning-mindmap.excalidraw`
-
-## Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| Elements overlap | Increase spacing between coordinates |
-| Text doesn't fit in boxes | Increase box width or reduce font size |
-| Too many elements | Break into multiple diagrams |
-| Unclear layout | Use grid layout (rows/columns) or radial layout (mind maps) |
-| Colors inconsistent | Define color palette upfront based on element types |
-
-## Advanced Techniques
-
-### Grid Layout (for Relationship Diagrams)
+**Relationship diagrams**: Grid layout for clarity.
 ```javascript
 const columns = Math.ceil(Math.sqrt(entityCount));
 const x = startX + (index % columns) * horizontalGap;
 const y = startY + Math.floor(index / columns) * verticalGap;
 ```
 
-### Radial Layout (for Mind Maps)
+**Mind maps**: Radial layout from center.
 ```javascript
 const angle = (2 * Math.PI * index) / branchCount;
 const x = centerX + radius * Math.cos(angle);
 const y = centerY + radius * Math.sin(angle);
 ```
 
-### Auto-generated IDs
-Use timestamp + random string for unique IDs:
-```javascript
-const id = Date.now().toString(36) + Math.random().toString(36).substr(2);
-```
+### 6. Save and deliver
 
-## Output Format
+1. Write file as `<descriptive-name>.excalidraw`
+2. Provide summary with: diagram type, element count, file path
+3. Include opening instructions:
+   - Visit https://excalidraw.com
+   - Drag-and-drop file or use File → Open
+   - Or use Excalidraw VS Code extension
 
-Always provide:
-1. ✅ Complete `.excalidraw` JSON file
-2. 📊 Summary of what was created
-3. 📝 Element count
-4. 💡 Instructions for opening/editing
-
-**Example summary:**
+**Example delivery format:**
 ```
 Created: user-workflow.excalidraw
 Type: Flowchart
-Elements: 7 rectangles, 6 arrows, 1 title text
-Total: 14 elements
+Elements: 7 boxes, 6 arrows, 1 title (14 total)
+Location: ./diagrams/user-workflow.excalidraw
 
-To view:
-1. Visit https://excalidraw.com
-2. Drag and drop user-workflow.excalidraw
-3. Or use File → Open in Excalidraw VS Code extension
+To view: Visit https://excalidraw.com and open the file.
 ```
 
-## Validation Checklist
+## Output contract
 
-Before delivering the diagram:
-- [ ] All elements have unique IDs
-- [ ] Coordinates prevent overlapping
-- [ ] Text is readable (font size 16+)
-- [ ] **All text elements use `fontFamily: 5` (Excalifont)**
-- [ ] Arrows connect logically
-- [ ] Colors follow consistent scheme
-- [ ] File is valid JSON
-- [ ] Element count is reasonable (<20 for clarity)
+Every execution produces:
 
-## Icon Libraries (Optional Enhancement)
+1. **File output**: Complete `.excalidraw` JSON file written to specified path
+2. **Validation summary**: Element count, diagram type, and complexity assessment
+3. **Usage instructions**: How to open and edit the diagram
 
-For specialized diagrams (e.g., AWS/GCP/Azure architecture diagrams), you can use pre-made icon libraries from Excalidraw. This provides professional, standardized icons instead of basic shapes.
+**Quality thresholds:**
+- Maximum 20 elements per diagram (propose multiple diagrams if exceeded)
+- All text uses `fontFamily: 5` (Excalifont)
+- No overlapping elements (minimum 100px spacing)
+- Valid JSON structure (can be parsed by Excalidraw)
 
-### When User Requests Icons
+## Failure handling
 
-**If user asks for AWS/cloud architecture diagrams or mentions wanting to use specific icons:**
+| Failure Mode | Detection | Agent Action |
+|--------------|-----------|--------------|
+| Invalid JSON output | JSON parse error on validation | Regenerate with corrected syntax; validate before saving |
+| Overlapping elements | Visual inspection or coordinate check | Increase spacing (minimum 200px horizontal, 100px vertical) and regenerate |
+| Too many elements (>20) | Element count exceeds threshold | Stop and ask user: "This diagram would have 25+ elements. Should I create a high-level overview instead, or split into multiple focused diagrams?" |
+| Missing fontFamily | Text elements lack `fontFamily: 5` | Add property to all text elements; validate before delivery |
+| Ambiguous diagram type | Multiple types match keywords | Ask clarifying question with options; do not guess |
+| Insufficient information | Missing entities or relationships | Request specific details: "What are the 3-5 main steps in this process?" |
+| File write failure | OS error or path issue | Report error with path; suggest alternative location |
 
-1. **Check if library exists**: Look for `libraries/<library-name>/reference.md`
-2. **If library exists**: Proceed to use icons (see AI Assistant Workflow below)
-3. **If library does NOT exist**: Respond with setup instructions:
+**On generation failure:**
+1. Identify failure mode from table above
+2. Apply corrective action
+3. Re-validate output before delivery
+4. If unresolvable, report: "Unable to generate valid diagram due to [reason]. Try simplifying the request or providing more structure."
 
-   ```
-   To use [AWS/GCP/Azure/etc.] architecture icons, please follow these steps:
-   
-   1. Visit https://libraries.excalidraw.com/
-   2. Search for "[AWS Architecture Icons/etc.]" and download the .excalidrawlib file
-   3. Create directory: skills/excalidraw-diagram-generator/libraries/[icon-set-name]/
-   4. Place the downloaded file in that directory
-   5. Run the splitter script:
-      python skills/excalidraw-diagram-generator/scripts/split-excalidraw-library.py skills/excalidraw-diagram-generator/libraries/[icon-set-name]/
-   
-   This will split the library into individual icon files for efficient use.
-   After setup is complete, I can create your diagram using the actual AWS/cloud icons.
-   
-   Alternatively, I can create the diagram now using simple shapes (rectangles, ellipses) 
-   which you can later replace with icons manually in Excalidraw.
-   ```
+## Next steps
 
-### User Setup Instructions (Detailed)
+After generating a diagram:
 
-**Step 1: Create Library Directory**
-```bash
-mkdir -p skills/excalidraw-diagram-generator/libraries/aws-architecture-icons
-```
+- **For diagram refinement**: Use direct file editing to adjust positions, colors, or labels
+- **For related diagrams**: Create additional focused diagrams for subsystems
+- **For icon enhancement**: Set up icon libraries (see references/excalidraw-schema.md) then use helper scripts
+- **For diagram validation**: Run evals in `evals/` directory to verify output quality
 
-**Step 2: Download Library**
-- Visit: https://libraries.excalidraw.com/
-- Search for your desired icon set (e.g., "AWS Architecture Icons")
-- Click download to get the `.excalidrawlib` file
-- Example categories (availability varies; confirm on the site):
-   - Cloud service icons
-   - UI/Material icons
-   - Flowchart symbols
+Related workflows:
+- `skill-creator`: If user requests a new diagram type not covered
+- `skill-adaptation`: If user needs diagram format adapted to specific toolchains
 
-**Step 3: Place Library File**
-- Rename the downloaded file to match the directory name (e.g., `aws-architecture-icons.excalidrawlib`)
-- Move it to the directory created in Step 1
+## Complexity management
 
-**Step 4: Run Splitter Script**
-```bash
-python skills/excalidraw-diagram-generator/scripts/split-excalidraw-library.py skills/excalidraw-diagram-generator/libraries/aws-architecture-icons/
-```
+**Element count guidelines:**
 
-**Step 5: Verify Setup**
-After running the script, verify the following structure exists:
-```
-skills/excalidraw-diagram-generator/libraries/aws-architecture-icons/
-  aws-architecture-icons.excalidrawlib  (original)
-  reference.md                          (generated - icon lookup table)
-  icons/                                (generated - individual icon files)
-    API-Gateway.json
-    CloudFront.json
-    EC2.json
-    Lambda.json
-    RDS.json
-    S3.json
-    ...
-```
+| Diagram Type | Recommended | Maximum |
+|--------------|-------------|---------|
+| Flowchart | 3-10 steps | 15 |
+| Relationship | 3-8 entities | 12 |
+| Mind map | 4-6 branches | 8 branches |
+| Architecture | 5-10 components | 15 |
 
-### AI Assistant Workflow
+**If request exceeds limits:**
+> "Your request includes 18 components. For clarity, I recommend: (1) High-level architecture diagram with 6 main components, (2) Detailed sub-diagrams for each subsystem. Should I start with the high-level view?"
 
-**When icon libraries are available in `libraries/`:**
+## Icon library integration (optional)
 
-**RECOMMENDED APPROACH: Use Python Scripts (Efficient & Reliable)**
+For professional diagrams with AWS/cloud icons:
 
-The repository includes Python scripts that handle icon integration automatically:
-
-1. **Create base diagram structure**:
-   - Create `.excalidraw` file with basic layout (title, boxes, regions)
-   - This establishes the canvas and overall structure
-
-2. **Add icons using Python script**:
+1. **Check availability**: Look for `libraries/<library-name>/reference.md`
+2. **If available**: Use helper scripts:
    ```bash
-   python skills/excalidraw-diagram-generator/scripts/add-icon-to-diagram.py \
-     <diagram-path> <icon-name> <x> <y> [--label "Text"] [--library-path PATH]
-   ```
-   - Edit via `.excalidraw.edit` is enabled by default to avoid overwrite issues; pass `--no-use-edit-suffix` to disable.
-   
-   **Examples**:
-   ```bash
-   # Add EC2 icon at position (400, 300) with label
    python scripts/add-icon-to-diagram.py diagram.excalidraw EC2 400 300 --label "Web Server"
-   
-   # Add VPC icon at position (200, 150)
-   python scripts/add-icon-to-diagram.py diagram.excalidraw VPC 200 150
-   
-   # Add icon from different library
-   python scripts/add-icon-to-diagram.py diagram.excalidraw Compute-Engine 500 200 \
-     --library-path libraries/gcp-icons --label "API Server"
-   ```
-
-3. **Add connecting arrows**:
-   ```bash
-   python skills/excalidraw-diagram-generator/scripts/add-arrow.py \
-     <diagram-path> <from-x> <from-y> <to-x> <to-y> [--label "Text"] [--style solid|dashed|dotted] [--color HEX]
-   ```
-   - Edit via `.excalidraw.edit` is enabled by default to avoid overwrite issues; pass `--no-use-edit-suffix` to disable.
-   
-   **Examples**:
-   ```bash
-   # Simple arrow from (300, 250) to (500, 300)
-   python scripts/add-arrow.py diagram.excalidraw 300 250 500 300
-   
-   # Arrow with label
    python scripts/add-arrow.py diagram.excalidraw 300 250 500 300 --label "HTTPS"
-   
-   # Dashed arrow with custom color
-   python scripts/add-arrow.py diagram.excalidraw 400 350 600 400 --style dashed --color "#7950f2"
    ```
+3. **If not available**: Create using basic shapes and inform user about icon setup
 
-4. **Workflow summary**:
-   ```bash
-   # Step 1: Create base diagram with title and structure
-   # (Create .excalidraw file with initial elements)
-   
-   # Step 2: Add icons with labels
-   python scripts/add-icon-to-diagram.py my-diagram.excalidraw "Internet-gateway" 200 150 --label "Internet Gateway"
-   python scripts/add-icon-to-diagram.py my-diagram.excalidraw VPC 250 250
-   python scripts/add-icon-to-diagram.py my-diagram.excalidraw ELB 350 300 --label "Load Balancer"
-   python scripts/add-icon-to-diagram.py my-diagram.excalidraw EC2 450 350 --label "EC2 Instance"
-   python scripts/add-icon-to-diagram.py my-diagram.excalidraw RDS 550 400 --label "Database"
-   
-   # Step 3: Add connecting arrows
-   python scripts/add-arrow.py my-diagram.excalidraw 250 200 300 250  # Internet → VPC
-   python scripts/add-arrow.py my-diagram.excalidraw 300 300 400 300  # VPC → ELB
-   python scripts/add-arrow.py my-diagram.excalidraw 400 330 500 350  # ELB → EC2
-   python scripts/add-arrow.py my-diagram.excalidraw 500 380 600 400  # EC2 → RDS
-   ```
+**Setup instructions for users:**
+1. Download `.excalidrawlib` from https://libraries.excalidraw.com/
+2. Place in `libraries/<name>/`
+3. Run: `python scripts/split-excalidraw-library.py libraries/<name>/`
 
-**Benefits of Python Script Approach**:
-- ✅ **No token consumption**: Icon JSON data (200-1000 lines each) never enters AI context
-- ✅ **Accurate transformations**: Coordinate calculations handled deterministically
-- ✅ **ID management**: Automatic UUID generation prevents conflicts
-- ✅ **Reliable**: No risk of coordinate miscalculation or ID collision
-- ✅ **Fast**: Direct file manipulation, no parsing overhead
-- ✅ **Reusable**: Works with any Excalidraw library you provide
-
-**ALTERNATIVE: Manual Icon Integration (Not Recommended)**
-
-Only use this if Python scripts are unavailable:
-
-1. **Check for libraries**: 
-   ```
-   List directory: skills/excalidraw-diagram-generator/libraries/
-   Look for subdirectories containing reference.md files
-   ```
-
-2. **Read reference.md**:
-   ```
-   Open: libraries/<library-name>/reference.md
-   This is lightweight (typically <300 lines) and lists all available icons
-   ```
-
-3. **Find relevant icons**:
-   ```
-   Search the reference.md table for icon names matching diagram needs
-   Example: For AWS diagram with EC2, S3, Lambda → Find "EC2", "S3", "Lambda" in table
-   ```
-
-4. **Load specific icon data** (WARNING: Large files):
-   ```
-   Read ONLY the needed icon files:
-   - libraries/aws-architecture-icons/icons/EC2.json (200-300 lines)
-   - libraries/aws-architecture-icons/icons/S3.json (200-300 lines)
-   - libraries/aws-architecture-icons/icons/Lambda.json (200-300 lines)
-   Note: Each icon file is 200-1000 lines - this consumes significant tokens
-   ```
-
-5. **Extract and transform elements**:
-   ```
-   Each icon JSON contains an "elements" array
-   Calculate bounding box (min_x, min_y, max_x, max_y)
-   Apply offset to all x/y coordinates
-   Generate new unique IDs for all elements
-   Update groupIds references
-   Copy transformed elements into your diagram
-   ```
-
-6. **Position icons and add connections**:
-   ```
-   Adjust x/y coordinates to position icons correctly in the diagram
-   Update IDs to ensure uniqueness across diagram
-   Add connecting arrows and labels as needed
-   ```
-
-**Manual Integration Challenges**:
-- ⚠️ High token consumption (200-1000 lines per icon × number of icons)
-- ⚠️ Complex coordinate transformation calculations
-- ⚠️ Risk of ID collision if not handled carefully
-- ⚠️ Time-consuming for diagrams with many icons
-
-### Example: Creating AWS Diagram with Icons
-
-**Request**: "Create an AWS architecture diagram with Internet Gateway, VPC, ELB, EC2, and RDS"
-
-**Recommended Workflow (using Python scripts)**:
-**Request**: "Create an AWS architecture diagram with Internet Gateway, VPC, ELB, EC2, and RDS"
-
-**Recommended Workflow (using Python scripts)**:
-
-```bash
-# Step 1: Create base diagram file with title
-# Create my-aws-diagram.excalidraw with basic structure (title, etc.)
-
-# Step 2: Check icon availability
-# Read: libraries/aws-architecture-icons/reference.md
-# Confirm icons exist: Internet-gateway, VPC, ELB, EC2, RDS
-
-# Step 3: Add icons with Python script
-python scripts/add-icon-to-diagram.py my-aws-diagram.excalidraw "Internet-gateway" 150 100 --label "Internet Gateway"
-python scripts/add-icon-to-diagram.py my-aws-diagram.excalidraw VPC 200 200
-python scripts/add-icon-to-diagram.py my-aws-diagram.excalidraw ELB 350 250 --label "Load Balancer"
-python scripts/add-icon-to-diagram.py my-aws-diagram.excalidraw EC2 500 300 --label "Web Server"
-python scripts/add-icon-to-diagram.py my-aws-diagram.excalidraw RDS 650 350 --label "Database"
-
-# Step 4: Add connecting arrows
-python scripts/add-arrow.py my-aws-diagram.excalidraw 200 150 250 200  # Internet → VPC
-python scripts/add-arrow.py my-aws-diagram.excalidraw 265 230 350 250  # VPC → ELB
-python scripts/add-arrow.py my-aws-diagram.excalidraw 415 280 500 300  # ELB → EC2
-python scripts/add-arrow.py my-aws-diagram.excalidraw 565 330 650 350 --label "SQL" --style dashed
-
-# Result: Complete diagram with professional AWS icons, labels, and connections
-```
-
-**Benefits**:
-- No manual coordinate calculation
-- No token consumption for icon data
-- Deterministic, reliable results
-- Easy to iterate and adjust positions
-
-**Alternative Workflow (manual, if scripts unavailable)**:
-1. Check: `libraries/aws-architecture-icons/reference.md` exists → Yes
-2. Read reference.md → Find entries for Internet-gateway, VPC, ELB, EC2, RDS
-3. Load:
-   - `icons/Internet-gateway.json` (298 lines)
-   - `icons/VPC.json` (550 lines)
-   - `icons/ELB.json` (363 lines)
-   - `icons/EC2.json` (231 lines) 
-   - `icons/RDS.json` (similar size)
-   **Total: ~2000+ lines of JSON to process**
-4. Extract elements from each JSON
-5. Calculate bounding boxes and offsets for each icon
-6. Transform all coordinates (x, y) for positioning
-7. Generate unique IDs for all elements
-8. Add arrows showing data flow
-9. Add text labels
-10. Generate final `.excalidraw` file
-
-**Challenges with manual approach**:
-- High token consumption (~2000-5000 lines)
-- Complex coordinate math
-- Risk of ID conflicts
-
-### Supported Icon Libraries (Examples — verify availability)
-
-- This workflow works with any valid `.excalidrawlib` file you provide.
-- Examples of library categories you may find on https://libraries.excalidraw.com/:
-   - Cloud service icons
-   - Kubernetes / infrastructure icons
-   - UI / Material icons
-   - Flowchart / diagram symbols
-   - Network diagram icons
-- Availability and naming can change; verify exact library names on the site before use.
-
-### Fallback: No Icons Available
-
-**If no icon libraries are set up:**
-- Create diagrams using basic shapes (rectangles, ellipses, arrows)
-- Use color coding and text labels to distinguish components
-- Inform user they can add icons later or set up libraries for future diagrams
-- The diagram will still be functional and clear, just less visually polished
+See `scripts/README.md` for detailed script documentation.
 
 ## References
 
-See bundled references for:
-- `references/excalidraw-schema.md` - Complete Excalidraw JSON schema
-- `references/element-types.md` - Detailed element type specifications
-- `templates/flowchart-template.json` - Basic flowchart starter
-- `templates/relationship-template.json` - Relationship diagram starter
-- `templates/mindmap-template.json` - Mind map starter
-- `scripts/split-excalidraw-library.py` - Tool to split `.excalidrawlib` files
-- `scripts/README.md` - Documentation for library tools
-- `scripts/.gitignore` - Prevents local Python artifacts from being committed
+Bundled documentation:
+- `references/excalidraw-schema.md` - Complete JSON schema specification
+- `references/element-types.md` - Element type specifications and examples
+- `templates/flowchart-template.excalidraw` - Starter flowchart structure
+- `templates/relationship-template.excalidraw` - Starter relationship diagram
+- `templates/mindmap-template.excalidraw` - Starter mind map
+- `templates/class-diagram-template.excalidraw` - Starter class diagram
+- `templates/sequence-diagram-template.excalidraw` - Starter sequence diagram
+- `templates/er-diagram-template.excalidraw` - Starter ER diagram
+- `templates/data-flow-diagram-template.excalidraw` - Starter DFD
+- `templates/business-flow-swimlane-template.excalidraw` - Starter swimlane
+- `scripts/split-excalidraw-library.py` - Library file splitter
+- `scripts/add-icon-to-diagram.py` - Icon insertion helper
+- `scripts/add-arrow.py` - Arrow insertion helper
+- `scripts/README.md` - Script usage documentation
 
 ## Limitations
 
-- Complex curves are simplified to straight/basic curved lines
-- Hand-drawn roughness is set to default (1)
-- No embedded images support in auto-generation
-- Maximum recommended elements: 20 per diagram
-- No automatic collision detection (use spacing guidelines)
+- Maximum 20 elements per diagram for clarity
+- Straight or basic curved arrows only (no complex curves)
+- Default roughness level (1)
+- No embedded image support in generated files
+- Manual collision detection (follow spacing guidelines)
+- Icon libraries require separate user setup
 
-## Future Enhancements
+---
 
-Potential improvements:
-- Auto-layout optimization algorithms
-- Import from Mermaid/PlantUML syntax
-- Template library expansion
-- Interactive editing after generation
+**Validation Checklist** (verify before delivery):
+- [ ] All elements have unique IDs
+- [ ] No overlapping elements (coordinate check)
+- [ ] Text readable (font size 16+)
+- [ ] All text uses `fontFamily: 5`
+- [ ] Arrows connect logically
+- [ ] Colors follow consistent scheme
+- [ ] Valid JSON structure
+- [ ] Element count ≤ 20
