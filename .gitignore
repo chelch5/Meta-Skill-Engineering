@@ -1,6 +1,10 @@
 eval-results/
 .meta-skill-studio/
+node_modules/
+dist/
+src-tauri/target/
 tasks/library-catalog-audit-*.json
+tasks/worklogs/
 .wix/
 __pycache__/
 **/__pycache__/

@@ -1,419 +1,62 @@
 # Architecture Guide
 
-**For:** AI Agents and Developers  
-**Purpose:** System architecture overview and patterns for MetaSkillStudio  
-**Version:** 1.0
-
----
+Meta Skill Studio is a headless-first skill-engineering platform with a Tauri desktop shell.
 
 ## System Overview
 
-MetaSkillStudio is a **dual-platform skill engineering environment** with:
-- **Python Backend:** CLI tools, automation scripts, and evaluation pipeline
-- **WPF Frontend:** Windows desktop application with modern MVVM architecture
+- Python Studio CLI: authoritative workflow contract for create, improve, evaluate, package, install, and library governance.
+- Python Studio backend: shared implementation in `scripts/meta_skill_studio/app.py`.
+- OpenCode SDK bridge: model-backed assistant and autonomous-agent execution helper.
+- Tauri shell: cross-platform desktop UI in `src/` and `src-tauri/`.
+- TUI/tkinter shells: local convenience surfaces layered over the same backend.
 
-### Architecture Diagram
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     User Interface Layer                     │
-├──────────────────┬──────────────────┬───────────────────────┤
-│   WPF Desktop    │   Python CLI     │   Python GUI (Tk)     │
-│   (windows-wpf/)│   (scripts/)      │   (meta_skill_studio/)│
-└────────┬─────────┴────────┬─────────┴───────────┬───────────┘
-         │                    │                     │
-┌────────▼────────────────────▼─────────────────────▼─────────┐
-│                    Application Services                      │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │
-│  │PythonRuntime │  │Configuration │  │Dialog Service    │  │
-│  │   Service    │  │   Storage    │  │                  │  │
-│  └──────────────┘  └──────────────┘  └──────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-         │
-┌────────▼────────────────────────────────────────────────────┐
-│                    Python Backend                            │
-│         (meta_skill_studio.py + skill scripts)              │
-└─────────────────────────────────────────────────────────────┘
-         │
-┌────────▼────────────────────────────────────────────────────┐
-│                    Skill Library                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐    │
-│  │  workbench/  │  │LibraryUnveri-│  │ LibraryWorkbench │    │
-│  │              │  │    fied/    │  │                  │    │
-│  └──────────────┘  └──────────────┘  └──────────────────┘    │
-└─────────────────────────────────────────────────────────────┘
+```text
+Tauri UI / TUI / tkinter
+        |
+        v
+Python Studio CLI contract
+        |
+        v
+scripts/meta_skill_studio/app.py
+        |
+        v
+Root skills, library tiers, evals, worklogs, and pipeline artifacts
 ```
 
----
+## Authority Boundaries
 
-## WPF Application Architecture (MVVM)
+The Python CLI remains the source of workflow truth. Desktop UI work must call or mirror documented CLI actions instead of inventing separate action semantics.
 
-### MVVM Pattern
+Use these checks when changing architecture:
 
-**Model-View-ViewModel** separation ensures testability and maintainability:
+1. `python3 scripts/validate_cli_contract.py`
+2. `./scripts/validate-skills.sh`
+3. `./scripts/run-evals.sh --dry-run skill-creator`
+4. `npm run build`
+5. `(cd src-tauri && cargo check)`
 
-```
-┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
-│    View     │────▶│  ViewModel   │────▶│     Model       │
-│   (XAML)    │◀────│   (C#)       │◀────│    (Data)       │
-└─────────────┘     └──────────────┘     └─────────────────┘
-      │                                        │
-      │         Data Binding                    │
-      └────────────────────────────────────────┘
-```
+## Tauri Shell
 
-### Component Responsibilities
+The Tauri shell owns desktop layout, navigation, local settings, and operator ergonomics. It does not own skill evaluation semantics.
 
-**View (.xaml.cs):**
-- Must NOT implement `INotifyPropertyChanged`
-- Must NOT contain business logic
-- Must delegate to ViewModel for all operations
-- Event handlers forward to ViewModel commands
+Primary paths:
 
-**ViewModel (C#):**
-- Implements `INotifyPropertyChanged`
-- Receives services via constructor injection
-- Contains all business logic
-- Exposes `ICommand` properties for UI actions
+- `src/main.ts`
+- `src/styles.css`
+- `src-tauri/src/lib.rs`
+- `src-tauri/tauri.conf.json`
 
-**Model (C#):**
-- Plain data classes with properties
-- Uses `[JsonPropertyName]` for serialization
-- Inherits from `ObservableModel` base class
+Expected commands:
 
-### Directory Structure
-
-```
-windows-wpf/MetaSkillStudio/
-├── Views/           # XAML UI definitions
-│   ├── MainWindow.xaml
-│   ├── CreateSkillDialog.xaml
-│   ├── SettingsDialog.xaml
-│   └── ...
-├── ViewModels/      # Business logic and data binding
-│   ├── MainViewModel.cs
-│   ├── SettingsViewModel.cs
-│   └── ...
-├── Models/          # Data models
-│   ├── ApplicationModels.cs
-│   └── WorkbenchModels.cs
-├── Services/        # Backend integration
-│   ├── PythonRuntimeService.cs
-│   ├── ConfigurationStorage.cs
-│   └── Interfaces/  # Service contracts
-├── Commands/        # ICommand implementations
-│   └── RelayCommand.cs
-├── Converters/      # XAML value converters
-├── Helpers/         # Utility classes
-└── Extensions/      # Extension methods
+```bash
+npm install
+npm run build
+(cd src-tauri && cargo check)
+npm run tauri -- dev
 ```
 
-### Service Layer
+## OpenCode SDK Bridge
 
-**Dependency Injection Pattern:**
+`scripts/meta_skill_studio/opencode_sdk_bridge.mjs` uses `@opencode-ai/sdk` to run assistant prompts and autonomous agent prompts through configured providers.
 
-```csharp
-// Service Interface
-public interface IPythonRuntimeService
-{
-    Task<List<DetectedRuntime>> DetectRuntimesAsync();
-    Task<RunResult> ExecuteSkillAsync(string skillName, string action);
-}
-
-// Service Implementation
-public class PythonRuntimeService : IPythonRuntimeService
-{
-    public PythonRuntimeService(IEnvironmentProvider envProvider)
-    {
-        // Constructor injection
-    }
-}
-
-// ViewModel receives service via DI
-public class MainViewModel
-{
-    public MainViewModel(IPythonRuntimeService pythonService)
-    {
-        _pythonService = pythonService;
-    }
-}
-```
-
-**DI Registration (App.xaml.cs):**
-```csharp
-services.AddSingleton<IPythonRuntimeService, PythonRuntimeService>();
-services.AddSingleton<IConfigurationStorage, ConfigurationStorage>();
-services.AddSingleton<IDialogService, DialogService>();
-```
-
----
-
-## Data Flow
-
-### Typical Operation Flow
-
-1. **User Action** → View captures event
-2. **View delegates** → Calls ViewModel command
-3. **ViewModel processes** → Business logic execution
-4. **Service calls** → Backend communication
-5. **Model updates** → Data changes
-6. **PropertyChanged** → UI updates via binding
-
-### Example: Creating a Skill
-
-```
-User clicks "Create Skill" button
-          │
-          ▼
-CreateSkillDialog View
-          │
-          ▼
-CreateButtonCommand (ICommand in ViewModel)
-          │
-          ▼
-MainViewModel.CreateSkillAsync()
-          │
-          ▼
-PythonRuntimeService.ExecuteSkillAsync("skill-creator", "create")
-          │
-          ▼
-Python backend executes skill-creator
-          │
-          ▼
-Result returned → Model updated
-          │
-          ▼
-PropertyChanged event fired
-          │
-          ▼
-UI updates with new skill list
-```
-
----
-
-## Integration Points
-
-### WPF ↔ Python Communication
-
-**Protocol:** JSON over stdin/stdout via Process
-
-**WPF Side:**
-```csharp
-var psi = new ProcessStartInfo
-{
-    FileName = pythonPath,
-    Arguments = $"\"{scriptPath}\"",
-    UseShellExecute = false,
-    RedirectStandardInput = true,
-    RedirectStandardOutput = true,
-    RedirectStandardError = true
-};
-
-using var process = Process.Start(psi);
-process.StandardInput.WriteLine(jsonInput);
-string output = process.StandardOutput.ReadToEnd();
-var result = JsonSerializer.Deserialize<RunResult>(output);
-```
-
-**Security:** Always use `ArgumentList` instead of string concatenation:
-```csharp
-// CORRECT:
-psi.ArgumentList.Add("--skill");
-psi.ArgumentList.Add(skillName);
-
-// INCORRECT (CWE-78):
-psi.Arguments = $"--skill \"{skillName}\"";
-```
-
-### Configuration Storage
-
-**Format:** JSON files in `.meta-skill-studio/`
-
-**Structure:**
-```json
-{
-  "DetectedRuntimes": [...],
-  "Roles": {
-    "create": { "Runtime": "codex", "Model": "auto" },
-    "improve": { "Runtime": "codex", "Model": "auto" }
-  }
-}
-```
-
-**Service:** `ConfigurationStorage` handles read/write with locking
-
----
-
-## Key Design Decisions
-
-### 1. MVVM Over Code-Behind
-
-**Why:** Testability, separation of concerns, designer/developer workflow
-
-**Rule:** Views contain only UI logic (event forwarding). All business logic in ViewModels.
-
-### 2. Service Interfaces for Testability
-
-**Why:** Mock services for unit testing
-
-**Pattern:** All services implement interfaces, injected via DI
-
-### 3. Async/Await Throughout
-
-**Why:** Keep UI responsive during long operations
-
-**Pattern:**
-```csharp
-public async Task CreateSkillAsync(string brief)
-{
-    IsBusy = true;
-    try
-    {
-        var result = await _pythonService.ExecuteSkillAsync(...);
-        // Update UI with results
-    }
-    finally
-    {
-        IsBusy = false;
-    }
-}
-```
-
-### 4. ObservableModel Base Class
-
-**Why:** Reduce boilerplate for INotifyPropertyChanged
-
-**Pattern:**
-```csharp
-public class ObservableModel : INotifyPropertyChanged
-{
-    public event PropertyChangedEventHandler? PropertyChanged;
-    
-    protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = "")
-    {
-        if (Equals(field, value)) return false;
-        field = value;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        return true;
-    }
-}
-```
-
----
-
-## Anti-Patterns to Avoid
-
-### ❌ View Implementing INotifyPropertyChanged
-
-```csharp
-// WRONG:
-public partial class MyDialog : Window, INotifyPropertyChanged
-{
-    // View should NOT implement this
-}
-```
-
-### ❌ Business Logic in Code-Behind
-
-```csharp
-// WRONG:
-private void SaveButton_Click(object sender, RoutedEventArgs e)
-{
-    // File I/O, JSON parsing, validation here
-    var json = File.ReadAllText(path);
-    var config = JsonSerializer.Deserialize<Config>(json);
-    // ...
-}
-```
-
-### ❌ Direct Service Instantiation
-
-```csharp
-// WRONG:
-public class MyViewModel
-{
-    private readonly PythonRuntimeService _service = new PythonRuntimeService();
-}
-```
-
-### ❌ Synchronous I/O in UI Thread
-
-```csharp
-// WRONG:
-private void LoadData()
-{
-    var data = File.ReadAllText(path); // Blocks UI
-}
-```
-
----
-
-## Testing Architecture
-
-### Unit Test Structure
-
-```
-MetaSkillStudio.Tests/
-├── ViewModels/
-│   └── MainViewModelTests.cs    # ViewModel logic tests
-├── Services/
-│   └── PythonRuntimeServiceTests.cs  # Service tests with mocks
-├── Converters/
-│   └── ConvertersTests.cs       # Value converter tests
-└── Mocks/
-    ├── MockPythonRuntimeService.cs
-    ├── MockDialogService.cs
-    └── MockConfigurationStorage.cs
-```
-
-### Mock Pattern
-
-```csharp
-public class MockPythonRuntimeService : IPythonRuntimeService
-{
-    public List<DetectedRuntime> DetectedRuntimes { get; set; } = new();
-    
-    public Task<List<DetectedRuntime>> DetectRuntimesAsync()
-    {
-        return Task.FromResult(DetectedRuntimes);
-    }
-}
-```
-
----
-
-## Performance Considerations
-
-### 1. Regex Caching
-
-Use `RegexCache` for compiled regex patterns:
-```csharp
-var regex = RegexCache.GetOrCreate("pattern", RegexOptions.Compiled);
-```
-
-### 2. StringBuilder Reuse
-
-Reuse StringBuilder for large string operations:
-```csharp
-private readonly StringBuilder _outputBuilder = new();
-```
-
-### 3. Async with ConfigureAwait
-
-Library code should use `ConfigureAwait(false)`:
-```csharp
-var result = await _service.GetDataAsync().ConfigureAwait(false);
-```
-
----
-
-## Related Documentation
-
-- **AGENTS.md:** `../AGENTS.md` - Behavioral guardrails and verification protocols
-- **CONTRIBUTING.md:** `../CONTRIBUTING.md` - How to contribute to this repository
-- **Workflow:** `docs/workflow.md` - Development workflow patterns
-- **Code Style:** `docs/code-style.md` - Coding conventions
-- **Testing:** `docs/testing-guide.md` - Testing requirements and patterns
-- **Security:** `docs/security-guidelines.md` - Security patterns and prevention
-- **Troubleshooting:** `docs/troubleshooting.md` - Common issues and solutions
-- **Evaluation Cadence:** `docs/evaluation-cadence.md` - When to run which tests
+The bridge is a runtime helper, not the canonical skill lifecycle contract. The CLI and `StudioCore` remain the durable contract.

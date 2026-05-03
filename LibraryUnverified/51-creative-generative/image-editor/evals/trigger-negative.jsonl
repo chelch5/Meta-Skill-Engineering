@@ -1,3 +1,10 @@
-{"input":"Tune retry settings in a queue worker.","expected":"no-trigger"}
-{"input":"Design an auth token rotation flow.","expected":"no-trigger"}
-{"input":"Choose between vector indexes for retrieval.","expected":"no-trigger"}
+{"input":"Generate an AI image of a mountain landscape using Stable Diffusion","expected":"no-trigger"}
+{"input":"Create a Figma mockup for the new landing page","expected":"no-trigger"}
+{"input":"Detect all cars in this surveillance footage using computer vision","expected":"no-trigger"}
+{"input":"Extract text from these scanned PDF documents using OCR","expected":"no-trigger"}
+{"input":"Create a PDF portfolio from these design files","expected":"no-trigger"}
+{"input":"Extract frames from this video file every 5 seconds","expected":"no-trigger"}
+{"input":"Generate a depth map from this 2D photo","expected":"no-trigger"}
+{"input":"Classify these images as cats or dogs using machine learning","expected":"no-trigger"}
+{"input":"Use DALL-E to create a logo for my startup","expected":"no-trigger"}
+{"input":"Build a React component for image upload","expected":"no-trigger"}

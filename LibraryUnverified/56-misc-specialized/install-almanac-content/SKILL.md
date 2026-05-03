@@ -1,13 +1,12 @@
 ---
 name: install-almanac-content
-description: >
-  Install skills, agents, and teams from agent-almanac into any supported
-  agentic framework using the CLI. Covers framework detection, content
-  search, installation with dependency resolution, health auditing, and
-  manifest-based syncing. Use when setting up a new project with agentic
-  capabilities, installing specific skills or entire domains, targeting
-  multiple frameworks simultaneously, or maintaining a declarative
-  manifest of installed content.
+description: |
+  Install skills, agents, and teams from the agent-almanac registry into supported
+  agentic frameworks (Claude Code, Cursor, OpenCode, etc.) using the agent-almanac CLI.
+  Triggers on: "install from agent-almanac", "agent-almanac install", "setup skills
+  from almanac", "install agent skills", "setup agentic framework", "sync agent-almanac.yml",
+  "gather team", "campfire commands". Covers framework detection, content search,
+  dependency resolution, health auditing, and manifest-based syncing.
 license: MIT
 allowed-tools:
   - Bash
@@ -34,9 +33,17 @@ Use the `agent-almanac` CLI to install skills, agents, and teams into any suppor
 
 - Setting up a new project and need to install agentic skills, agents, or teams
 - Installing all skills from a specific domain (e.g., `r-packages`, `devops`)
-- Targeting multiple frameworks simultaneously (Claude Code, Cursor, Copilot, etc.)
+- Targeting multiple frameworks simultaneously (Claude Code, Cursor, OpenCode, etc.)
 - Creating or syncing a declarative `agent-almanac.yml` manifest for reproducible setups
 - Auditing installed content for broken symlinks or stale references
+
+## When NOT to Use
+
+- Installing skills from a different registry (not agent-almanac) — use the registry-specific installation method instead
+- Manually copying skill files without dependency resolution — use `agent-almanac install` to ensure dependencies are included
+- One-off skill evaluation without installation — read the skill directly rather than installing
+- Installing system packages or language runtimes — use the appropriate package manager (npm, pip, cargo, etc.)
+- Configuring agent framework settings unrelated to skill content — refer to framework-specific documentation
 
 ## Inputs
 
@@ -59,7 +66,7 @@ Run framework detection to see which agentic tools are present in the current pr
 agent-almanac detect
 ```
 
-This scans the working directory for configuration files and directories (`.claude/`, `.cursor/`, `.github/copilot-instructions/`, `.agents/`, etc.) and reports which frameworks are active.
+This scans the working directory for configuration files and directories (`.claude/`, `.cursor/`, `.opencode/`, `.agents/`, etc.) and reports which frameworks are active.
 
 **Expected:** Output lists one or more detected frameworks with their adapter status. If no frameworks are detected, the universal adapter (`.agents/skills/`) is used as fallback.
 
@@ -117,7 +124,11 @@ The CLI resolves the content from the registries, selects the appropriate adapte
 
 **Expected:** Output confirms the number of items installed and the target framework(s). Installed content appears in the correct framework directory.
 
-**On failure:** If items are not found, verify the ID matches the `name` field in the registry (`skills/_registry.yml`, `agents/_registry.yml`, `teams/_registry.yml`). If files already exist and installation is skipped, use `--force` to overwrite.
+**On failure:**
+- If items are not found: Run `agent-almanac list` to see available IDs, or check the registry files (`skills/_registry.yml`, `agents/_registry.yml`, `teams/_registry.yml`) to verify the exact ID spelling
+- If files already exist: Run `agent-almanac install <id> --force` to overwrite
+- If installation reports "0 items installed": Check that the ID exists with `agent-almanac search <partial-id>`, then retry with the exact registry name
+- If dependency resolution fails: Run `agent-almanac audit` to check for broken references, then reinstall with `--force`
 
 ### Step 4: Verify Installation
 
@@ -153,7 +164,17 @@ For reproducible setups, use a declarative `agent-almanac.yml` manifest:
 agent-almanac init
 ```
 
-This creates `agent-almanac.yml` in the current directory with detected frameworks and placeholder content lists. Edit the file to declare desired skills, agents, and teams:
+This creates `agent-almanac.yml` in the current directory with detected frameworks and placeholder content lists. Edit the file to declare desired content:
+
+1. Open `agent-almanac.yml` in a text editor
+2. Verify or update the `source` path to your agent-almanac installation
+3. List framework IDs under `frameworks:` (run `agent-almanac list --frameworks` to see available options)
+4. Add skill IDs under `skills:` (prefix with `domain:` to install entire domains)
+5. Add agent IDs under `agents:` if needed
+6. Add team IDs under `teams:` if needed
+7. Save the file
+
+Example manifest:
 
 ```yaml
 source: /path/to/agent-almanac
@@ -184,7 +205,11 @@ agent-almanac sync --dry-run  # Preview first
 
 **Expected:** Running `install` with no arguments reads the manifest and installs all declared content. Running `sync` brings the installed state into alignment with the manifest, adding missing items and removing undeclared ones.
 
-**On failure:** If `sync` reports "No agent-almanac.yml found", run `agent-almanac init` first. If the manifest resolves to 0 items, check that skill/agent/team IDs match the registry entries exactly. Comment lines starting with `#` are ignored.
+**On failure:**
+- If `sync` reports "No agent-almanac.yml found": Run `agent-almanac init` in the current directory, then edit the generated file before retrying
+- If the manifest resolves to 0 items: Run `agent-almanac list` to verify exact IDs, then update the manifest with correct names (IDs are case-sensitive)
+- If `install` without arguments reports "nothing to install": Check that `agent-almanac.yml` exists in the current directory and contains at least one of `skills:`, `agents:`, or `teams:` sections
+- If sync wants to remove unexpected items: Run `agent-almanac sync --dry-run` to preview, then either update the manifest to include those items or confirm the removal
 
 ### Step 6: Manage Teams as Campfires (Optional)
 
@@ -222,13 +247,32 @@ All campfire commands support `--quiet` (standard reporter output) and `--json` 
 
 **On failure:** If campfire state is corrupted, delete `.agent-almanac/state.json` and re-gather teams. If `gather` fails, check that the team name matches an entry in `teams/_registry.yml`.
 
+## Output Contract
+
+After completing this skill:
+
+1. **Installed Content**: Skills, agents, or teams are installed to framework-specific directories (e.g., `.claude/skills/`, `.cursor/rules/`, `.agents/skills/`)
+2. **Verified State**: `agent-almanac audit` reports all items as healthy with no broken references
+3. **Resolvable References**: Installed skills are accessible via their framework's skill resolution (e.g., `/skill-name` in Claude Code)
+4. **Manifest Alignment**: If using `agent-almanac.yml`, the installed state matches the manifest declarations
+5. **Team State (if applicable)**: Gathered teams track thermal state in `.agent-almanac/state.json`
+
 ## Validation
 
-- [ ] `agent-almanac detect` shows expected frameworks
-- [ ] `agent-almanac list --installed` shows all intended content
-- [ ] `agent-almanac audit` reports no broken items
-- [ ] Installed skills resolve in the target framework (e.g., `/skill-name` works in Claude Code)
-- [ ] If using a manifest, `agent-almanac sync --dry-run` reports no changes needed
+Run these commands to verify successful completion:
+
+- [ ] Run `agent-almanac detect` and confirm it lists the intended framework(s)
+- [ ] Run `agent-almanac list --installed` and verify all declared content appears in the output
+- [ ] Run `agent-almanac audit` and confirm output shows "0 broken items" or "all healthy"
+- [ ] Test a single installed skill: Run the framework's skill invocation (e.g., in Claude Code: `/create-skill` should resolve to the installed skill)
+- [ ] If using a manifest: Run `agent-almanac sync --dry-run` and confirm output shows "0 changes needed" or "already in sync"
+
+## Next Steps
+
+- After installing skills: Use `create-skill` to author new skills for the almanac registry if the installed skills do not meet your needs
+- After installing agents: Use `configure-mcp-server` to set up any MCP servers the agents require
+- If audit reports broken items: Use `audit-discovery-symlinks` to diagnose and repair symlink issues
+- If creating reproducible setups: Use `design-cli-output` patterns for consistent terminal reporting in custom scripts
 
 ## Common Pitfalls
 

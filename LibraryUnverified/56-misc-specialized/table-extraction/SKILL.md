@@ -1,9 +1,9 @@
 ---
 name: table-extraction
-description: "Extract tables from PDFs, HTML pages, and images — detect row/column boundaries, infer headers, handle merged cells, and output structured data as CSV, JSON, or DataFrames using camelot, tabula-py, or custom parsers. Use when pulling tabular data from documents, converting document tables to structured formats, or building table detection pipelines. Do not use for creating tables in documents (prefer document-writing) or spreadsheet generation (prefer xlsx-generation)."
+description: "Extract tables from PDFs, HTML pages, and images into structured formats. Triggers on: extracting tabular data from PDF reports or scanned documents, converting document tables to CSV/JSON/DataFrames, parsing tables from HTML without API access, handling merged cells or multi-row headers, OCR-based table extraction from images. Does NOT trigger on: creating new tables in documents, generating Excel files from scratch, extracting plain text from PDFs, or editing existing PDFs."
 license: Apache-2.0
 compatibility:
-  clients: [openai-codex, gemini-cli, opencode, github-copilot]
+  clients: [openai-codex, gemini-cli, opencode]
 metadata:
   owner: codex
   domain: table-extraction
@@ -16,26 +16,38 @@ metadata:
 
 Extract tables from PDFs, HTML pages, and images into structured data formats. Detect row/column boundaries, infer headers, handle merged cells and multi-line rows, and output clean CSV, JSON, or pandas DataFrames using camelot, tabula-py, pdfplumber, or custom parsers — building reliable table extraction pipelines for data processing workflows.
 
-# When to use this skill
+# When to use
 
 - Extracting tabular data from PDF reports, financial statements, or government filings.
 - Pulling tables from HTML pages where the data is not available via API.
 - Building a pipeline that converts document tables into database-ready structured formats.
 - Processing scanned documents with OCR to extract table content from images.
 - Handling complex tables with merged cells, multi-row headers, or nested structures.
+- Converting document tables to CSV, JSON, or pandas DataFrames for analysis.
 
-# Do not use this skill
+# When NOT to use
 
-- For creating tables in new documents — prefer `document-writing` or `docx-generation`.
-- For generating spreadsheets — prefer `xlsx-generation`.
-- For extracting non-tabular text from PDFs — prefer `pdf-extraction`.
-- For editing or annotating existing PDFs — prefer `pdf-editor`.
+- Creating tables in new documents — prefer `document-writing` or `docx-generation`.
+- Generating Excel files from scratch — prefer `xlsx-generation`.
+- Extracting non-tabular text from PDFs — prefer `pdf-extraction`.
+- Editing or annotating existing PDFs — prefer `pdf-editor`.
+- Querying data already available via a REST API — use API clients directly.
 
-# Operating procedure
+# Procedure
 
-1. **Identify the source format.** Determine whether the input is a native PDF (text-based), a scanned PDF (image-based requiring OCR), an HTML page, or a standalone image. This determines the extraction library and approach.
-2. **Select the extraction tool.** For text-based PDFs with ruled lines, use camelot (`lattice` mode). For text-based PDFs without visible borders, use camelot (`stream` mode) or pdfplumber. For scanned PDFs, apply OCR first (Tesseract via pytesseract) then extract. For HTML tables, use pandas `read_html()` or BeautifulSoup. For tabula-py, use it as a wrapper when Java is available.
-3. **Configure extraction parameters.** For camelot lattice: set `line_scale`, `joint_tol`, and `edge_tol` based on the PDF's ruling line thickness. For camelot stream: set `row_tol` and `column_tol` to control cell boundary detection. For pdfplumber: define explicit bounding boxes with `page.crop()` when tables occupy only part of the page.
+1. **Identify the source format.** Determine whether the input is a native PDF (text-based), a scanned PDF (image-based requiring OCR), an HTML page, or a standalone image. Test by attempting text extraction: if `pdfplumber` returns meaningful text, it is text-based; if only images are detected, it requires OCR.
+2. **Select the extraction tool.** Choose based on source type and table structure:
+   - Text-based PDFs with visible borders: use camelot `flavor='lattice'`.
+   - Text-based PDFs without visible borders: use camelot `flavor='stream'` or pdfplumber.
+   - Scanned PDFs or images: apply OCR first (Tesseract via pytesseract or `pdf2image` + OCR), then extract tables from the recognized text.
+   - HTML pages: use `pandas.read_html()` as the first attempt; fall back to BeautifulSoup only if pandas fails on complex nested structures.
+   - Java-available environments: consider tabula-py as an alternative to camelot for simple bordered tables.
+3. **Configure extraction parameters.** Adjust based on document characteristics:
+   - For camelot lattice with thin ruling lines: `line_scale=15`, `joint_tol=2`, `edge_tol=5`.
+   - For camelot lattice with thick ruling lines: `line_scale=40`, `joint_tol=5`, `edge_tol=10`.
+   - For camelot stream with tightly packed tables: `row_tol=5`, `column_tol=5`.
+   - For camelot stream with loosely spaced tables: `row_tol=10`, `column_tol=10`.
+   - For pdfplumber with partial-page tables: define explicit `page.crop(bounding_box)` to isolate the table region before extraction.
 4. **Extract raw table data.** Run the extraction and capture the raw DataFrame output. For multi-page documents, iterate pages and extract tables from each: `camelot.read_pdf(path, pages='1-end', flavor='lattice')`.
 5. **Detect and validate headers.** Check if the first row contains header values or data. Heuristics: headers are typically bold, contain no numeric-only values, and have unique values. If headers span multiple rows, merge them into a single header row with concatenated names.
 6. **Handle merged cells.** Identify cells spanning multiple rows or columns. For vertically merged cells, forward-fill the value down. For horizontally merged cells, assign the value to the first column and mark others as derived. Log each merge operation for traceability.
@@ -53,7 +65,7 @@ Extract tables from PDFs, HTML pages, and images into structured data formats. D
 - Apply OCR (Tesseract) only for scanned/image-based documents — it is slow and error-prone on text-based PDFs.
 - When extraction confidence is below 80%, flag the output for manual review rather than silently delivering bad data.
 
-# Output requirements
+# Output contract
 
 1. Structured data in the requested format (CSV, JSON, or DataFrame) with consistent column types.
 2. Extraction metadata: source file path, page number, table index, row count, column count, and confidence score.
@@ -68,7 +80,7 @@ Extract tables from PDFs, HTML pages, and images into structured data formats. D
 - Tesseract OCR: https://github.com/tesseract-ocr/tesseract
 - pandas read_html: https://pandas.pydata.org/docs/reference/api/pandas.read_html.html
 
-# Related skills
+# Next steps
 
 - `pdf-extraction` — for extracting non-tabular content (text, images, metadata) from PDFs.
 - `document-to-structured-data` — for broader document-to-data conversion beyond tables.
@@ -84,8 +96,15 @@ Extract tables from PDFs, HTML pages, and images into structured data formats. D
 
 # Failure handling
 
-- If camelot finds zero tables, retry with `flavor='stream'` and adjusted tolerances before reporting failure.
-- If OCR quality is poor (many garbled characters), recommend higher-resolution scanning (300+ DPI) and reprocessing.
-- If column counts are inconsistent across rows, output the raw extraction with a warning and the specific row numbers that mismatch.
-- If a required library is not installed, output the install command (`pip install camelot-py[cv]`, `pip install pdfplumber`) and halt.
-- If the PDF is password-protected, report the error and request the password or an unlocked version.
+- **Zero tables detected by camelot lattice:** Automatically retry with `flavor='stream'` and tolerance adjustments (`row_tol=10`, `column_tol=10`). If still zero tables, inspect the PDF visually to confirm tables exist, then try pdfplumber with explicit bounding boxes.
+- **OCR produces garbled or low-confidence text:** Check source resolution. If below 300 DPI, report: "Re-scan at 300+ DPI and reprocess." If at 300 DPI already, report: "OCR quality insufficient; consider manual review or specialized OCR tuning."
+- **Column count mismatch across rows:** Output the raw extraction with a warning header listing the specific row indices where column counts differ. Include both expected and actual column counts for each mismatched row.
+- **Missing required library:** Output the exact install command and halt immediately:
+  - `pip install camelot-py[cv]` for camelot with computer vision support
+  - `pip install pdfplumber` for pdfplumber
+  - `pip install pytesseract pdf2image` for OCR workflows
+  - `pip install tabula-py` for tabula-py (requires Java runtime)
+- **Password-protected PDF:** Report the specific error (`PdfReadError: File has not been decrypted`) and request the password or an unlocked version before proceeding.
+- **Merged cells causing data misalignment:** Log each fill operation with source cell coordinates and destination cells. Report: "Merged cell at [row, col] filled to [start_row:end_row, col]."
+- **Header detection uncertainty:** When header confidence is below 80%, output a warning: "Header detection uncertain. Review rows 1-{N} and confirm header boundaries."
+- **Multi-page extraction partial failure:** If some pages fail extraction while others succeed, output successful tables with a failure log listing page numbers and specific error messages for failed pages.

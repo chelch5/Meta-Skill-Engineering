@@ -1,3 +1,12 @@
-{"input":"Fix a broken CSS grid.","expected":"no-trigger"}
-{"input":"Write a Bash one-liner for file cleanup.","expected":"no-trigger"}
-{"input":"Create a meeting agenda.","expected":"no-trigger"}
+{"input":"How do I fine-tune Llama-3-8B on my medical domain dataset?","expected":"no-trigger","category":"boundary: fine-tuning"}
+{"input":"Set up LoRA adapters for instruction tuning","expected":"no-trigger","category":"boundary: fine-tuning"}
+{"input":"Design a transformer architecture with sliding window attention and RoPE","expected":"no-trigger","category":"boundary: model architecture"}
+{"input":"What activation function should I use between transformer layers?","expected":"no-trigger","category":"boundary: model architecture"}
+{"input":"Deploy my 7B model as an OpenAI-compatible API endpoint","expected":"no-trigger","category":"boundary: inference/serving"}
+{"input":"Optimize inference latency for batch processing","expected":"no-trigger","category":"boundary: inference/serving"}
+{"input":"Train a BPE tokenizer on my custom vocabulary","expected":"no-trigger","category":"boundary: tokenizer training"}
+{"input":"Design the vocabulary for a multilingual model","expected":"no-trigger","category":"boundary: tokenizer training"}
+{"input":"Preprocess text data for training without distributed setup","expected":"no-trigger","category":"boundary: data only"}
+{"input":"Just clean and filter my dataset, no training needed","expected":"no-trigger","category":"boundary: data only"}
+{"input":"Fix a broken CSS grid layout","expected":"no-trigger","category":"unrelated: frontend"}
+{"input":"Write a Bash script to clean up log files","expected":"no-trigger","category":"unrelated: devops"}

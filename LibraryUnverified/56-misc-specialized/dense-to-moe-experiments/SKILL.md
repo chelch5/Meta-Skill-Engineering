@@ -1,9 +1,9 @@
 ---
 name: dense-to-moe-experiments
-description: Converts dense transformer models to Mixture-of-Experts (MoE) architectures via FFN upcycling, expert initialization (copy/split-perturb/random), router training (top-k gating, auxiliary load-balancing loss), and continued pretraining. Use when experimenting with dense-to-MoE conversion, expert routing strategies, or MoE scaling. Do not use for training dense models or serving optimization.
+description: Convert dense transformer models to Mixture-of-Experts (MoE) architectures via FFN upcycling, expert initialization strategies, and router training with load-balancing loss. Triggers on dense-to-MoE conversion, FFN upcycling, expert routing implementation, or MoE continued pretraining tasks.
 license: Apache-2.0
 compatibility:
-  clients: [openai-codex, gemini-cli, opencode, github-copilot]
+  clients: [openai-codex, gemini-cli, opencode]
 metadata:
   owner: codex
   domain: dense-to-moe-experiments
@@ -16,62 +16,185 @@ metadata:
 
 Guides the experimental conversion of dense transformer models into Mixture-of-Experts (MoE) architectures. Covers FFN layer splitting into multiple experts, initialization strategies, router/gating mechanism design, load balancing, continued pretraining schedules, and evaluation methodology for comparing MoE vs. dense baselines at equivalent active parameter counts.
 
-# When to use this skill
+# When to use
 
 Use this skill when:
 
-- upcycling a dense model's FFN layers into N experts per transformer block (Mixtral-style)
-- choosing expert initialization: copying dense weights, split+perturb, or random initialization
-- implementing or tuning router/gating networks (top-1, top-2, expert choice, hash-based routing)
-- adding auxiliary load-balancing losses to prevent expert collapse (GShard, Switch Transformer patterns)
-- designing continued pretraining schedules after MoE upcycling
-- comparing dense baselines vs. MoE variants with matched active parameters and FLOPs
+- Upcycling a dense model's FFN layers into N experts per transformer block (Mixtral-style)
+- Choosing expert initialization strategy (copy, split+perturb, random, or cluster-based)
+- Implementing or tuning router/gating networks (top-1, top-2, expert choice, hash-based routing)
+- Adding auxiliary load-balancing losses to prevent expert collapse (GShard, Switch Transformer patterns)
+- Designing continued pretraining schedules after MoE upcycling
+- Comparing dense baselines vs. MoE variants with matched active parameters and FLOPs
 
-# Do not use this skill when
+# When NOT to use
 
-- training a dense model from scratch (use `pretraining-pipeline`)
-- optimizing MoE inference serving (use `serving-architecture`)
-- the task is model distillation or compression (use `distillation-compression`)
-- the task is infrastructure setup (use `training-infrastructure`)
+- Training a dense model from scratch (use `pretraining-pipeline`)
+- Optimizing MoE inference serving (use `serving-architecture`)
+- Model distillation or compression tasks (use `distillation-compression`)
+- Infrastructure setup for training (use `training-infrastructure`)
 
-# Operating procedure
+# Procedure
 
-1. **Select the source dense model and target MoE configuration.** Define: number of experts per layer (typically 8, 16, or 64), experts activated per token (top-k, typically k=2), and which layers to convert (usually all FFN layers, sometimes alternating). Document total params vs. active params — e.g., 8 experts with top-2 routing means 4x total params but same active FLOPs per token.
-2. **Initialize experts from dense FFN weights.** Choose a strategy:
-   - **Copy**: duplicate the dense FFN weights to all N experts identically. Simplest; relies on router training to break symmetry. Risk: slow differentiation.
-   - **Split + perturb**: copy weights then add small Gaussian noise (σ=0.01–0.02) to each expert. Faster differentiation; standard practice.
-   - **Random subset**: initialize each expert with a random subset of the dense FFN neurons. Better diversity but larger initial quality drop.
-   - **Cluster-based**: cluster hidden representations, assign neurons to experts by cluster. Most principled but highest complexity.
-3. **Implement the router/gating mechanism.** The router is a learned linear projection `W_gate ∈ R^{d_model × num_experts}` producing logits per token. Apply top-k selection:
-   ```python
-   gate_logits = x @ W_gate  # (batch*seq, num_experts)
-   topk_vals, topk_idx = torch.topk(gate_logits, k=2)
-   weights = F.softmax(topk_vals, dim=-1)
-   ```
-   Consider alternatives: expert-choice routing (experts select tokens instead of tokens selecting experts), hash-based routing (deterministic, no learned parameters), or soft-MoE (continuous mixing).
-4. **Add load-balancing loss.** Without balancing, routers collapse to using 1–2 experts. Add auxiliary loss:
-   - **GShard-style**: `L_aux = α * N * Σ(f_i * P_i)` where f_i is fraction of tokens routed to expert i, P_i is mean gate probability for expert i. Typical α=0.01.
-   - **Switch Transformer**: simplified version with differentiable load balance. Set expert capacity factor C=1.25 (25% overflow buffer).
-   - **Z-loss**: penalize large logits to stabilize training: `L_z = β * mean(logsumexp(gate_logits)^2)`, β=0.001.
-   - Monitor expert utilization: all experts should receive 0.8/N to 1.2/N fraction of tokens.
-5. **Continue pretraining.** After upcycling, train on 50B–200B tokens (5–20% of original pretraining budget). Use lower learning rate (0.1–0.3x original peak LR) with warmup. The router needs 1B–5B tokens to stabilize routing patterns. Monitor per-expert utilization and downstream eval metrics every 1B tokens.
-6. **Evaluate against dense baseline.** Compare on matched active parameters (not total params). Report: eval loss, downstream benchmarks (MMLU, HumanEval, GSM8K), expert utilization entropy, routing stability (% of tokens that change expert assignment between consecutive checkpoints), and wall-clock training/inference time.
+## 1. Select source model and target MoE configuration
 
-# Decision rules
+Define the target architecture:
+- Number of experts per layer (typically 8, 16, or 64)
+- Experts activated per token (top-k, typically k=2)
+- Which layers to convert (usually all FFN layers, sometimes alternating)
 
-- Use top-2 routing as the default; top-1 is prone to expert collapse, top-4+ adds overhead with diminishing returns.
-- Set auxiliary loss coefficient α=0.01 initially; increase to 0.1 only if expert utilization entropy is <50% of uniform.
-- Always use split+perturb initialization over plain copy; the noise cost is negligible but differentiation is measurably faster.
-- If any expert receives <5% of its fair share of tokens after 5B tokens of training, increase α or investigate dead experts.
-- MoE models should match or exceed dense baseline quality at the same active-param count within 100B continued-pretraining tokens; if not, revisit initialization and routing.
+Document total params vs. active params. Example: 8 experts with top-2 routing means 4x total params but same active FLOPs per token.
 
-# Output requirements
+**Validation checkpoint:** Confirm the dense source model has saved checkpoints available and document baseline eval metrics before upcycling.
 
-1. `Architecture spec` — num experts, top-k, layers converted, total vs. active params, FLOP comparison
-2. `Initialization config` — strategy used, perturbation scale, weight mapping
-3. `Router config` — gating type, auxiliary loss formulation, capacity factor, loss coefficients
-4. `Training log` — loss curves, expert utilization histograms per checkpoint, routing stability metrics
-5. `Comparison report` — dense vs. MoE results on matched benchmarks with confidence intervals
+## 2. Initialize experts from dense FFN weights
+
+Choose and implement one initialization strategy:
+
+| Strategy | Method | When to use |
+|----------|--------|-------------|
+| **Copy** | Duplicate dense FFN weights to all N experts identically | Simplest baseline; router training breaks symmetry |
+| **Split + perturb** | Copy weights, add Gaussian noise (σ=0.01–0.02) per expert | **Recommended default** — faster differentiation |
+| **Random subset** | Random subset of dense FFN neurons per expert | Better diversity but larger initial quality drop |
+| **Cluster-based** | Cluster hidden representations, assign by cluster | Most principled but highest complexity |
+
+**Validation checkpoint:** Verify all experts produce non-identical outputs on a sample batch before router training begins.
+
+## 3. Implement router/gating mechanism
+
+Implement the learned linear projection producing logits per token:
+
+```python
+# Router is W_gate ∈ R^{d_model × num_experts}
+gate_logits = x @ W_gate  # (batch*seq, num_experts)
+topk_vals, topk_idx = torch.topk(gate_logits, k=2)
+weights = F.softmax(topk_vals, dim=-1)
+```
+
+Consider alternatives based on constraints:
+- **Top-k routing** (default): Tokens select top-k experts
+- **Expert-choice routing**: Experts select tokens (better load balancing)
+- **Hash-based routing**: Deterministic, no learned parameters (lowest overhead)
+- **Soft-MoE**: Continuous mixing (no discrete selection)
+
+**Decision rule:** Use top-2 routing as default. Top-1 is prone to expert collapse; top-4+ adds overhead with diminishing returns.
+
+## 4. Add load-balancing loss
+
+Implement auxiliary loss to prevent expert collapse. Without balancing, routers tend to use only 1–2 experts.
+
+**GShard-style loss (recommended default):**
+```
+L_aux = α * N * Σ(f_i * P_i)
+```
+Where f_i = fraction of tokens routed to expert i, P_i = mean gate probability for expert i. Set α=0.01 initially; increase to 0.1 only if expert utilization entropy drops below 50% of uniform.
+
+**Additional stabilization losses:**
+- **Switch Transformer**: Simplified differentiable load balance with capacity factor C=1.25
+- **Z-loss**: Penalize large logits: `L_z = β * mean(logsumexp(gate_logits)^2)`, β=0.001
+
+**Validation checkpoint:** Monitor expert utilization — all experts should receive 0.8/N to 1.2/N fraction of tokens. If any expert receives <5% of fair share after 5B tokens, increase α or investigate dead experts.
+
+## 5. Continue pretraining
+
+After upcycling, train on 50B–200B tokens (5–20% of original pretraining budget):
+
+- Use lower learning rate: 0.1–0.3x original peak LR
+- Include warmup period
+- The router needs 1B–5B tokens to stabilize routing patterns
+- Monitor per-expert utilization every 1B tokens
+- Track downstream eval metrics every 1B tokens
+
+**Validation checkpoint:** Router routing patterns should stabilize (measured by <5% change in expert assignment distribution between consecutive checkpoints).
+
+## 6. Evaluate against dense baseline
+
+Compare on matched active parameters (not total params):
+
+| Metric | Target |
+|--------|--------|
+| Eval loss | Match or beat dense baseline |
+| Downstream benchmarks | MMLU, HumanEval, GSM8K with confidence intervals |
+| Expert utilization entropy | >50% of uniform distribution |
+| Routing stability | <10% tokens change expert assignment between checkpoints |
+| Wall-clock time | Document training/inference overhead |
+
+**Decision rule:** MoE models should match or exceed dense baseline quality at the same active-param count within 100B continued-pretraining tokens. If not, revisit initialization and routing.
+
+# Output contract
+
+When executing this skill, produce:
+
+1. **Runtime Context** — Source model, target MoE config, compute resources, token budget
+2. **Interfaces and Schemas** — Router implementation details, loss functions, checkpoint formats
+3. **Safety or Cost Controls** — Expert utilization monitoring, dead expert detection, overflow handling
+4. **Evaluation Plan** — Baseline comparison methodology, metrics to track, success criteria
+5. **Architecture spec** — Num experts, top-k, layers converted, total vs. active params, FLOP comparison
+6. **Initialization config** — Strategy used, perturbation scale, weight mapping
+7. **Router config** — Gating type, auxiliary loss formulation, capacity factor, loss coefficients
+8. **Training log** — Loss curves, expert utilization histograms per checkpoint, routing stability metrics
+9. **Comparison report** — Dense vs. MoE results on matched benchmarks with confidence intervals
+
+# Failure handling
+
+## Expert utilization collapse (>80% of tokens to ≤2 experts)
+
+**Diagnostic steps:**
+1. Check current auxiliary loss coefficient α
+2. Verify router gradients are non-zero and flowing
+3. Inspect expert utilization histogram per layer
+
+**Resolution:**
+- Increase auxiliary loss α by 5x (e.g., 0.01 → 0.05)
+- Restart from last balanced checkpoint
+- If persists, consider expert-choice routing instead of top-k
+
+## Loss spikes during continued pretraining
+
+**Diagnostic steps:**
+1. Check if spike correlates with learning rate warmup end
+2. Verify gradient norms are not exploding
+3. Inspect per-expert loss contributions
+
+**Resolution:**
+- Reduce learning rate by 50%
+- Add gradient clipping at 1.0
+- If spike occurs at same checkpoint consistently, verify data quality at that step
+
+## MoE underperforms dense baseline after 100B tokens
+
+**Diagnostic steps:**
+1. Verify initialization correctness — check expert weight distributions match expected
+2. Confirm router gradients are non-zero throughout training
+3. Compare eval curves — is MoE improving slower or plateauing lower?
+4. Check that comparison uses active params, not total params
+
+**Resolution:**
+- Revisit initialization strategy (try split+perturb if using plain copy)
+- Inspect for dead experts and apply utilization collapse fixes
+- Consider reducing expert count or switching to expert-choice routing
+
+## All-to-all communication dominates training time
+
+**Diagnostic steps:**
+1. Profile communication vs. computation time per step
+2. Check expert parallelism configuration
+3. Verify GPU topology and NVLink connectivity
+
+**Resolution:**
+- Implement expert-choice routing (reduces communication)
+- Reduce expert count per layer
+- Use MegaBlocks or Fairseq MoE optimized kernels
+- Consider gradient checkpointing to reduce memory pressure
+
+# Next steps
+
+After completing dense-to-MoE conversion:
+
+- For deploying MoE models with expert parallelism, use `serving-architecture`
+- For distributed training infrastructure (expert parallelism, all-to-all communication), use `training-infrastructure`
+- For distilling MoE back to dense for inference efficiency, use `distillation-compression`
+- For general transformer architecture decisions, use `model-architecture`
 
 # References
 
@@ -79,19 +202,12 @@ Use this skill when:
 - Switch Transformer: Fedus et al. "Switch Transformers: Scaling to Trillion Parameter Models"
 - GShard: Lepikhin et al. "GShard: Scaling Giant Models with Conditional Computation"
 - ST-MoE: Zoph et al. "ST-MoE: Designing Stable and Transferable Sparse Expert Models"
-- MegaBlocks: efficient MoE training library `github.com/databricks/megablocks`
+- MegaBlocks: Efficient MoE training library `github.com/databricks/megablocks`
 - Fairseq MoE: `github.com/facebookresearch/fairseq/tree/main/examples/moe`
 
 # Related skills
 
-- `serving-architecture` — deploying MoE models with expert parallelism
-- `training-infrastructure` — distributed training setup for MoE (expert parallelism, all-to-all communication)
-- `distillation-compression` — distilling MoE back to dense for inference efficiency
-- `model-architecture` — general transformer architecture decisions
-
-# Failure handling
-
-- If expert utilization collapses (>80% of tokens to ≤2 experts), increase auxiliary loss α by 5x and restart from last balanced checkpoint.
-- If loss spikes during continued pretraining, reduce learning rate by 50% and add gradient clipping at 1.0.
-- If MoE underperforms dense baseline after 100B tokens, verify initialization correctness and check that router gradients are non-zero.
-- If all-to-all communication dominates training time, consider expert-choice routing or reducing expert count per layer.
+- `serving-architecture` — Deploying MoE models with expert parallelism
+- `training-infrastructure` — Distributed training setup for MoE (expert parallelism, all-to-all communication)
+- `distillation-compression` — Distilling MoE back to dense for inference efficiency
+- `model-architecture` — General transformer architecture decisions

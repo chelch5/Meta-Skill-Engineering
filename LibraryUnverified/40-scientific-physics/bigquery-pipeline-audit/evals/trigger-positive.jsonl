@@ -1,0 +1,5 @@
+{"prompt":"Review this Python script that loads data into BigQuery","expected":"trigger","category":"core","notes":"BigQuery pipeline audit request"}
+{"prompt":"Audit my ELT pipeline before I deploy it to production","expected":"trigger","category":"core","notes":"BigQuery pipeline audit request"}
+{"prompt":"Check if this backfill script is safe to run - it uses BigQuery","expected":"trigger","category":"core","notes":"BigQuery pipeline audit request"}
+{"prompt":"Inspect this data pipeline for cost issues before scheduling","expected":"trigger","category":"core","notes":"BigQuery pipeline audit request"}
+{"prompt":"I'm about to run a backfill on our BigQuery tables - is it safe?","expected":"trigger","category":"core","notes":"BigQuery pipeline audit request"}

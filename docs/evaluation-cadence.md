@@ -56,4 +56,4 @@ python scripts/meta-skill-studio.py --mode cli --action improvement-brief --run-
 
 - There is no repo-wide full-cycle runner in the current root `scripts/` inventory.
 - Plugin-eval token-budget grading is not treated as a universal repo-wide gate.
-- WPF is not required for any of the evaluation steps above.
+- The Tauri shell is not required for any of the evaluation steps above.

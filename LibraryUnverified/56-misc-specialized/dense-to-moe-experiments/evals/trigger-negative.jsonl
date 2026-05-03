@@ -1,3 +1,10 @@
-{"input":"Fix a broken CSS grid.","expected":"no-trigger"}
-{"input":"Write a Bash one-liner for file cleanup.","expected":"no-trigger"}
-{"input":"Create a meeting agenda.","expected":"no-trigger"}
+{"input":"Fix a broken CSS grid layout on my website","expected":"no-trigger","category":"Frontend / Web Development"}
+{"input":"Write a Bash one-liner to clean up old log files","expected":"no-trigger","category":"System Administration"}
+{"input":"Create a meeting agenda for the product team","expected":"no-trigger","category":"General Productivity"}
+{"input":"Train a dense transformer model from scratch on Wikipedia data","expected":"no-trigger","category":"AI / LLM Training (dense baseline, not MoE conversion)"}
+{"input":"Optimize inference serving latency for my production MoE model","expected":"no-trigger","category":"AI / MoE Serving (use serving-architecture)"}
+{"input":"Distill my large MoE model into a smaller dense student model","expected":"no-trigger","category":"AI / Model Distillation (use distillation-compression)"}
+{"input":"Set up Kubernetes cluster for distributed training","expected":"no-trigger","category":"Infrastructure (use training-infrastructure)"}
+{"input":"Implement KV-cache optimization for transformer inference","expected":"no-trigger","category":"AI / Inference Optimization"}
+{"input":"Design a model compression technique using pruning","expected":"no-trigger","category":"AI / Model Compression (use distillation-compression)"}
+{"input":"Fine-tune a pre-trained model on my custom dataset","expected":"no-trigger","category":"AI / Fine-tuning (not MoE upcycling)"}

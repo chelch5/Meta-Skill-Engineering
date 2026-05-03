@@ -1,80 +1,162 @@
 ---
 name: unity-scriptableobject-events
-description: Implements the ScriptableObject event channel architecture in Unity — GameEvent SOs with Raise/Register, GameEventListener MonoBehaviours, shared variable SOs (FloatVariable, IntVariable), RuntimeSet<T> patterns, and SO-based decoupling as an alternative to singletons. Use when designing event-driven communication between Unity systems without hard references.
-license: Apache-2.0
-compatibility:
-  clients: [openai-codex, gemini-cli, opencode, github-copilot]
-metadata:
-  owner: codex
-  domain: unity-scriptableobject-events
-  maturity: draft
-  risk: low
-  tags: [unity, scriptableobject, events, architecture, decoupling]
+description: Guide implementation of ScriptableObject-based event architecture in Unity for decoupled system communication. Use when the user asks about GameEvent channels, GameEventListener patterns, shared variable ScriptableObjects, or RuntimeSet collections to replace singletons and direct references between Unity systems.
 ---
 
 # Purpose
 
-Guide implementation of the ScriptableObject-based event architecture pattern in Unity — where SO assets act as event channels and data containers, enabling fully decoupled communication between systems without singletons or direct references. Based on Ryan Hipple's GDC talk "Game Architecture with ScriptableObjects."
+Guide implementation of ScriptableObject-based event architecture in Unity, where ScriptableObject assets serve as event channels and shared data containers. This pattern enables decoupled communication between systems without singletons or direct references, based on Ryan Hipple's GDC 2017 talk "Game Architecture with ScriptableObjects."
 
-# When to use this skill
+# When to use
 
-- Designing event-driven communication between systems that should not reference each other directly
-- Creating `GameEvent` ScriptableObjects that act as mediator channels between producers and consumers
-- Building `GameEventListener` MonoBehaviours that register with a GameEvent and invoke a UnityEvent response
-- Implementing shared variable SOs (`FloatVariable`, `IntVariable`, `StringVariable`) as observable data containers
-- Creating `RuntimeSet<T>` ScriptableObjects to track collections of active objects (e.g., all enemies, all pickups)
-- Deciding between SO events, C# events (`System.Action`), `UnityEvent`, or a message bus
+- The user asks about decoupled event communication in Unity without singletons
+- Creating GameEvent ScriptableObjects as mediator channels between producers and consumers
+- Building GameEventListener MonoBehaviours that subscribe to events and invoke UnityEvent responses
+- Implementing shared variable ScriptableObjects (FloatVariable, IntVariable, BoolVariable) as observable data
+- Creating RuntimeSet collections to track active objects (enemies, pickups, players) without FindObjectsOfType
+- Comparing SO events vs C# events vs UnityEvents vs message buses for a specific use case
+- Converting singleton-based communication to ScriptableObject event channels
 
-# Do not use this skill when
+# When NOT to use
 
-- The task is general Unity scripting without an event architecture focus — use `unity`
-- The task involves Unreal Engine event systems (delegates, dispatchers) — use `unreal-engine`
-- The decoupling requirement is for network replication — use `multiplayer-netcode`
+- General Unity scripting without event architecture — use `unity`
+- Unreal Engine delegate or dispatcher systems — use `unreal-engine`
+- Network-replicated events for multiplayer — use `multiplayer-netcode`
+- High-frequency events (1000+/frame) where C# events perform better — use standard C# events instead
+- Simple single-object callbacks that do not need cross-scene communication — use UnityEvents directly
 
-# Operating procedure
+# Procedure
 
-1. **Create the GameEvent SO.** Define a `ScriptableObject` with `[CreateAssetMenu(menuName="Events/GameEvent")]`. Include a `List<GameEventListener>` for registered listeners, a `Raise()` method that iterates listeners and calls `OnEventRaised()`, and `RegisterListener`/`UnregisterListener` methods.
-2. **Create the GameEventListener MB.** A MonoBehaviour with a `GameEvent` field and a `UnityEvent` response. In `OnEnable`, call `gameEvent.RegisterListener(this)`. In `OnDisable`, call `gameEvent.UnregisterListener(this)`. Expose `OnEventRaised()` which invokes the UnityEvent.
-3. **Wire in the inspector.** Create a GameEvent asset (right-click → Events → GameEvent). On the producer, reference the GameEvent and call `Raise()`. On the consumer, add a GameEventListener, assign the same GameEvent asset, and configure the UnityEvent response.
-4. **Shared variable pattern.** Create `FloatVariable : ScriptableObject` with `[CreateAssetMenu]`, a `Value` field, and optionally an `OnValueChanged` event. Consumers read from the SO directly or listen for changes. Useful for HP bars, score displays, and settings.
-5. **RuntimeSet pattern.** Create `RuntimeSet<T> : ScriptableObject` with a `List<T> Items`, `Add(T)`, and `Remove(T)`. Objects call `Add` in `OnEnable` and `Remove` in `OnDisable`. Systems iterate the set without `FindObjectsOfType`.
-6. **Typed event variants.** For events with data, create `GameEvent<T>` generics: `IntGameEvent`, `FloatGameEvent`, `StringGameEvent`, `Vector3GameEvent`. Each has a corresponding typed listener with `UnityEvent<T>`.
-7. **Debug and validate.** Add a `[TextArea] string developerDescription` to every SO event for documentation. Add editor buttons to Raise events from the inspector during play mode. Log event raises with listener counts.
-8. **Choose the right event type.** SO events for designer-configurable, inspector-wired, cross-scene communication. C# `Action`/`event` for code-only, high-frequency, same-assembly events. `UnityEvent` for inspector-wired single-object callbacks. Enum-based event bus for rapid prototyping only.
+1. **Create the GameEvent ScriptableObject.**
+   - Define a class extending `ScriptableObject` with `[CreateAssetMenu(menuName = "Events/GameEvent")]`
+   - Add a private `List<GameEventListener> listeners = new List<GameEventListener>()`
+   - Implement `public void Raise()` that iterates through listeners and calls each `OnEventRaised()`
+   - Implement `RegisterListener(GameEventListener listener)` and `UnregisterListener(GameEventListener listener)`
+   - Validate: The menu item appears in Unity's Create menu under Events/GameEvent
+
+2. **Create the GameEventListener MonoBehaviour.**
+   - Define a class extending `MonoBehaviour` with a public `GameEvent gameEvent` field
+   - Add a public `UnityEvent response` field for inspector configuration
+   - In `OnEnable()`, call `gameEvent.RegisterListener(this)` — check for null first
+   - In `OnDisable()`, call `gameEvent.UnregisterListener(this)` — check for null first
+   - Add `public void OnEventRaised()` that invokes `response?.Invoke()`
+   - Validate: Listener auto-registers when enabled, unregisters when disabled
+
+3. **Wire event producers and consumers in the Inspector.**
+   - Create a GameEvent asset via right-click → Create → Events → GameEvent
+   - On the producer GameObject: add a field referencing the GameEvent, call `gameEvent.Raise()` when the event occurs
+   - On the consumer GameObject: add the GameEventListener component, drag the GameEvent asset into the slot, configure the UnityEvent response
+   - Validate: Raising the event triggers all configured responses
+
+4. **Implement the shared variable pattern (optional).**
+   - Create `FloatVariable : ScriptableObject` with `[CreateAssetMenu(menuName = "Variables/Float")]`
+   - Add a public `float Value` property with a setter that invokes `OnValueChanged?.Invoke()`
+   - Add `public event Action<float> OnValueChanged` for code subscriptions
+   - Use for HP, score, settings that multiple systems read
+   - Validate: Changing the value triggers the event; multiple readers see the same value
+
+5. **Implement the RuntimeSet pattern (optional).**
+   - Create `RuntimeSet<T> : ScriptableObject` where T is a MonoBehaviour type
+   - Add `public List<T> Items = new List<T>()`
+   - Add `public void Add(T item)` and `public void Remove(T item)` methods
+   - Objects call `myRuntimeSet.Add(this)` in `OnEnable` and `myRuntimeSet.Remove(this)` in `OnDisable`
+   - Systems query the RuntimeSet instead of calling `FindObjectsOfType<T>()`
+   - Validate: RuntimeSet count matches active objects; no null entries after objects destroy
+
+6. **Create typed event variants for data-bearing events (optional).**
+   - For events needing data (position, damage amount, player ID), create typed variants:
+     - `IntGameEvent : ScriptableObject` with `Raise(int value)` and `UnityEvent<int>` response
+     - `FloatGameEvent`, `Vector3GameEvent`, `StringGameEvent` following the same pattern
+   - Create matching typed listeners with `UnityEvent<T>` responses
+   - Validate: Typed data passes correctly from producer to all listeners
+
+7. **Add debugging and validation utilities.**
+   - Add `[TextArea] public string developerDescription` to GameEvent for documentation
+   - Add a `[ContextMenu("Raise")]` method to GameEvent for testing in Edit mode
+   - Log `Debug.Log($"Event raised with {listeners.Count} listeners")` during development
+   - Validate: Inspector shows event raises correctly; logs show expected listener count
+
+8. **Document architecture decisions.**
+   - Write a brief comment or separate doc explaining why SO events were chosen over alternatives
+   - Note the specific use case (cross-scene communication, designer wiring, decoupling)
+   - Validate: Team members can understand the choice without asking
+
+# Output contract
+
+The agent must produce:
+
+1. **Complete C# GameEvent ScriptableObject class**
+   - `[CreateAssetMenu]` attribute with proper menu path
+   - Listeners collection with thread-safe add/remove
+   - Raise() method that safely iterates listeners
+   - Registration methods for lifecycle management
+
+2. **Complete C# GameEventListener MonoBehaviour class**
+   - GameEvent reference field
+   - UnityEvent response field
+   - OnEnable/OnDisable registration lifecycle
+   - OnEventRaised() callback method
+
+3. **Setup instructions for the Unity Inspector**
+   - Step-by-step asset creation process
+   - Producer configuration (how to call Raise)
+   - Consumer configuration (how to wire the UnityEvent response)
+
+4. **Decision rationale**
+   - Why SO events were chosen over C# events, UnityEvents, or singletons
+   - Performance and maintainability tradeoffs for the specific use case
+
+# Next steps
+
+- `unity` — General Unity patterns for lifecycle, component architecture, or serialization
+- `ai-npc-behavior` — AI systems that consume SO events for perception or stimulus
+- `multiplayer-netcode` — When local SO events need network replication for multiplayer
 
 # Decision rules
 
-- Use SO events when designers need to wire connections in the inspector without code changes.
-- Use C# `event Action` when performance matters (thousands of events/frame) and only programmers configure it.
-- Use shared variable SOs over singletons for any data read by multiple systems (HP, score, settings).
-- Use RuntimeSets over `FindObjectsOfType` — they're O(1) add/remove vs O(n) search.
-- If an event carries complex data, create a typed SO event rather than passing multiple parameters.
-- SO events survive scene loads if the asset is referenced by a persistent object or Addressable.
-
-# Output requirements
-
-1. `ScriptableObject Script` — complete C# class with `[CreateAssetMenu]`, fields, and methods
-2. `Listener Script` — GameEventListener MonoBehaviour with registration lifecycle
-3. `Inspector Setup` — how to create assets, assign references, configure UnityEvent callbacks
-4. `Architecture Diagram` — which systems produce events, which consume, data flow direction
-5. `Tradeoff Notes` — why SO events over alternatives for this specific use case
+- Use SO events when designers need to wire connections in the inspector without code changes
+- Use C# `event Action` when processing thousands of events per frame in code-only scenarios
+- Use shared variable SOs over singletons for any data read by multiple systems (HP, score, settings)
+- Use RuntimeSets over `FindObjectsOfType` — O(1) add/remove vs O(n) search every frame
+- Create typed SO events (GameEvent<T>) when events carry data; avoid passing multiple parameters
+- SO events survive scene loads if referenced by persistent objects or Addressables
 
 # References
 
 - [Ryan Hipple — Game Architecture with ScriptableObjects (GDC 2017)](https://www.youtube.com/watch?v=raQ3iHhE_Kk)
-- [Unity ScriptableObject Documentation](https://docs.unity3d.com/Manual/class-ScriptableObject.html)
+- [Unity ScriptableObject Manual](https://docs.unity3d.com/Manual/class-ScriptableObject.html)
 - [CreateAssetMenu Attribute](https://docs.unity3d.com/ScriptReference/CreateAssetMenuAttribute.html)
 - [UnityEvent Documentation](https://docs.unity3d.com/ScriptReference/Events.UnityEvent.html)
 
-# Related skills
-
-- `unity` — general Unity patterns, lifecycle, and component architecture
-- `ai-npc-behavior` — AI systems that consume SO events for perception/stimulus
-- `multiplayer-netcode` — when events need network replication beyond local SO channels
-
 # Failure handling
 
-- If listeners don't receive events, verify `OnEnable`/`OnDisable` registration and that the same SO asset instance is referenced (not a duplicate).
-- If SO values reset between scenes, ensure the SO asset is not instantiated at runtime — reference the project asset directly.
-- If UnityEvent callbacks show as "Missing", the target GameObject was destroyed — use `OnDisable` unregistration.
-- If event ordering matters, document the expected order or use a priority field in the listener.
+**Listeners not receiving events:**
+- Verify the GameEventListener has the correct GameEvent asset assigned in the Inspector
+- Check that the same SO asset instance is referenced on both producer and consumer (not duplicates with same name)
+- Confirm OnEnable/OnDisable are calling RegisterListener/UnregisterListener — add Debug.Log to verify
+- Ensure the producer is actually calling Raise() — add Debug.Log before the Raise call
+
+**SO values reset between scene loads:**
+- Check that the SO asset is not being instantiated at runtime via ScriptableObject.CreateInstance
+- Verify the SO is a project asset referenced directly, not a runtime-created instance
+- For data that must persist, ensure the SO is referenced by a persistent DontDestroyOnLoad object or Addressable
+
+**UnityEvent callbacks show as "Missing":**
+- The target GameObject was destroyed but the listener wasn't unregistered
+- Verify OnDisable calls UnregisterListener before the object destroys
+- Check for null reference on gameEvent before calling UnregisterListener
+
+**Event ordering problems:**
+- SO events fire in registration order by default
+- If ordering matters, document the expected order in developerDescription
+- For strict ordering, add a priority field to GameEventListener and sort listeners by priority in Raise()
+
+**Memory leaks or lingering references:**
+- Ensure every RegisterListener has a matching UnregisterListener in OnDisable
+- Check that destroyed objects are removed from RuntimeSets
+- Use the Profiler to verify GameEventListener instances are garbage collected when GameObjects destroy
+
+**Performance issues with many events:**
+- Profile with Unity Profiler to confirm events are the bottleneck
+- If raising >1000 events/frame, consider switching to C# events for that specific high-frequency system
+- Avoid searching or iterating large RuntimeSets every frame — cache results or use events instead

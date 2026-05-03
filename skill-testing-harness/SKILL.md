@@ -107,7 +107,7 @@ Each line defines a prompt with expected output characteristics for behavior tes
 - **(d) Concrete vs vague language:** Flag if >30% of output sentences use hedge words ("consider", "may want to", "could potentially", "it might be useful to"). Skills should produce decisions, not suggestions.
 
 ```jsonl
-{"prompt": "Create trigger tests for skill-authoring", "expected_sections": ["trigger-positive.jsonl", "trigger-negative.jsonl"], "required_patterns": ["\"expected\": \"trigger\"", "\"expected\": \"no_trigger\""], "forbidden_patterns": ["TODO", "placeholder", "consider adding"], "min_output_lines": 5}
+{"prompt": "Create trigger tests for skill-authoring", "expected_sections": ["trigger-positive.jsonl", "trigger-negative.jsonl"], "required_patterns": ["\"expected\": \"trigger\"", "\"expected\": \"no_trigger\""], "forbidden_patterns": ["deferred-work marker", "filler prompt", "consider adding"], "min_output_lines": 5}
 {"prompt": "Build a full test harness for the pdf-extraction skill", "expected_sections": ["trigger-positive.jsonl", "trigger-negative.jsonl", "behavior.jsonl", "README.md"], "required_patterns": ["\"category\""], "forbidden_patterns": ["may want to", "could potentially"], "min_output_lines": 8}
 ```
 

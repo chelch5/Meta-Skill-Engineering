@@ -1,3 +1,6 @@
+{"input":"Create a new table in this Word document with project milestones","expected":"no-trigger"}
+{"input":"Generate an Excel file with budget projections from scratch","expected":"no-trigger"}
+{"input":"Extract all the text content from this PDF without the tables","expected":"no-trigger"}
+{"input":"Add annotations and highlights to this existing PDF","expected":"no-trigger"}
+{"input":"Query the sales data from the REST API and return JSON","expected":"no-trigger"}
 {"input":"Tune retry settings in a queue worker.","expected":"no-trigger"}
-{"input":"Design an auth token rotation flow.","expected":"no-trigger"}
-{"input":"Choose between vector indexes for retrieval.","expected":"no-trigger"}

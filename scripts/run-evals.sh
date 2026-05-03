@@ -6,7 +6,7 @@
 #   ./scripts/run-evals.sh --all              # Run evals for all skills with evals/
 #   ./scripts/run-evals.sh --dry-run [skill]  # Show test cases without running
 #
-# Requires: selected runtime CLI, jq
+# Requires: node, jq, and @opencode-ai/sdk installed from package.json
 #
 # The script reads evals/trigger-positive.jsonl, evals/trigger-negative.jsonl,
 # and evals/behavior.jsonl. Trigger tests check skill routing (precision/recall).
@@ -19,9 +19,9 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 RESULTS_DIR="${REPO_ROOT}/eval-results"
 DRY_RUN=false
 TARGETS=()
-MODEL="${EVAL_MODEL:-claude-sonnet-4.5}"
+MODEL="${EVAL_MODEL:-minimax-coding-plan/MiniMax-M2.7}"
 TIMEOUT="${EVAL_TIMEOUT:-60}"
-RUNTIME="${EVAL_RUNTIME:-copilot}"
+SDK_BRIDGE="${REPO_ROOT}/scripts/meta_skill_studio/opencode_sdk_bridge.mjs"
 
 usage() {
   echo "Usage: $0 [--all | --dry-run] [skill-name ...]"
@@ -29,9 +29,8 @@ usage() {
   echo "Options:"
   echo "  --all       Run evals for all skills that have evals/ directories"
   echo "  --dry-run   List test cases without executing them"
-  echo "  --model X   Override model (default: claude-sonnet-4.5)"
+  echo "  --model X   Override OpenCode model (default: minimax-coding-plan/MiniMax-M2.7)"
   echo "  --timeout N Seconds per prompt (default: 60)"
-  echo "  --runtime X Runtime CLI command (default: copilot)"
   exit 1
 }
 
@@ -57,10 +56,6 @@ while [[ $# -gt 0 ]]; do
       TIMEOUT="$2"
       shift 2
       ;;
-    --runtime)
-      RUNTIME="$2"
-      shift 2
-      ;;
     --help|-h)
       usage
       ;;
@@ -78,31 +73,26 @@ fi
 
 # Check dependencies
 command -v jq >/dev/null 2>&1 || { echo "Error: jq is required"; exit 1; }
-command -v "$RUNTIME" >/dev/null 2>&1 || { echo "Error: runtime not found: $RUNTIME"; exit 1; }
+command -v node >/dev/null 2>&1 || { echo "Error: node is required"; exit 1; }
+[[ -f "$SDK_BRIDGE" ]] || { echo "Error: OpenCode SDK bridge not found: $SDK_BRIDGE"; exit 1; }
 
 mkdir -p "$RESULTS_DIR"
 
 run_prompt() {
   local prompt="$1"
-  local cmd=("$RUNTIME" -p "$prompt")
-
-  if [[ "$RUNTIME" == "copilot" ]]; then
-    if [[ "$MODEL" != "auto" ]]; then
-      cmd+=("--model" "$MODEL")
-    fi
-    cmd+=("--reasoning-effort" "low" "--allow-all" "--autopilot")
-  elif [[ "$RUNTIME" == "opencode" || "$RUNTIME" == */opencode || "$RUNTIME" == */opencode.exe ]]; then
-    cmd=("$RUNTIME" run "$prompt")
-    if [[ "$MODEL" != "auto" ]]; then
-      cmd+=("--model" "$MODEL")
-    fi
+  local json
+  if [[ "$MODEL" == "auto" ]]; then
+    json=$(timeout "$TIMEOUT" node "$SDK_BRIDGE" prompt --prompt "$prompt" 2>/dev/null) || {
+      echo "ERROR: timeout or failure"
+      return
+    }
   else
-    if [[ "$MODEL" != "auto" ]]; then
-      cmd+=("--model" "$MODEL")
-    fi
+    json=$(timeout "$TIMEOUT" node "$SDK_BRIDGE" prompt --prompt "$prompt" --model "$MODEL" 2>/dev/null) || {
+      echo "ERROR: timeout or failure"
+      return
+    }
   fi
-
-  timeout "$TIMEOUT" "${cmd[@]}" 2>/dev/null || echo "ERROR: timeout or failure"
+  echo "$json" | jq -r 'if .ok then .response else "ERROR: " + (.error // "OpenCode SDK prompt failed") end'
 }
 
 run_trigger_tests() {
@@ -138,7 +128,7 @@ run_trigger_tests() {
       continue
     fi
 
-    # Run the prompt through selected runtime
+    # Run the prompt through the OpenCode SDK bridge.
     local response
     response=$(run_prompt "$prompt")
 
@@ -231,7 +221,7 @@ run_behavior_tests() {
       continue
     fi
 
-    # Run the prompt through selected runtime
+    # Run the prompt through the OpenCode SDK bridge.
     local response
     response=$(run_prompt "$prompt")
 
@@ -313,7 +303,7 @@ run_behavior_tests() {
 # Main loop
 echo "═══════════════════════════════════════════"
 echo "  Meta-Skill Eval Runner"
-echo "  Runtime: ${RUNTIME}"
+echo "  Runtime: opencode-sdk"
 echo "  Model: ${MODEL}"
 echo "  Mode: $(if $DRY_RUN; then echo 'DRY RUN'; else echo 'LIVE'; fi)"
 echo "═══════════════════════════════════════════"
@@ -338,7 +328,7 @@ for skill in "${TARGETS[@]}"; do
   > "${RESULTS_DIR}/${skill}-eval.md"
   echo "# Eval Results: ${skill}" >> "${RESULTS_DIR}/${skill}-eval.md"
   echo "Date: $(date -Iseconds)" >> "${RESULTS_DIR}/${skill}-eval.md"
-  echo "Runtime: ${RUNTIME}" >> "${RESULTS_DIR}/${skill}-eval.md"
+  echo "Runtime: opencode-sdk" >> "${RESULTS_DIR}/${skill}-eval.md"
   echo "Model: ${MODEL}" >> "${RESULTS_DIR}/${skill}-eval.md"
   echo "" >> "${RESULTS_DIR}/${skill}-eval.md"
 

@@ -18,7 +18,6 @@ compatibility:
     - openai-codex
     - gemini-cli
     - opencode
-    - github-copilot
 requires:
   tools: []
 artifacts:

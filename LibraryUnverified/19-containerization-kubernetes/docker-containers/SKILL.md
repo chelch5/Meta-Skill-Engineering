@@ -1,9 +1,9 @@
 ---
 name: docker-containers
-description: "Author Dockerfiles, optimize multi-stage builds, write docker-compose services, configure health checks, reduce image size, and scan images for vulnerabilities. Use when creating or editing Dockerfiles, docker-compose.yml, container runtime configuration, or debugging container build/run issues. Do not use for container orchestration (prefer kubernetes/ECS skills) or application code changes unrelated to containerization."
+description: "Create or improve Dockerfiles, docker-compose.yml, and .dockerignore files. Use for containerizing applications, optimizing image size with multi-stage builds, adding health checks, debugging build failures, and scanning for vulnerabilities. Do not use for Kubernetes/ECS orchestration, pure application code changes, or cloud registry management."
 license: Apache-2.0
 compatibility:
-  clients: [openai-codex, gemini-cli, opencode, github-copilot]
+  clients: [openai-codex, gemini-cli, opencode]
 metadata:
   owner: codex
   domain: docker-containers
@@ -35,20 +35,77 @@ Author production-quality Dockerfiles with multi-stage builds, write docker-comp
 - The task involves cloud-provider container services (ECR, GCR, ACR) — prefer `aws` or `gcp` for registry-specific commands.
 - The focus is on CI/CD pipeline design — prefer `cloud-deploy` for deployment strategy.
 
-# Operating procedure
+# Procedure
 
-1. **Identify the containerization target.** Determine the application runtime (Node.js, Python, Go, Rust, Java), its dependency installation method, and its build/start commands.
-2. **Choose the base image.** Select the smallest suitable base: `alpine` variants for minimal size, `slim` variants for Debian compatibility, or `distroless` for production security. Pin to a specific tag (e.g., `node:20-alpine3.19`), never use `latest`.
-3. **Write the .dockerignore.** Exclude `node_modules`, `.git`, `*.md`, test files, local env files, and any files not needed in the build context. Place `.dockerignore` next to the Dockerfile.
-4. **Implement multi-stage build.** Stage 1 (`builder`): install all dependencies and compile/build the application. Stage 2 (`runtime`): copy only the built artifacts and production dependencies from the builder stage. This eliminates build tools from the final image.
-5. **Optimize layer ordering.** Copy dependency manifests (`package.json`, `requirements.txt`, `go.mod`) before source code. Run `npm ci` / `pip install` / `go mod download` as a separate layer so dependency installs are cached when only source code changes.
-6. **Configure build arguments and secrets.** Use `ARG` for build-time variables (app version, build date). Use `--mount=type=secret` (BuildKit) for sensitive build-time values (private registry tokens). Never embed secrets in `ENV` or `RUN` commands.
-7. **Set the runtime user.** Add `RUN addgroup -S app && adduser -S app -G app` and `USER app` before the `CMD`. Never run containers as root in production.
-8. **Add health checks.** Add `HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD curl -f http://localhost:${PORT}/healthz || exit 1`. For compose, use the `healthcheck` key with `test`, `interval`, `timeout`, and `retries`.
-9. **Write docker-compose.yml.** Define services with `build` (context and Dockerfile path), `ports`, `environment`, `volumes` (for local development bind mounts), `depends_on` (with `condition: service_healthy` for health-check ordering), and `networks`.
-10. **Build and test locally.** Run `docker build -t app:local .` and verify the image size with `docker images app:local`. Run the container and confirm the health check passes with `docker inspect --format='{{.State.Health.Status}}' <container>`.
-11. **Scan for vulnerabilities.** Run `docker scout cves app:local` or `trivy image app:local`. Fix critical and high CVEs by updating base images or pinning patched package versions.
-12. **Document image metadata.** Add `LABEL` instructions for `org.opencontainers.image.source`, `org.opencontainers.image.version`, and `org.opencontainers.image.description`.
+1. **Identify the target application.** Determine the runtime (Node.js, Python, Go, Rust, Java), dependency manager (npm, pip, go modules, cargo, maven), and build/start commands. Check for existing Docker-related files in the project root.
+
+2. **Create or update .dockerignore.** Place in the same directory as the Dockerfile. Exclude:
+   - Version control: `.git`, `.gitignore`
+   - Dependencies: `node_modules`, `vendor/`
+   - Documentation: `*.md`, `docs/`
+   - Tests and local configs: `*_test.go`, `.env`, `.env.local`
+   - IDE and OS files: `.vscode/`, `.DS_Store`
+
+3. **Select the base image.** Pin to a specific version (e.g., `node:20-alpine3.19`, `python:3.11-slim-bookworm`). Priority order:
+   - `alpine` variants for minimal size (static binaries, Go, Rust)
+   - `slim` variants for glibc compatibility (Node.js, Python)
+   - `distroless` for security-hardened production (Java, Go)
+   - Never use `latest` tag
+
+4. **Write the Dockerfile with multi-stage build.** Create in project root as `Dockerfile` (or `Dockerfile.prod` for production variant).
+   - Stage 1 (builder): Install dependencies, compile/build. Include all build tools.
+   - Stage 2 (runtime): Copy only artifacts from builder. Use `COPY --from=builder`.
+   - Order layers: dependency manifests first, then source code.
+   - Use `npm ci` (Node), `pip install --no-cache-dir` (Python), `go mod download` (Go).
+
+5. **Configure production hardening.**
+   - Add non-root user: `RUN addgroup -S app && adduser -S app -G app` then `USER app`
+   - Add health check: `HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD ["curl", "-f", "http://localhost:8080/healthz"]`
+   - Add metadata labels: `org.opencontainers.image.source`, `org.opencontainers.image.version`
+
+6. **Create docker-compose.yml if multiple services or local development needed.** Place in project root. Include:
+   - Service definitions with `build.context: .` and `build.dockerfile: Dockerfile`
+   - Port mappings: `ports: ["8080:8080"]`
+   - Environment variables: `environment` or `env_file: .env`
+   - Volume mounts for development: `volumes: [".:/app"]`
+   - Health check ordering: `depends_on: {db: {condition: service_healthy}}`
+
+7. **Build the image.** Run:
+   ```bash
+   DOCKER_BUILDKIT=1 docker build -t <image-name>:<tag> .
+   ```
+
+8. **Validate the build.** Execute these verification commands:
+   ```bash
+   # Check image size (target: under 200MB for most apps)
+   docker images <image-name>:<tag> --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
+
+   # Inspect layer sizes if image is large
+   docker history <image-name>:<tag>
+
+   # Run container and check health
+   docker run -d --name test-container -p 8080:8080 <image-name>:<tag>
+   sleep 5
+   docker inspect --format='{{.State.Health.Status}}' test-container
+   docker logs test-container
+   docker stop test-container && docker rm test-container
+   ```
+
+9. **Scan for vulnerabilities.** Run:
+   ```bash
+   docker scout cves <image-name>:<tag>
+   # or
+   trivy image <image-name>:<tag>
+   ```
+   Address critical/high CVEs by updating base images or dependency versions.
+
+10. **Test with docker-compose (if applicable).**
+    ```bash
+    docker-compose up --build -d
+    docker-compose ps
+    docker-compose logs <service-name>
+    docker-compose down
+    ```
 
 # Decision rules
 
@@ -61,13 +118,30 @@ Author production-quality Dockerfiles with multi-stage builds, write docker-comp
 - Use BuildKit (`DOCKER_BUILDKIT=1`) for all builds — it enables cache mounts, secret mounts, and parallel stage execution.
 - Run containers as non-root unless the application explicitly requires root (and document why).
 
-# Output requirements
+# Output contract
 
-1. **Dockerfile** — multi-stage, optimized layer order, pinned base image, non-root user, health check.
-2. **docker-compose.yml** — service definitions with health checks, proper depends_on ordering, and environment variable configuration.
-3. **.dockerignore** — excludes all unnecessary files from the build context.
-4. **Image size report** — final image size and base image used.
-5. **Vulnerability scan result** — summary of critical/high CVEs found and remediation status.
+After completing containerization work, deliver:
+
+1. **Dockerfile** — Multi-stage build with:
+   - Pinned base image tag (specific version, not `latest`)
+   - Optimized layer ordering (dependencies before source)
+   - Non-root `USER` instruction
+   - `HEALTHCHECK` instruction
+   - OCI metadata labels
+
+2. **docker-compose.yml** (if applicable) — Service definitions with:
+   - Explicit build context and Dockerfile paths
+   - Port mappings and environment configuration
+   - Health check definitions
+   - Proper `depends_on` ordering
+
+3. **.dockerignore** — Exclusions for build context optimization
+
+4. **Validation report** — Results showing:
+   - Image size (target: <200MB for typical applications)
+   - Health check status (`healthy` or `unhealthy`)
+   - Vulnerability scan summary (critical/high CVE count)
+   - Build commands used for reproducibility
 
 # References
 
@@ -97,8 +171,34 @@ Author production-quality Dockerfiles with multi-stage builds, write docker-comp
 
 # Failure handling
 
-- If `docker build` fails at a `RUN` step, check the specific command's exit code and stderr. Common causes: missing package in the base image, network issues during `apt-get`/`npm install`, or incorrect `WORKDIR`.
-- If the image is unexpectedly large, use `docker history <image>` to identify which layers contribute the most size. Check for unneeded build tools in the runtime stage.
-- If health checks fail after container start, verify the application is listening on the expected port and that the health endpoint exists. Check `docker logs <container>` for startup errors.
-- If vulnerability scanning reports critical CVEs in the base image, update to the latest patched tag or switch to a distroless/alpine variant.
-- If the task involves orchestration (Kubernetes, ECS, Swarm), redirect to the appropriate orchestration skill.
+**Build failures:**
+- **Error at `RUN` step:** Check command exit code and stderr. Common fixes:
+  - Missing package: Switch to `slim` variant or add `apt-get install <package>`
+  - Network issues: Retry with `--network host` or check proxy settings
+  - Incorrect `WORKDIR`: Verify the directory exists (`RUN mkdir -p /app` before `WORKDIR /app`)
+
+**Image size too large:**
+- Run `docker history <image>` to identify large layers (>50MB)
+- Fix: Ensure build tools are only in builder stage, not runtime
+- Fix: Add cleanup in same layer: `apt-get install && rm -rf /var/lib/apt/lists/*`
+- Fix: Use `.dockerignore` to reduce build context
+
+**Health check failures:**
+- Verify health endpoint exists: `curl http://localhost:<port>/healthz` from inside container
+- Check application startup: `docker logs <container>` for port binding errors
+- Verify `EXPOSE` matches actual listening port
+- Check non-root user has permissions to run health check binary
+
+**Vulnerability scan failures:**
+- Critical CVEs in base image: Update to latest patched tag (e.g., `alpine3.19` → `alpine3.20`)
+- Application CVEs: Update dependencies in manifest files
+- Last resort: Switch to `distroless` base for minimal attack surface
+
+**Permission denied errors:**
+- Container running as non-root but binding to port <1024: Change to port >1024 (8080 instead of 80)
+- Filesystem permission issues: Ensure `USER` instruction comes after all `COPY`/`RUN` that need root
+
+**Redirect to other skills:**
+- If task involves Kubernetes deployments, pods, or services → Use `kubernetes` skill
+- If task involves AWS ECS, Fargate, or ECR → Use `aws` skill
+- If task involves CI/CD pipelines → Use `cloud-deploy` skill

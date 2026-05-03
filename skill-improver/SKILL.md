@@ -96,7 +96,7 @@ Change summary template:
 
 Use when the skill has the right goal but poor execution: vague description, no phases, no decision rules, no failure handling, too much in one file.
 
-Output: rewritten SKILL.md, new references/ if justified, eval stubs or updated evals.
+Output: rewritten SKILL.md, new references/ if justified, eval fixtures or updated evals.
 
 ## Mode 3 — Package upgrade
 
@@ -134,7 +134,7 @@ Name the primary failure mode before rewriting. Map it to a fix target:
 | scope creep | add constraints, narrow boundaries |
 | bloat | remove unnecessary steps or content |
 | resource mismatch | add or remove references/scripts as evidence warrants |
-| no proof | add eval stubs or test prompts |
+| no proof | add eval fixtures or test prompts |
 | package rot | add manifest/changelog/ownership metadata |
 
 Score informally against: routing quality, procedural clarity, decision support, support-layer quality, evaluation readiness, maintainability. See `references/skill-quality-rubric.md` for the detailed rubric.

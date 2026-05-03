@@ -1,268 +1,200 @@
 ---
 name: screenshot
-description: "Use when the user explicitly asks for a desktop or system screenshot (full screen, specific app or window, or a pixel region), or when tool-specific capture capabilities are unavailable and an OS-level capture is needed."
+description: "Capture desktop screenshots (full screen, app window, or pixel region) on macOS, Linux, and Windows. Triggers on: 'take a screenshot', 'capture my screen', 'screenshot of app', 'screen region', 'window capture'."
+version: 1.0
+lifecycle: unverified
+tags: [screenshot, screen-capture, macos, linux, windows, desktop]
+triggers:
+  - "take a screenshot"
+  - "capture my screen"
+  - "screenshot of app"
+  - "screen region"
+  - "window capture"
+  - "capture the screen"
 ---
 
 > Source: https://github.com/openai/skills/tree/main/skills/.curated skills/.curated/screenshot
 
 # Screenshot Capture
 
-Follow these save-location rules every time:
+## When to use
 
-1) If the user specifies a path, save there.
-2) If the user asks for a screenshot without a path, save to the OS default screenshot location.
-3) If Codex needs a screenshot for its own inspection, save to the temp directory.
+- User explicitly asks for a desktop, system, or app screenshot
+- Tool-specific capture is unavailable for the target application
+- Comparing a design view (e.g., Figma) against a running application
+- Inspecting a visual UI state that cannot be conveyed in text
+
+## When NOT to use
+
+- A dedicated capture tool exists for the target (e.g., Figma MCP, Playwright, agent-browser tools)
+- The request is for a screenshot of a web page or browser content (use browser-devtools or equivalent)
+- Only text/status information is needed (no visual comparison required)
+- The user wants a recording (video), not a still image
 
 ## Tool priority
 
-- Prefer tool-specific screenshot capabilities when available (for example: a Figma MCP/skill for Figma files, or Playwright/agent-browser tools for browsers and Electron apps).
-- Use this skill when explicitly asked, for whole-system desktop captures, or when a tool-specific capture cannot get what you need.
-- Otherwise, treat this skill as the default for desktop apps without a better-integrated capture tool.
+1. Tool-specific screenshot capabilities first (Figma MCP, Playwright, browser tools)
+2. This skill for whole-system desktop captures
+3. OS-level commands as fallback when helpers are unavailable
 
-## macOS permission preflight (reduce repeated prompts)
+## Save-location rules
 
-On macOS, run the preflight helper once before window/app capture. It checks
-Screen Recording permission, explains why it is needed, and requests it in one
-place.
+1. User-specified path: save there
+2. User asked without a path: save to the OS default screenshot location
+3. Agent visual inspection: save to the temp directory
 
-The helpers route Swift's module cache to `$TMPDIR/codex-swift-module-cache`
-to avoid extra sandbox module-cache prompts.
+## Output contract
+
+Each invocation prints one output path per capture. Multiple windows or displays produce one path per line with `-w<windowId>` or `-d<display>` suffixes. Report every printed path in the response.
+
+## Procedure
+
+### Preflight: macOS Screen Recording permission
+
+Run once before window or app capture on macOS:
 
 ```bash
 bash <path-to-skill>/scripts/ensure_macos_permissions.sh
 ```
 
-To avoid multiple sandbox approval prompts, combine preflight + capture in one
-command when possible:
+To combine preflight and capture in one command:
 
 ```bash
 bash <path-to-skill>/scripts/ensure_macos_permissions.sh && \
-python3 <path-to-skill>/scripts/take_screenshot.py --app "Codex"
+python3 <path-to-skill>/scripts/take_screenshot.py --app "<AppName>"
 ```
 
-For Codex inspection runs, keep the output in temp:
+### Cross-platform helper (macOS and Linux)
 
 ```bash
-bash <path-to-skill>/scripts/ensure_macos_permissions.sh && \
-python3 <path-to-skill>/scripts/take_screenshot.py --app "<App>" --mode temp
+python3 <path-to-skill>/scripts/take_screenshot.py [options]
 ```
 
-Use the bundled scripts to avoid re-deriving OS-specific commands.
+| Option | Description |
+|--------|-------------|
+| `--path <path>` | Output file path or directory |
+| `--mode default\|temp` | `default` saves to OS screenshot folder; `temp` saves to temp dir |
+| `--app "<name>"` | macOS only: capture all windows matching app name (substring) |
+| `--window-name "<title>"` | macOS only: filter by window title (use with `--app`) |
+| `--list-windows --app "<name>"` | macOS only: list matching window ids and exit |
+| `--window-id <id>` | Capture a specific window id |
+| `--active-window` | Capture the focused/frontmost window |
+| `--region x,y,w,h` | Capture a pixel region (x, y, width, height) |
+| `--interactive` | Use OS interactive selection picker |
+| `--format png\|jpg\|...` | Image format (default: png) |
 
-## macOS and Linux (Python helper)
+**Common patterns:**
 
-Run the helper from the repo root:
+- Default (OS screenshot folder):
+  `python3 <path-to-skill>/scripts/take_screenshot.py`
+- Temp dir for agent inspection:
+  `python3 <path-to-skill>/scripts/take_screenshot.py --mode temp`
+- Explicit path:
+  `python3 <path-to-skill>/scripts/take_screenshot.py --path output/screen.png`
+- App window capture (macOS):
+  `python3 <path-to-skill>/scripts/take_screenshot.py --app "Codex"`
+- Specific window within app (macOS):
+  `python3 <path-to-skill>/scripts/take_screenshot.py --app "Codex" --window-name "Settings"`
+- List window ids before capturing (macOS):
+  `python3 <path-to-skill>/scripts/take_screenshot.py --list-windows --app "Codex"`
+- Pixel region:
+  `python3 <path-to-skill>/scripts/take_screenshot.py --mode temp --region 100,200,800,600`
+- Active/focused window:
+  `python3 <path-to-skill>/scripts/take_screenshot.py --mode temp --active-window`
+- Specific window id:
+  `python3 <path-to-skill>/scripts/take_screenshot.py --window-id 12345`
 
-```bash
-python3 <path-to-skill>/scripts/take_screenshot.py
+### Windows helper
+
+```powershell
+powershell -ExecutionPolicy Bypass -File <path-to-skill>/scripts/take_screenshot.ps1 [options]
 ```
 
-Common patterns:
+| Parameter | Description |
+|-----------|-------------|
+| `-Path "<path>"` | Output file path |
+| `-Mode default\|temp` | Save destination |
+| `-Region x,y,w,h` | Pixel region |
+| `-ActiveWindow` | Capture focused window |
+| `-WindowHandle <id>` | Capture specific window handle |
 
-- Default location (user asked for "a screenshot"):
+**Common patterns:**
 
-```bash
-python3 <path-to-skill>/scripts/take_screenshot.py
-```
+- Default:
+  `powershell -ExecutionPolicy Bypass -File <path-to-skill>/scripts/take_screenshot.ps1`
+- Temp dir:
+  `powershell -ExecutionPolicy Bypass -File <path-to-skill>/scripts/take_screenshot.ps1 -Mode temp`
+- Explicit path:
+  `powershell -ExecutionPolicy Bypass -File <path-to-skill>/scripts/take_screenshot.ps1 -Path "C:\Temp\screen.png"`
+- Pixel region:
+  `powershell -ExecutionPolicy Bypass -File <path-to-skill>/scripts/take_screenshot.ps1 -Mode temp -Region 100,200,800,600`
+- Active window:
+  `powershell -ExecutionPolicy Bypass -File <path-to-skill>/scripts/take_screenshot.ps1 -Mode temp -ActiveWindow`
 
-- Temp location (Codex visual check):
+### Direct OS commands (fallback only)
 
-```bash
-python3 <path-to-skill>/scripts/take_screenshot.py --mode temp
-```
+Use when bundled helpers cannot be run.
 
-- Explicit location (user provided a path or filename):
+**macOS:**
 
-```bash
-python3 <path-to-skill>/scripts/take_screenshot.py --path output/screen.png
-```
+- Full screen to path:
+  `screencapture -x output/screen.png`
+- Pixel region:
+  `screencapture -x -R100,200,800,600 output/region.png`
+- Specific window id:
+  `screencapture -x -l12345 output/window.png`
+- Interactive selection:
+  `screencapture -x -i output/interactive.png`
 
-- App/window capture by app name (macOS only; substring match is OK; captures all matching windows):
+**Linux:**
 
-```bash
-python3 <path-to-skill>/scripts/take_screenshot.py --app "Codex"
-```
+- Full screen via scrot:
+  `scrot output/screen.png`
+- Full screen via gnome-screenshot:
+  `gnome-screenshot -f output/screen.png`
+- Full screen via ImageMagick:
+  `import -window root output/screen.png`
+- Pixel region via scrot:
+  `scrot -a 100,200,800,600 output/region.png`
+- Pixel region via ImageMagick:
+  `import -window root -crop 800x600+100+200 output/region.png`
+- Active window via scrot:
+  `scrot -u output/window.png`
+- Active window via gnome-screenshot:
+  `gnome-screenshot -w -f output/window.png`
 
-- Specific window title within an app (macOS only):
+### Linux tool selection
 
-```bash
-python3 <path-to-skill>/scripts/take_screenshot.py --app "Codex" --window-name "Settings"
-```
-
-- List matching window ids before capturing (macOS only):
-
-```bash
-python3 <path-to-skill>/scripts/take_screenshot.py --list-windows --app "Codex"
-```
-
-- Pixel region (x,y,w,h):
-
-```bash
-python3 <path-to-skill>/scripts/take_screenshot.py --mode temp --region 100,200,800,600
-```
-
-- Focused/active window (captures only the frontmost window; use `--app` to capture all windows):
-
-```bash
-python3 <path-to-skill>/scripts/take_screenshot.py --mode temp --active-window
-```
-
-- Specific window id (use --list-windows on macOS to discover ids):
-
-```bash
-python3 <path-to-skill>/scripts/take_screenshot.py --window-id 12345
-```
-
-The script prints one path per capture. When multiple windows or displays match, it prints multiple paths (one per line) and adds suffixes like `-w<windowId>` or `-d<display>`. View each path sequentially with the image viewer tool, and only manipulate images if needed or requested.
-
-### Workflow examples
-
-- "Take a look at <App> and tell me what you see": capture to temp, then view each printed path in order.
-
-```bash
-bash <path-to-skill>/scripts/ensure_macos_permissions.sh && \
-python3 <path-to-skill>/scripts/take_screenshot.py --app "<App>" --mode temp
-```
-
-- "The design from Figma is not matching what is implemented": use a Figma MCP/skill to capture the design first, then capture the running app with this skill (typically to temp) and compare the raw screenshots before any manipulation.
+The helper auto-selects available tools in this order: `scrot` → `gnome-screenshot` → ImageMagick `import`. If none are available, ask the user to install one and retry.
 
 ### Multi-display behavior
 
-- On macOS, full-screen captures save one file per display when multiple monitors are connected.
-- On Linux and Windows, full-screen captures use the virtual desktop (all monitors in one image); use `--region` to isolate a single display when needed.
+- **macOS**: Full-screen captures save one file per display.
+- **Linux/Windows**: Full-screen captures use the virtual desktop (all monitors in one image). Use `--region` to isolate a specific display.
 
-### Linux prerequisites and selection logic
+## Failure handling
 
-The helper automatically selects the first available tool:
+| Symptom | Resolution |
+|---------|------------|
+| macOS "screen capture blocked in sandbox" | Rerun with escalated permissions |
+| macOS "could not create image from display" | Rerun `ensure_macos_permissions.sh` with elevated permissions |
+| Swift ModuleCache permission errors | Rerun with escalated permissions; the helper routes module cache to `$TMPDIR/codex-swift-module-cache` |
+| macOS app/window capture returns no matches | Run `--list-windows --app "<AppName>"`, verify app is on screen, retry with `--window-id` |
+| Linux region/window capture fails | Check tool availability: `command -v scrot`, `command -v gnome-screenshot`, `command -v import` |
+| Linux no screenshot tool found | Ask user to install `scrot`, `gnome-screenshot`, or `ImageMagick` |
+| Permission error saving to OS default location | Rerun with escalated permissions |
+| `--app`/`--window-name`/`--list-windows` on non-macOS | These flags are macOS-only; use `--active-window` or `--window-id` on Linux/Windows |
 
-1) `scrot`
-2) `gnome-screenshot`
-3) ImageMagick `import`
+Report every saved file path in the response.
 
-If none are available, ask the user to install one of them and retry.
+## Next steps
 
-Coordinate regions require `scrot` or ImageMagick `import`.
+- **Compare designs**: After capturing a Figma or design tool view, use this skill to capture the running app for pixel comparison.
+- **Browser content**: If the target is a web page, consider a browser-devtools MCP or Playwright capture instead of this skill.
+- **Visual inspection workflow**: Capture to temp, view each printed path with an image viewer, then decide if manipulation is needed.
 
-`--app`, `--window-name`, and `--list-windows` are macOS-only. On Linux, use
-`--active-window` or provide `--window-id` when available.
+## References
 
-## Windows (PowerShell helper)
-
-Run the PowerShell helper:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File <path-to-skill>/scripts/take_screenshot.ps1
-```
-
-Common patterns:
-
-- Default location:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File <path-to-skill>/scripts/take_screenshot.ps1
-```
-
-- Temp location (Codex visual check):
-
-```powershell
-powershell -ExecutionPolicy Bypass -File <path-to-skill>/scripts/take_screenshot.ps1 -Mode temp
-```
-
-- Explicit path:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File <path-to-skill>/scripts/take_screenshot.ps1 -Path "C:\Temp\screen.png"
-```
-
-- Pixel region (x,y,w,h):
-
-```powershell
-powershell -ExecutionPolicy Bypass -File <path-to-skill>/scripts/take_screenshot.ps1 -Mode temp -Region 100,200,800,600
-```
-
-- Active window (ask the user to focus it first):
-
-```powershell
-powershell -ExecutionPolicy Bypass -File <path-to-skill>/scripts/take_screenshot.ps1 -Mode temp -ActiveWindow
-```
-
-- Specific window handle (only when provided):
-
-```powershell
-powershell -ExecutionPolicy Bypass -File <path-to-skill>/scripts/take_screenshot.ps1 -WindowHandle 123456
-```
-
-## Direct OS commands (fallbacks)
-
-Use these when you cannot run the helpers.
-
-### macOS
-
-- Full screen to a specific path:
-
-```bash
-screencapture -x output/screen.png
-```
-
-- Pixel region:
-
-```bash
-screencapture -x -R100,200,800,600 output/region.png
-```
-
-- Specific window id:
-
-```bash
-screencapture -x -l12345 output/window.png
-```
-
-- Interactive selection or window pick:
-
-```bash
-screencapture -x -i output/interactive.png
-```
-
-### Linux
-
-- Full screen:
-
-```bash
-scrot output/screen.png
-```
-
-```bash
-gnome-screenshot -f output/screen.png
-```
-
-```bash
-import -window root output/screen.png
-```
-
-- Pixel region:
-
-```bash
-scrot -a 100,200,800,600 output/region.png
-```
-
-```bash
-import -window root -crop 800x600+100+200 output/region.png
-```
-
-- Active window:
-
-```bash
-scrot -u output/window.png
-```
-
-```bash
-gnome-screenshot -w -f output/window.png
-```
-
-## Error handling
-
-- On macOS, run `bash <path-to-skill>/scripts/ensure_macos_permissions.sh` first to request Screen Recording in one place.
-- If you see "screen capture checks are blocked in the sandbox", "could not create image from display", or Swift `ModuleCache` permission errors in a sandboxed run, rerun the command with escalated permissions.
-- If macOS app/window capture returns no matches, run `--list-windows --app "AppName"` and retry with `--window-id`, and make sure the app is visible on screen.
-- If Linux region/window capture fails, check tool availability with `command -v scrot`, `command -v gnome-screenshot`, and `command -v import`.
-- If saving to the OS default location fails with permission errors in a sandbox, rerun the command with escalated permissions.
-- Always report the saved file path in the response.
+- [macOS screencapture man page](https://ss64.com/mac/screencapture.html)
+- [scrot documentation](https://github.com/dreamer/scrot)
+- [ImageMagick import](https://imagemagick.org/script/import.php)

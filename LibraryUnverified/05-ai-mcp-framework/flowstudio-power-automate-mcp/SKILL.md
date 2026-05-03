@@ -1,26 +1,39 @@
 ---
 name: flowstudio-power-automate-mcp
-description: >-
-  Connect to and operate Power Automate cloud flows via a FlowStudio MCP server.
-  Use when asked to: list flows, read a flow definition, check run history, inspect
-  action outputs, resubmit a run, cancel a running flow, view connections, get a
-  trigger URL, validate a definition, monitor flow health, or any task that requires
-  talking to the Power Automate API through an MCP tool. Also use for Power Platform
-  environment discovery and connection management. Requires a FlowStudio MCP
-  subscription or compatible server — see https://mcp.flowstudio.app
+description: Operate Microsoft Power Automate cloud flows through a FlowStudio MCP server. Use for listing flows, reading flow definitions, checking run history, inspecting action outputs, resubmitting failed runs, canceling running flows, managing connections, retrieving trigger URLs, and monitoring flow health. Requires FlowStudio MCP subscription or compatible server (https://mcp.flowstudio.app).
 ---
 
 # Power Automate via FlowStudio MCP
 
-This skill lets AI agents read, monitor, and operate Microsoft Power Automate
-cloud flows programmatically through a **FlowStudio MCP server** — no browser,
-no UI, no manual steps.
+Operate Microsoft Power Automate cloud flows programmatically through a FlowStudio MCP server without browser automation or UI interaction.
 
-> **Requires:** A [FlowStudio](https://mcp.flowstudio.app) MCP subscription (or
-> compatible Power Automate MCP server). You will need:
-> - MCP endpoint: `https://mcp.flowstudio.app/mcp` (same for all subscribers)
-> - API key / JWT token (`x-api-key` header — NOT Bearer)
-> - Power Platform environment name (e.g. `Default-<tenant-guid>`)
+**Prerequisites:**
+- FlowStudio MCP subscription or compatible Power Automate MCP server
+- MCP endpoint: `https://mcp.flowstudio.app/mcp`
+- API key / JWT token (`x-api-key` header — NOT Bearer format)
+- Power Platform environment name (e.g., `Default-<tenant-guid>`)
+
+## Purpose
+
+Enable AI agents to interact with Power Automate cloud flows through standardized MCP tooling. Supports flow discovery, monitoring, debugging, and operational control without manual portal navigation.
+
+## When to use
+
+- **Flow discovery:** List flows, environments, or connections in a Power Platform tenant
+- **Flow inspection:** Read flow definitions, inspect action configurations, or retrieve trigger URLs
+- **Run monitoring:** Check run history, view run status, or get aggregated flow statistics
+- **Debugging:** Inspect action outputs, retrieve error details, trace failed actions
+- **Run control:** Resubmit failed runs or cancel currently running executions
+- **HTTP trigger operations:** Get HTTP schemas, trigger flows programmatically, view response definitions
+- **Environment management:** Discover environments, list makers/developers, view connection health
+
+## When NOT to use
+
+- **Building new flows from scratch** — use the `power-automate-build` skill instead
+- **Complex debugging requiring root cause analysis** — use the `power-automate-debug` skill for end-to-end failure diagnosis
+- **Desktop flows (RPA)** — this skill operates on cloud flows only
+- **Power Apps or Power BI operations** — limited to canvas app listing via store tools only
+- **Non-MCP Power Automate access** — requires FlowStudio MCP subscription or compatible MCP server
 
 ---
 
@@ -42,94 +55,24 @@ no UI, no manual steps.
 
 ---
 
-## Recommended Language: Python or Node.js
+## Procedure
 
-All examples in this skill and the companion build / debug skills use **Python
-with `urllib.request`** (stdlib — no `pip install` needed). **Node.js** is an
-equally valid choice: `fetch` is built-in from Node 18+, JSON handling is
-native, and the async/await model maps cleanly onto the request-response pattern
-of MCP tool calls — making it a natural fit for teams already working in a
-JavaScript/TypeScript stack.
+Follow these steps to interact with Power Automate via FlowStudio MCP:
 
-| Language | Verdict | Notes |
+### Step 1 — Initialize Connection and Discover Tools
+
+Start every session by confirming server reachability and discovering available tools. This returns authoritative, up-to-date schemas for all tool parameters.
+
+**Recommended approach:** Use Python with `urllib.request` (stdlib, no installation required) or Node.js 18+ with native `fetch`. Both provide clean JSON handling without additional dependencies.
+
+| Language | Suitability | Reason |
 |---|---|---|
-| **Python** | ✅ Recommended | Clean JSON handling, no escaping issues, all skill examples use it |
-| **Node.js (≥ 18)** | ✅ Recommended | Native `fetch` + `JSON.stringify`/`JSON.parse`; async/await fits MCP call patterns well; no extra packages needed |
-| PowerShell | ⚠️ Avoid for flow operations | `ConvertTo-Json -Depth` silently truncates nested definitions; quoting and escaping break complex payloads. Acceptable for a quick `tools/list` discovery call but not for building or updating flows. |
-| cURL / Bash | ⚠️ Possible but fragile | Shell-escaping nested JSON is error-prone; no native JSON parser |
+| **Python** | ✅ Preferred | All examples use this; clean JSON handling |
+| **Node.js ≥ 18** | ✅ Valid | Native `fetch` and async/await pattern fits MCP well |
+| PowerShell | ⚠️ Avoid for operations | `ConvertTo-Json -Depth` truncates nested definitions |
+| cURL / Bash | ⚠️ Fragile | Shell-escaping JSON is error-prone |
 
-> **TL;DR — use the Core MCP Helper (Python or Node.js) below.** Both handle
-> JSON-RPC framing, auth, and response parsing in a single reusable function.
-
----
-
-## What You Can Do
-
-FlowStudio MCP has two access tiers. **FlowStudio for Teams** subscribers get
-both the fast Azure-table store (cached snapshot data + governance metadata) and
-full live Power Automate API access. **MCP-only subscribers** get the live tools —
-more than enough to build, debug, and operate flows.
-
-### Live Tools — Available to All MCP Subscribers
-
-| Tool | What it does |
-|---|---|
-| `list_live_flows` | List flows in an environment directly from the PA API (always current) |
-| `list_live_environments` | List all Power Platform environments visible to the service account |
-| `list_live_connections` | List all connections in an environment from the PA API |
-| `get_live_flow` | Fetch the complete flow definition (triggers, actions, parameters) |
-| `get_live_flow_http_schema` | Inspect the JSON body schema and response schemas of an HTTP-triggered flow |
-| `get_live_flow_trigger_url` | Get the current signed callback URL for an HTTP-triggered flow |
-| `trigger_live_flow` | POST to an HTTP-triggered flow's callback URL (AAD auth handled automatically) |
-| `update_live_flow` | Create a new flow or patch an existing definition in one call |
-| `add_live_flow_to_solution` | Migrate a non-solution flow into a solution |
-| `get_live_flow_runs` | List recent run history with status, start/end times, and errors |
-| `get_live_flow_run_error` | Get structured error details (per-action) for a failed run |
-| `get_live_flow_run_action_outputs` | Inspect inputs/outputs of any action (or every foreach iteration) in a run |
-| `resubmit_live_flow_run` | Re-run a failed or cancelled run using its original trigger payload |
-| `cancel_live_flow_run` | Cancel a currently running flow execution |
-
-### Store Tools — FlowStudio for Teams Subscribers Only
-
-These tools read from (and write to) the FlowStudio Azure table — a monitored
-snapshot of your tenant's flows enriched with governance metadata and run statistics.
-
-| Tool | What it does |
-|---|---|
-| `list_store_flows` | Search flows from the cache with governance flags, run failure rates, and owner metadata |
-| `get_store_flow` | Get full cached details for a single flow including run stats and governance fields |
-| `get_store_flow_trigger_url` | Get the trigger URL from the cache (instant, no PA API call) |
-| `get_store_flow_runs` | Cached run history for the last N days with duration and remediation hints |
-| `get_store_flow_errors` | Cached failed-only runs with failed action names and remediation hints |
-| `get_store_flow_summary` | Aggregated stats: success rate, failure count, avg/max duration |
-| `set_store_flow_state` | Start or stop a flow via the PA API and sync the result back to the store |
-| `update_store_flow` | Update governance metadata (description, tags, monitor flag, notification rules, business impact) |
-| `list_store_environments` | List all environments from the cache |
-| `list_store_makers` | List all makers (citizen developers) from the cache |
-| `get_store_maker` | Get a maker's flow/app counts and account status |
-| `list_store_power_apps` | List all Power Apps canvas apps from the cache |
-| `list_store_connections` | List all Power Platform connections from the cache |
-
----
-
-## Which Tool Tier to Call First
-
-| Task | Tool | Notes |
-|---|---|---|
-| List flows | `list_live_flows` | Always current — calls PA API directly |
-| Read a definition | `get_live_flow` | Always fetched live — not cached |
-| Debug a failure | `get_live_flow_runs` → `get_live_flow_run_error` | Use live run data |
-
-> ⚠️ **`list_live_flows` returns a wrapper object** with a `flows` array — access via `result["flows"]`.
-
-> Store tools (`list_store_flows`, `get_store_flow`, etc.) are available to **FlowStudio for Teams** subscribers and provide cached governance metadata. Use live tools when in doubt — they work for all subscription tiers.
-
----
-
-## Step 0 — Discover Available Tools
-
-Always start by calling `tools/list` to confirm the server is reachable and see
-exactly which tool names are available (names may vary by server version):
+**Discover tools:**
 
 ```python
 import json, urllib.request
@@ -157,11 +100,13 @@ for t in raw["result"]["tools"]:
     print(t["name"], "—", t["description"][:60])
 ```
 
----
+**Validation:** Confirm `raw["result"]["tools"]` contains expected tools like `list_live_flows`, `get_live_flow`, `get_live_flow_runs`. If empty or missing, verify token validity and endpoint URL.
 
-## Core MCP Helper (Python)
+### Step 2 — Initialize MCP Helper
 
-Use this helper throughout all subsequent operations:
+Use one of these helpers for all subsequent tool calls. Both handle JSON-RPC framing, authentication, response parsing, and error handling.
+
+**Python helper:**
 
 ```python
 import json, urllib.request
@@ -187,16 +132,7 @@ def mcp(tool, args, cid=1):
     return json.loads(text)
 ```
 
-> **Common auth errors:**
-> - HTTP 401/403 → token is missing, expired, or malformed. Get a fresh JWT from [mcp.flowstudio.app](https://mcp.flowstudio.app).
-> - HTTP 400 → malformed JSON-RPC payload. Check `Content-Type: application/json` and body structure.
-> - `MCP error: {"code": -32602, ...}` → wrong or missing tool arguments.
-
----
-
-## Core MCP Helper (Node.js)
-
-Equivalent helper for Node.js 18+ (built-in `fetch` — no packages required):
+**Node.js helper (18+):**
 
 ```js
 const TOKEN = "<YOUR_JWT_TOKEN>";
@@ -228,12 +164,9 @@ async function mcp(tool, args, cid = 1) {
 }
 ```
 
-> Requires Node.js 18+. For older Node, replace `fetch` with `https.request`
-> from the stdlib or install `node-fetch`.
+**Validation:** Test with `mcp("tools/list", {})` to confirm helper functions correctly and returns tool catalog.
 
----
-
-## List Flows
+### Step 3 — List Flows and Discover Environment
 
 ```python
 ENV = "Default-<tenant-guid>"
@@ -247,9 +180,16 @@ for f in result["flows"]:
     print(FLOW_ID, "|", f["displayName"], "|", f["state"])
 ```
 
----
+**Environment discovery (if environment name unknown):**
 
-## Read a Flow Definition
+```python
+envs = mcp("list_live_environments", {})
+ENV = envs[0]["id"]  # Use first environment or select by displayName
+```
+
+**Validation:** Confirm `result["flows"]` is non-empty and contains expected flow structure with `id`, `displayName`, and `state` fields.
+
+### Step 4 — Read Flow Definition
 
 ```python
 FLOW = "<flow-uuid>"
@@ -268,9 +208,9 @@ print("Actions:", list(actions.keys()))
 print(actions["Compose_Filter"]["inputs"])
 ```
 
----
+**Validation:** Confirm `flow["properties"]["definition"]` exists and contains `actions` dictionary. Check `flow["properties"]["state"]` is "Started" or "Stopped".
 
-## Check Run History
+### Step 5 — Check Run History
 
 ```python
 # Most recent runs (newest first)
@@ -292,9 +232,11 @@ for r in runs:
 run_id = next((r["name"] for r in runs if r["status"] == "Failed"), None)
 ```
 
----
+**Validation:** Confirm `runs` is a list with run objects containing `name`, `status`, `startTime`. Verify status values are one of: "Succeeded", "Failed", "Running", "Cancelled".
 
-## Inspect an Action's Output
+### Step 6 — Inspect Action Output or Error Details
+
+**Option A — Inspect specific action output:**
 
 ```python
 run_id = runs[0]["name"]
@@ -308,9 +250,7 @@ out = mcp("get_live_flow_run_action_outputs", {
 print(json.dumps(out, indent=2))
 ```
 
----
-
-## Get a Run's Error
+**Option B — Get structured error breakdown:**
 
 ```python
 err = mcp("get_live_flow_run_error", {
@@ -326,20 +266,18 @@ err = mcp("get_live_flow_run_error", {
 #    {"actionName": "Scope_prepare_workers", "status": "Failed",
 #     "error": {"code": "ActionFailed", "message": "An action failed..."}}
 #  ],
-#  "allActions": [
-#    {"actionName": "Apply_to_each", "status": "Skipped"},
-#    {"actionName": "Compose_WeekEnd", "status": "Succeeded"},
-#    ...
-#  ]}
+#  "allActions": [...]}
 
 # The ROOT cause is usually the deepest entry in failedActions:
 root = err["failedActions"][-1]
 print(f"Root failure: {root['actionName']} → {root['code']}")
 ```
 
----
+**Validation:** For action outputs, confirm response is array with `actionName`, `status`, `inputs`, `outputs` fields. For errors, confirm `failedActions` array exists and is ordered outer-to-inner (root cause at last index).
 
-## Resubmit a Run
+### Step 7 — Resubmit or Cancel Runs (as needed)
+
+**Resubmit a failed run:**
 
 ```python
 result = mcp("resubmit_live_flow_run", {
@@ -350,9 +288,7 @@ result = mcp("resubmit_live_flow_run", {
 print(result)   # {"resubmitted": true, "triggerName": "..."}
 ```
 
----
-
-## Cancel a Running Run
+**Cancel a running run:**
 
 ```python
 mcp("cancel_live_flow_run", {
@@ -362,89 +298,124 @@ mcp("cancel_live_flow_run", {
 })
 ```
 
-> ⚠️ **Do NOT cancel a run that shows `Running` because it is waiting for an
-> adaptive card response.** That status is normal — the flow is paused waiting
-> for a human to respond in Teams. Cancelling it will discard the pending card.
+**Validation:** For resubmit, confirm `result["resubmitted"]` is `true`. For cancel, verify the run status changes to "Cancelled" in subsequent run history queries.
+
+> **Warning:** Do NOT cancel a run showing `Running` status when waiting for an adaptive card response. This status is normal while a Teams card awaits user input; canceling discards the pending card.
 
 ---
 
-## Full Round-Trip Example — Debug and Fix a Failing Flow
+## Output Contract
 
-```python
-# ── 1. Find the flow ─────────────────────────────────────────────────────
-result = mcp("list_live_flows", {"environmentName": ENV})
-target = next(f for f in result["flows"] if "My Flow Name" in f["displayName"])
-FLOW_ID = target["id"]
+Every MCP tool call returns a JSON response conforming to one of these patterns:
 
-# ── 2. Get the most recent failed run ────────────────────────────────────
-runs = mcp("get_live_flow_runs", {"environmentName": ENV, "flowName": FLOW_ID, "top": 5})
-# [{"name": "08584296068...", "status": "Failed", ...}, ...]
-RUN_ID = next(r["name"] for r in runs if r["status"] == "Failed")
+| Tool Pattern | Response Structure | Key Validation Fields |
+|---|---|---|
+| **List flows** | Wrapper with `flows` array | `result["flows"]`, `result["totalCount"]` |
+| **Get flow** | Object with `properties` | `properties["displayName"]`, `properties["state"]`, `properties["definition"]` |
+| **List runs** | Direct array | Array elements with `name`, `status`, `startTime`, `endTime` |
+| **Run error** | Object with `failedActions` | `failedActions` ordered outer-to-inner, `allActions` status map |
+| **Action outputs** | Array of action detail objects | `actionName`, `status`, `inputs`, `outputs` per element |
+| **Resubmit/Cancel** | Object with operation result | `resubmitted` boolean or verify via subsequent run query |
+| **Update flow** | Object with `error` key | `error` is `null` on success, object on failure |
 
-# ── 3. Get per-action failure breakdown ──────────────────────────────────
-err = mcp("get_live_flow_run_error", {"environmentName": ENV, "flowName": FLOW_ID, "runName": RUN_ID})
-# {"failedActions": [{"actionName": "HTTP_find_AD_User_by_Name", "code": "NotSpecified",...}], ...}
-root_action = err["failedActions"][-1]["actionName"]
-print(f"Root failure: {root_action}")
+**Response Parsing Rule:** All responses require parsing `result["content"][0]["text"]` as JSON, then inspecting the inner data structure.
 
-# ── 4. Read the definition and inspect the failing action's expression ───
-defn = mcp("get_live_flow", {"environmentName": ENV, "flowName": FLOW_ID})
-acts = defn["properties"]["definition"]["actions"]
-print("Failing action inputs:", acts[root_action]["inputs"])
-
-# ── 5. Inspect the prior action's output to find the null ────────────────
-out = mcp("get_live_flow_run_action_outputs", {
-    "environmentName": ENV, "flowName": FLOW_ID,
-    "runName": RUN_ID, "actionName": "Compose_Names"
-})
-nulls = [x for x in out.get("body", []) if x.get("Name") is None]
-print(f"{len(nulls)} records with null Name")
-
-# ── 6. Apply the fix ─────────────────────────────────────────────────────
-acts[root_action]["inputs"]["parameters"]["searchName"] = \
-    "@coalesce(item()?['Name'], '')"
-
-conn_refs = defn["properties"]["connectionReferences"]
-result = mcp("update_live_flow", {
-    "environmentName": ENV, "flowName": FLOW_ID,
-    "definition": defn["properties"]["definition"],
-    "connectionReferences": conn_refs
-})
-assert result.get("error") is None, f"Deploy failed: {result['error']}"
-# ⚠️ error key is always present — only fail if it is NOT None
-
-# ── 7. Resubmit and verify ───────────────────────────────────────────────
-mcp("resubmit_live_flow_run", {"environmentName": ENV, "flowName": FLOW_ID, "runName": RUN_ID})
-
-import time; time.sleep(30)
-new_runs = mcp("get_live_flow_runs", {"environmentName": ENV, "flowName": FLOW_ID, "top": 1})
-print(new_runs[0]["status"])   # Succeeded = done
-```
+**Success Indicators:**
+- HTTP 200 from MCP server
+- No `error` key in outer JSON-RPC response
+- For `update_live_flow`: `error` field in parsed body is `null`
+- For `resubmit_live_flow_run`: `resubmitted` field is `true`
 
 ---
 
-## Auth & Connection Notes
+## Failure Handling
 
-| Field | Value |
+### Common Error Patterns and Resolution
+
+| Error | Cause | Resolution |
+|---|---|---|
+| HTTP 401/403 | Missing, expired, or malformed JWT token | Obtain fresh token from https://mcp.flowstudio.app |
+| HTTP 400 | Malformed JSON-RPC payload | Verify `Content-Type: application/json`, proper JSON structure, required fields present |
+| MCP error -32602 | Missing or invalid tool arguments | Check `tools/list` for required parameters; verify `environmentName`, `flowName` formats |
+| `MissingEnvironmentFilter` | `environmentName` omitted from tool requiring it | Pass `environmentName` to all tools except global discovery tools |
+| `ConnectionAuthorizationFailed` (403) | Connection reference owned by different user | Use connection belonging to the token's account; copy from user's existing flow |
+| `only HTTP Request triggers can be invoked` | Attempted `trigger_live_flow` on non-HTTP trigger | Verify trigger type via `get_live_flow`; use `get_live_flow_trigger_url` + direct HTTP POST instead |
+| `FlowNotFound` | Flow ID does not exist in environment | Verify flow ID via `list_live_flows`; check correct environment |
+| `RunNotFound` | Run ID does not exist for flow | Verify run ID via `get_live_flow_runs`; runs expire after retention period |
+| 50 MB+ response timeout | Large action outputs exceeding timeout | Increase timeout to 120s+ for `get_live_flow_run_action_outputs` |
+
+### Diagnostic Procedure for Failures
+
+1. **Verify connectivity:** Call `tools/list` to confirm token and endpoint validity
+2. **Check environment:** Ensure `environmentName` matches value from `list_live_environments`
+3. **Validate flow ID:** Confirm flow exists via `list_live_flows`
+4. **Inspect error structure:** For tool errors, parse `raw["error"]` for code and message
+5. **Check run status:** Failed runs retain history; cancelled runs may disappear quickly
+6. **Review connection references:** For update failures, verify connection ownership and GUIDs
+
+### Safety Constraints
+
+- Never cancel runs waiting for adaptive card responses
+- Always verify `error` is `null` (not just missing) after `update_live_flow`
+- Use 120s+ timeout for action output inspection on flows with bulk data operations
+- Connection references are user-scoped; sharing flows requires connection remapping
+
+---
+
+## Tool Catalog Reference
+
+### Live Tools (Available to All MCP Subscribers)
+
+| Tool | Purpose |
 |---|---|
-| Auth header | `x-api-key: <JWT>` — **not** `Authorization: Bearer` |
-| Token format | Plain JWT — do not strip, alter, or prefix it |
-| Timeout | Use ≥ 120 s for `get_live_flow_run_action_outputs` (large outputs) |
-| Environment name | `Default-<tenant-guid>` (find it via `list_live_environments` or `list_live_flows` response) |
+| `list_live_flows` | List flows from PA API (wrapper with `flows` array) |
+| `list_live_environments` | List environments (direct array) |
+| `list_live_connections` | List connections (wrapper with `connections` array) |
+| `get_live_flow` | Fetch complete flow definition |
+| `get_live_flow_http_schema` | Inspect HTTP trigger request/response schemas |
+| `get_live_flow_trigger_url` | Get HTTP trigger callback URL |
+| `trigger_live_flow` | POST to HTTP-triggered flow |
+| `update_live_flow` | Create new flow or patch existing |
+| `add_live_flow_to_solution` | Migrate non-solution flow to solution |
+| `get_live_flow_runs` | List run history (direct array) |
+| `get_live_flow_run_error` | Get per-action error breakdown |
+| `get_live_flow_run_action_outputs` | Inspect action inputs/outputs |
+| `resubmit_live_flow_run` | Re-run failed execution |
+| `cancel_live_flow_run` | Cancel running execution |
+
+### Store Tools (FlowStudio for Teams Subscribers Only)
+
+| Tool | Purpose |
+|---|---|
+| `list_store_flows` | Cached flow search with governance metadata |
+| `get_store_flow` | Cached flow details with run stats |
+| `get_store_flow_runs` | Cached run history with remediation hints |
+| `get_store_flow_errors` | Cached failed runs with hints |
+| `get_store_flow_summary` | Aggregated statistics |
+| `set_store_flow_state` | Start/stop flow via API + cache sync |
+| `update_store_flow` | Update governance metadata |
+| `list_store_environments` | Cached environment list |
+| `list_store_makers` | List citizen developers |
+| `get_store_maker` | Maker details |
+| `list_store_power_apps` | List canvas apps |
+| `list_store_connections` | Cached connections |
 
 ---
 
-## Reference Files
+## Next Steps
 
-- [MCP-BOOTSTRAP.md](references/MCP-BOOTSTRAP.md) — endpoint, auth, request/response format (read this first)
-- [tool-reference.md](references/tool-reference.md) — response shapes and behavioral notes (parameters are in `tools/list`)
+- **Diagnose failing flows end-to-end** → Load `power-automate-debug` skill
+- **Build and deploy new flows** → Load `power-automate-build` skill
+- **Understand action types** → See `references/action-types.md`
+- **Connection reference patterns** → See `references/connection-references.md`
+- **Response shape details** → See `references/tool-reference.md`
+- **Authentication and protocol** → See `references/MCP-BOOTSTRAP.md`
+
+---
+
+## References
+
+- [MCP-BOOTSTRAP.md](references/MCP-BOOTSTRAP.md) — Endpoint, authentication, request/response format
+- [tool-reference.md](references/tool-reference.md) — Response shapes and behavioral notes
 - [action-types.md](references/action-types.md) — Power Automate action type patterns
-- [connection-references.md](references/connection-references.md) — connector reference guide
-
----
-
-## More Capabilities
-
-For **diagnosing failing flows** end-to-end → load the `power-automate-debug` skill.
-
-For **building and deploying new flows** → load the `power-automate-build` skill.
+- [connection-references.md](references/connection-references.md) — Connector reference patterns

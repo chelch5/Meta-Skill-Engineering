@@ -13,7 +13,6 @@ categories:
 compatibility:
   clients:
     - opencode
-    - copilot
     - codex
     - gemini-cli
     - claude-code

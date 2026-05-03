@@ -72,7 +72,7 @@ Read the target SKILL.md. Check each anti-pattern below. For each PRESENT, write
 **AP-6: Unmeasurable acceptance criteria** · `LOW` — wasted tokens on subjective checks
 - Pattern: Success defined with subjective terms like "good", "appropriate", "high-quality"
 - Example before: `Ensure output is high-quality and appropriate for the context`
-- Example after: `Output passes if: (1) all required sections present, (2) no placeholder text remains, (3) every code example is syntactically valid`
+- Example after: `Output passes if: (1) all required sections present, (2) no filler text remains, (3) every code example is syntactically valid`
 - Fix: Replace with observable, countable criteria
 
 **AP-7: Missing "Do NOT use when" section** · `HIGH` — causes overtriggering
@@ -92,7 +92,7 @@ Read the target SKILL.md. Check each anti-pattern below. For each PRESENT, write
 **AP-10: No authoritative references** · `LOW` — broken or missing context links
 - Pattern: No URLs, or only vague "see documentation"
 - Example before: `References: relevant documentation`
-- Example after: `References: https://docs.github.com/en/copilot/concepts/agents/about-agent-skills`
+- Example after: `References: https://opencode.ai/docs/agents/`
 - Fix: Add 2-3 real URLs to official documentation
 
 **AP-11: Identity-free description** · `HIGH` — fails to distinguish from neighbors
@@ -115,7 +115,7 @@ Read the target SKILL.md. Check each anti-pattern below. For each PRESENT, write
 - Pattern: Steps assume tools the agent may not have (subagents, browsers, specific CLIs, MCP servers) without declaring the dependency
 - Example before: `Spawn a subagent to run the eval suite in parallel`
 - Example after: `Run the eval suite. If subagents are available, spawn parallel runs; otherwise run sequentially.`
-- Fix: Declare tool dependencies in frontmatter. Add fallback paths for optional capabilities.
+- Fix: Declare tool dependencies in frontmatter. Add explicit sequential or parallel procedures for optional capabilities.
 
 **AP-15: Few-shot starvation** · `MEDIUM` — inconsistent output format
 - Pattern: Output format described in prose but no concrete filled example provided
@@ -126,7 +126,7 @@ Read the target SKILL.md. Check each anti-pattern below. For each PRESENT, write
 **AP-16: Hallucination surface** · `MEDIUM` — agent invents success criteria
 - Pattern: Vague quality requirements like "ensure quality", "verify correctness", "make it good" with no measurable criteria
 - Example before: `Verify the output meets quality standards`
-- Example after: `Verify: (1) all required sections present, (2) no TODO/placeholder text, (3) code examples parse without syntax errors`
+- Example after: `Verify: (1) all required sections present, (2) no deferred-work or filler text, (3) code examples parse without syntax errors`
 - Fix: Replace subjective quality language with concrete, checkable criteria
 
 ## Output contract

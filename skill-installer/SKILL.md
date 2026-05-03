@@ -31,7 +31,7 @@ Do NOT use when:
 | Client | Path |
 |--------|------|
 | OpenCode | `.opencode/skills/<name>/` |
-| Copilot | `.github/skills/<name>/` or `.vscode/skills/<name>/` |
+| Codex | `.codex/skills/<name>/` |
 | Claude Code | `.claude/skills/<name>/` (project) or `~/.claude/skills/<name>/` (user) |
 | Gemini CLI | `.gemini/skills/<name>/` |
 

@@ -1,3 +1,10 @@
-{"input":"The user or repo work clearly points at unity scriptableobject events","expected":"unity-scriptableobject-events","category":"Game Engines and Creative Tech"}
-{"input":"this task clearly needs unity scriptableobject events","expected":"unity-scriptableobject-events","category":"Game Engines and Creative Tech"}
-{"input":"a plan, ticket, or repo state would benefit from explicit guardrails around unity scriptableobject events","expected":"unity-scriptableobject-events","category":"Game Engines and Creative Tech"}
+{"input":"I need to set up decoupled event communication between my Unity player health system and UI without using singletons","expected":"unity-scriptableobject-events","category":"unity-so-events-use-case"}
+{"input":"How do I create a GameEvent ScriptableObject that multiple systems can listen to without direct references?","expected":"unity-scriptableobject-events","category":"unity-so-events-implementation"}
+{"input":"My Unity project uses singletons for cross-system communication and I want to refactor to ScriptableObject events","expected":"unity-scriptableobject-events","category":"unity-so-events-refactoring"}
+{"input":"I need a RuntimeSet to track all active enemies in my Unity game without calling FindObjectsOfType every frame","expected":"unity-scriptableobject-events","category":"unity-so-events-runtimeset"}
+{"input":"What's the best pattern for designer-configurable events in Unity that work across scenes?","expected":"unity-scriptableobject-events","category":"unity-so-events-architecture"}
+{"input":"Create a FloatVariable ScriptableObject for sharing player score between multiple Unity systems","expected":"unity-scriptableobject-events","category":"unity-so-events-shared-variable"}
+{"input":"Should I use UnityEvents, C# events, or ScriptableObject events for my Unity game's event system?","expected":"unity-scriptableobject-events","category":"unity-so-events-decision"}
+{"input":"My GameEventListener isn't receiving events in Unity even though I assigned the GameEvent asset","expected":"unity-scriptableobject-events","category":"unity-so-events-troubleshooting"}
+{"input":"Implement the ScriptableObject event channel pattern for decoupled Unity architecture","expected":"unity-scriptableobject-events","category":"unity-so-events-pattern"}
+{"input":"How do I pass data with events using IntGameEvent or Vector3GameEvent ScriptableObjects?","expected":"unity-scriptableobject-events","category":"unity-so-events-typed"}

@@ -1,77 +1,50 @@
 # Meta Skill Studio - Windows Build Guide
 
-Meta Skill Studio's supported Windows delivery path is the WPF application in `windows-wpf/`.
-
-The older `windows-build/` Nuitka prototype remains in the repository as historical material only. It is **not** the supported release path and should not be used as a fallback for PR #18 or future Windows releases.
+Meta Skill Studio's supported Windows delivery path is the Tauri 2 application in this repository root.
 
 ## Supported Build Path
 
-**Location:** `windows-wpf/`
+**Location:** `src-tauri/` with the TypeScript/Vite frontend in `src/`.
 
-This is the native Windows application built with C# and WPF, backed by the existing Python skill engine.
+This is the cross-platform desktop application backed by the existing Python skill engine.
 
 ## Requirements
 
 - Windows 10/11 (64-bit)
-- .NET 8.0 SDK
+- Rust stable toolchain
+- Node.js 22+
 - Python 3.11 or 3.12+
-- WiX Toolset v3.x for MSI packaging
-- Visual Studio 2022 (optional, recommended for XAML design/debugging)
+- Microsoft Visual Studio C++ build tools
+- WebView2 runtime
 
 ## Build and Test
 
 ```powershell
-cd windows-wpf
-
-dotnet restore MetaSkillStudio.sln
-dotnet build MetaSkillStudio.sln -c Release
-dotnet test MetaSkillStudio.sln --no-build -c Release
+npm install
+npm run build
+cd src-tauri
+cargo check
 ```
 
 ## Run the App
 
 ```powershell
-cd windows-wpf
-dotnet run --project MetaSkillStudio
+npm run tauri -- dev
 ```
 
-## Publish the Portable Executable
-
-Use the staging script rather than raw `dotnet publish` so the full workspace bundle is assembled and the published exe is smoke-tested.
+## Build the Desktop App
 
 ```powershell
-cd windows-wpf
-.\build-release.ps1
+npm run tauri -- build
 ```
 
 Expected output:
 
-- `windows-wpf\publish\MetaSkillStudio.exe`
-- A passing startup smoke test for the published exe
-
-Use `.\build-release.ps1 -SkipSmokeTest` only when you intentionally need staging without launch validation.
-
-## Build the MSI Installer
-
-```powershell
-$toolPath = ".tools\wix4"
-dotnet tool install wix --version 4.0.6 --tool-path $toolPath
-& "$toolPath\wix.exe" extension add WixToolset.UI.wixext/4.0.6
-
-cd windows-wpf\installer
-
-$publishDir = (Resolve-Path ..\publish).Path
-& "..\..\$toolPath\wix.exe" build `
-  -arch x64 `
-  -ext WixToolset.UI.wixext `
-  -d "ProductVersion=1.0.0" `
-  -d "PublishDir=$publishDir" `
-  -o MetaSkillStudio-1.0.0.msi `
-  MetaSkillStudio.wxs
-```
+- `src-tauri\target\release\meta-skill-studio.exe`
+- installer artifacts under `src-tauri\target\release\bundle\`
 
 ## Distribution Notes
 
-- The published executable is self-contained for .NET, but the Python backend is still required for skill execution workflows.
-- The MSI installer packages the published WPF executable plus its icon and registration metadata.
+- The published executable bundles the Tauri shell, but the Python backend is still required for skill execution workflows.
+- Installer artifacts are produced by the Tauri bundler.
 - GitHub Actions workflows in `.github/workflows/` are the canonical automation path for CI and release packaging.

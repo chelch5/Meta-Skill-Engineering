@@ -1,3 +1,8 @@
-{"input":"Tune retry settings in a queue worker.","expected":"no-trigger"}
-{"input":"Design an auth token rotation flow.","expected":"no-trigger"}
-{"input":"Choose between vector indexes for retrieval.","expected":"no-trigger"}
+{"input":"Create a PDF from this HTML invoice template","expected":"no-trigger"}
+{"input":"Extract all the text from this research paper PDF for analysis","expected":"no-trigger"}
+{"input":"Convert this scanned PDF to searchable text using OCR","expected":"no-trigger"}
+{"input":"Generate a new PDF report from the sales data in this CSV","expected":"no-trigger"}
+{"input":"Design an authentication flow with JWT tokens","expected":"no-trigger"}
+{"input":"Set up a PostgreSQL database schema for user profiles","expected":"no-trigger"}
+{"input":"Build a React component for a navigation sidebar","expected":"no-trigger"}
+{"input":"Deploy this application to AWS Lambda","expected":"no-trigger"}

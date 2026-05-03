@@ -1,23 +1,21 @@
 ---
 name: observe-guidance
-description: >
-  Guide a person in systematic observation of systems, patterns, or
-  phenomena. AI coaches neutral attention, field notes methodology,
-  pattern recognition, hypothesis formation, and structured reporting
-  for debugging, research, and system understanding. Use when a person
-  wants to understand a system's behavior before intervening, when someone
-  keeps jumping to conclusions and needs the discipline of observation first,
-  when preparing an evidence-based report, or when studying team dynamics
-  or process effectiveness through direct observation.
+description: |
+  Guide a person in systematic observation of systems, patterns, or phenomena.
+  Coaches neutral attention, field notes methodology, pattern recognition, hypothesis formation, and structured reporting.
+  Use when: a person wants to understand system behavior before intervening; someone keeps jumping to conclusions and needs observation discipline first;
+  preparing evidence-based reports; studying team dynamics or process effectiveness through direct observation.
+  Do NOT use when: the person needs immediate intervention or quick fixes; the task is data analysis of existing logs/metrics without live observation;
+  the scope is a simple one-time check with obvious outcomes; the person needs technical instruction rather than observational methodology.
 license: MIT
 allowed-tools: Read
 metadata:
   author: Philipp Thoss
-  version: "1.0"
+  version: "1.1"
   domain: esoteric
   complexity: intermediate
   language: natural
-  tags: esoteric, observation, field-study, pattern-recognition, debugging, guidance
+  tags: esoteric, observation, field-study, pattern-recognition, debugging, guidance, methodology
 ---
 
 # Observe (Guidance)
@@ -26,12 +24,21 @@ Guide a person in systematic observation of a system, phenomenon, or pattern. Th
 
 ## When to Use
 
-- A person wants to understand a system's behavior before intervening (debugging by observation rather than by trial and error)
+- A person wants to understand a system's behavior before intervening (debugging by observation rather than trial and error)
 - Someone is conducting research or gathering evidence and needs structured observation methodology
-- A person keeps jumping to conclusions and needs to develop the discipline of observation before interpretation
-- Someone is preparing a report that requires evidence-based findings, not opinions
+- A person keeps jumping to conclusions and needs to develop observation discipline before interpretation
+- Someone is preparing a report that requires evidence-based findings, not opinions or assumptions
 - A person wants to understand team dynamics, user behavior, or process effectiveness through direct observation
 - After `meditate-guidance` has cultivated sustained attention, the person wants to direct that attention toward a specific system
+
+## When NOT to Use
+
+- The person needs immediate intervention or quick fixes — observation takes time and delays action
+- The task is data analysis of existing logs/metrics without any live observation component
+- The scope is a simple one-time check with obvious outcomes that don't warrant systematic study
+- The person needs technical instruction on *how* to do something rather than observational methodology for *understanding* something
+- The observation target is inaccessible, illegal, or violates privacy/ethics boundaries
+- A more specific skill exists (`debug-guidance`, `research-guidance`, `user-study-guidance`) that matches the exact context
 
 ## Inputs
 
@@ -170,6 +177,29 @@ Help the person communicate their observations effectively.
 
 **On failure:** If the report buries observations in interpretation, restructure: "Put all the facts in one section, all the theories in another." If the report lacks confidence levels ("this is definitely because..."), help them calibrate: "How sure are you? What would change your mind?"
 
+## Output Contract
+
+After using this skill, the person must have:
+
+1. **Observation Frame**: A clearly defined target, scope, purpose, and stance (naturalist/controlled/longitudinal)
+2. **Recording Protocol**: A chosen method and template for capturing observations
+3. **Field Notes**: At least 5-10 concrete observations with timestamps, context, and clear separation of fact from interpretation
+4. **Pattern Analysis**: Identified patterns (repetition, correlation, sequence, absence, anomaly) with alternative explanations considered
+5. **Hypotheses**: 2-3 testable hypotheses explaining the patterns, with stated confidence levels
+6. **Structured Report**: Clear documentation separating findings (data) from analysis (interpretation) with recommendations and limitations
+
+**Quality Gates:**
+- Observations contain specific, verifiable details (not vague generalizations)
+- Facts and interpretations are never mixed in the same statement
+- Each hypothesis has a stated confidence level and a test that could confirm or refute it
+- The report includes explicit limitations and potential observer biases
+
+**Stop Conditions:**
+- The person cannot define an observation target after 3 attempts → pivot to `clarify-guidance`
+- The person refuses to record observations and insists on immediate action → acknowledge and exit
+- The observation reveals safety or ethics concerns → stop and escalate appropriately
+- The analysis produces only confirmation of pre-existing beliefs → challenge and extend observation period
+
 ## Validation
 
 - [ ] The observation target was framed before observation began (not free-form wandering)
@@ -180,6 +210,61 @@ Help the person communicate their observations effectively.
 - [ ] Hypotheses are testable and have stated confidence levels
 - [ ] The person experienced the discipline of observing before interpreting
 
+## Failure Handling
+
+### If the person cannot narrow their focus
+- **Symptom**: "I want to understand everything" or scope keeps expanding
+- **Response**: "What is the one behavior you find most confusing right now?" Force a single entry point.
+- **Escalation**: If still unable to focus after 3 attempts, pivot to `clarify-guidance` to define the problem space first.
+
+### If the person is already committed to a conclusion
+- **Symptom**: "I just need to prove X" or dismisses contrary evidence
+- **Response**: "What would we need to see to disprove that? Let's look for both confirming and disconfirming evidence."
+- **Escalation**: If they refuse to consider alternatives, acknowledge the bias explicitly and ask if they want to continue with that limitation noted.
+
+### If the template feels too formal
+- **Symptom**: Resistance to structured recording
+- **Response**: Simplify to: "Just write down what you see, and separately write what you think it means."
+- **Escalation**: If they resist all recording, explain memory bias risk once, then proceed with their preferred method but document the limitation.
+
+### If they keep interpreting instead of observing
+- **Symptom**: "The system is broken" instead of "The system stopped responding at 14:32"
+- **Response**: Use the exercise: "Describe what you see as if explaining it to someone who has never seen this system. Only verifiable facts."
+- **Escalation**: If persistent, ask them to record observations verbatim for 5 minutes before any analysis is allowed.
+
+### If they run out of things to observe quickly
+- **Symptom**: "There's nothing else to see" after minimal observation
+- **Response**: Guide them to zoom in: timing, ordering, edge cases, exceptions, environmental conditions.
+- **Escalation**: If the system is genuinely simple, conclude observation early and move to analysis.
+
+### If notes are too vague
+- **Symptom**: "Things seemed slow" without specifics
+- **Response**: Ask: "How slow? Compared to what? In which conditions? Can you measure or timestamp it?"
+
+### If notes are too detailed
+- **Symptom**: Recording everything indiscriminately
+- **Response**: Help identify which observations relate to the original frame and which are noise; prioritize observations that answer the original question.
+
+### If they jump to a single explanation immediately
+- **Symptom**: "It's obviously because of X"
+- **Response**: "That is one possibility. What is another explanation that could also fit the data?"
+
+### If they see no patterns
+- **Symptom**: Random-looking data with no discernible structure
+- **Response**: Suggest continuing observation (more data may reveal patterns) or checking if the frame is too narrow.
+
+### If every observation points to the same conclusion
+- **Symptom**: Unanimous data supporting one theory
+- **Response**: Check for filtering: "What evidence would contradict your current theory? Have you looked for it?"
+
+### If the report buries observations in interpretation
+- **Symptom**: Facts and theories mixed throughout
+- **Response**: Restructure: "Put all the facts in one section, all the theories in another."
+
+### If the report lacks confidence calibration
+- **Symptom**: "This is definitely because..." without uncertainty acknowledgment
+- **Response**: Help calibrate: "How sure are you on a scale of 1-10? What would change your mind?"
+
 ## Common Pitfalls
 
 - **Observation as confirmation bias**: Observing only things that support a pre-existing belief. The frame should include "look for evidence against your hypothesis" as an explicit instruction
@@ -189,10 +274,10 @@ Help the person communicate their observations effectively.
 - **Confusing observation with surveillance**: In interpersonal observation, ethical boundaries matter. Observe behavior that is visible, do not spy. If observing people, transparency is usually better than secrecy
 - **Skipping the frame**: Without a clear observation target, attention scatters and findings are unfocused. Even a rough frame is better than none
 
-## Related Skills
+## Next Steps
 
-- `observe` — the AI self-directed variant for sustained neutral pattern recognition across systems
-- `learn-guidance` — observation feeds learning by providing raw data for understanding
-- `listen-guidance` — listening is focused observation of a speaker; observation is broader-scope attention to any system
-- `remote-viewing-guidance` — shares structured observation methodology adapted for non-local perception
-- `read-garden` — garden observation skill that uses similar CRV-adapted sensory protocols
+- **After observation is complete and patterns identified**: Use `learn-guidance` to turn observations into structured understanding and knowledge
+- **If the observation reveals a specific technical problem**: Use `debug-guidance` to systematically resolve the identified issue
+- **If the observation involves understanding people or communication**: Use `listen-guidance` for focused attention on speakers and dialogue patterns
+- **If the person needs to sustain attention for extended observation**: Use `meditate-guidance` to cultivate the neutral attention capacity first
+- **For self-directed AI observation across systems**: Use `observe` (the AI-directed variant of this skill)

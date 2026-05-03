@@ -1,74 +1,76 @@
 ---
 name: serialize-data-formats
-description: >
-  Serialize and deserialize data across common formats including JSON, XML,
-  YAML, Protocol Buffers, MessagePack, and Apache Arrow/Parquet. Covers
-  format selection criteria, encoding/decoding patterns, performance
-  trade-offs, and interoperability considerations. Use when choosing a wire
-  format for API communication, persisting structured data to disk, exchanging
-  data between systems written in different languages, optimizing transfer size
-  or parsing speed, or migrating from one serialization format to another.
-license: MIT
-allowed-tools: Read Write Edit Bash Grep Glob
-metadata:
-  author: Philipp Thoss
-  version: "1.0"
-  domain: data-serialization
-  complexity: intermediate
-  language: multi
-  tags: json, xml, yaml, protobuf, messagepack, parquet, arrow, serialization
+description: >-
+  Serialize and deserialize data across JSON, XML, YAML, Protocol Buffers,
+  MessagePack, and Apache Arrow/Parquet. Use when asked to "convert data to JSON",
+  "serialize to protobuf", "choose a wire format for APIs", "optimize data storage",
+  or implement format-specific encoding/decoding. Do not use for database-specific
+  serialization (use database-access patterns), custom binary protocols without
+  standard formats, or data format design without implementation.
 ---
 
-# Serialize Data Formats
+## Purpose
 
-Select and implement the right data serialization format for your use case, with correct encoding/decoding and performance awareness.
+Enable correct selection and implementation of data serialization formats for
+API communication, persistent storage, and cross-system data exchange. Provides
+concrete encoding/decoding patterns with performance trade-offs and schema
+guidance for production use.
 
-## When to Use
+## When to use
 
-- Choosing a wire format for API communication
-- Persisting structured data to disk or object storage
-- Exchanging data between systems written in different languages
-- Optimizing data transfer size or parsing speed
-- Migrating from one serialization format to another
+- Converting data structures to/from JSON, XML, or YAML
+- Implementing Protocol Buffers schemas and code generation
+- Choosing between MessagePack, JSON, or binary formats for wire transfer
+- Writing or reading Apache Parquet/Arrow for analytics workloads
+- Comparing serialization format performance for specific payload sizes
+- Migrating data from one serialization format to another
+- Adding custom type handling (datetime, binary, decimal) to JSON/MsgPack
 
-## Inputs
+## When NOT to use
 
-- **Required**: Data structure to serialize (schema or example)
-- **Required**: Use case (API, storage, streaming, analytics)
-- **Optional**: Performance requirements (size, speed, schema enforcement)
-- **Optional**: Target language/runtime constraints
-- **Optional**: Human readability requirements
+- Database-specific serialization (ORM models, SQL dumps) → database-access skill
+- Custom binary protocols without standard format specs → custom-protocol skill
+- Format selection without implementation → documentation request only
+- Data compression without serialization (gzip, zstd on raw bytes) → compression skill
+- Authentication/encryption encoding (base64 for auth tokens) → security-encoding skill
 
 ## Procedure
 
-### Step 1: Select the Right Format
+### Step 1: Select format based on requirements
 
-| Format | Human Readable | Schema | Size | Speed | Best For |
-|--------|---------------|--------|------|-------|----------|
-| JSON | Yes | Optional (JSON Schema) | Medium | Medium | REST APIs, config, broad interop |
-| XML | Yes | XSD, DTD | Large | Slow | Enterprise/legacy, SOAP, documents |
+Read the user's data structure and use case, then select from this decision matrix:
+
+| Format | Human Readable | Schema Required | Size | Speed | Best For |
+|--------|---------------|-----------------|------|-------|----------|
+| JSON | Yes | Optional | Medium | Medium | REST APIs, config, broad interop |
+| XML | Yes | Yes (XSD/DTD) | Large | Slow | Enterprise/legacy, SOAP, documents |
 | YAML | Yes | Optional | Medium | Slow | Config files, CI/CD, Kubernetes |
-| Protocol Buffers | No | Required (.proto) | Small | Fast | gRPC, microservices, mobile |
-| MessagePack | No | None | Small | Fast | Real-time, embedded, Redis |
-| Arrow/Parquet | No | Built-in | Very Small | Very Fast | Analytics, columnar queries, data lakes |
+| Protocol Buffers | No | Required | Small | Fast | gRPC, microservices, mobile APIs |
+| MessagePack | No | None | Small | Fast | Real-time, embedded, Redis caching |
+| Apache Parquet | No | Built-in | Very Small | Very Fast | Analytics, columnar queries, data lakes |
+| Apache Arrow | No | Built-in | Medium | Fast | In-memory interchange, zero-copy |
 
-Decision tree:
-1. **Need human editing?** → YAML (config) or JSON (data)
-2. **Need strict schema + fast RPC?** → Protocol Buffers
-3. **Need smallest wire size?** → MessagePack or Protobuf
-4. **Need columnar analytics?** → Apache Parquet
-5. **Need in-memory interchange?** → Apache Arrow
-6. **Legacy enterprise integration?** → XML
+Decision logic:
+1. Human editing required + config use → YAML
+2. Human readable + API use → JSON
+3. Strict schema + fast RPC → Protocol Buffers
+4. Smallest wire size + no schema → MessagePack
+5. Columnar analytics + storage → Apache Parquet
+6. In-memory columnar processing → Apache Arrow
+7. Legacy enterprise integration → XML
 
-**Expected:** Format selected with documented rationale matching use case requirements.
-**On failure:** If requirements conflict (e.g., human-readable AND fast), prioritize the primary use case and note the trade-off.
+**Selection output:** Document the chosen format with one-sentence rationale
+matching the primary use case requirement.
 
-### Step 2: Implement JSON Serialization
+### Step 2: Implement JSON encoding/decoding
+
+For Python with complex types:
 
 ```python
 import json
 from datetime import datetime, date
 from dataclasses import dataclass, asdict
+from typing import Any
 
 @dataclass
 class Measurement:
@@ -77,9 +79,9 @@ class Measurement:
     unit: str
     timestamp: datetime
 
-# Custom encoder for non-standard types
 class CustomEncoder(json.JSONEncoder):
-    def default(self, obj):
+    """Handles datetime, date, and bytes serialization."""
+    def default(self, obj: Any) -> Any:
         if isinstance(obj, datetime):
             return obj.isoformat()
         if isinstance(obj, date):
@@ -90,31 +92,37 @@ class CustomEncoder(json.JSONEncoder):
         return super().default(obj)
 
 # Serialize
-measurement = Measurement("sensor-01", 23.5, "celsius", datetime.now())
-json_str = json.dumps(asdict(measurement), cls=CustomEncoder, indent=2)
+data = Measurement("sensor-01", 23.5, "celsius", datetime.now())
+json_output = json.dumps(asdict(data), cls=CustomEncoder, indent=2)
 
-# Deserialize
-data = json.loads(json_str)
+# Deserialize with type restoration
+def json_decode(json_str: str) -> dict:
+    """Decode JSON with ISO datetime parsing."""
+    data = json.loads(json_str)
+    if 'timestamp' in data and isinstance(data['timestamp'], str):
+        data['timestamp'] = datetime.fromisoformat(data['timestamp'])
+    return data
 ```
+
+For R statistical computing:
 
 ```r
-# R: JSON with jsonlite
 library(jsonlite)
 
-# Serialize
+# Serialize dataframe
 df <- data.frame(sensor_id = "sensor-01", value = 23.5, unit = "celsius")
-json_str <- jsonlite::toJSON(df, auto_unbox = TRUE, pretty = TRUE)
+json_output <- jsonlite::toJSON(df, auto_unbox = TRUE, pretty = TRUE)
 
-# Deserialize
-df_back <- jsonlite::fromJSON(json_str)
+# Deserialize with type preservation
+df_restored <- jsonlite::fromJSON(json_output)
 ```
 
-**Expected:** Round-trip serialization preserves all data types accurately.
-**On failure:** If a type is lost (e.g., dates become strings), add explicit type conversion in the deserialization step.
+**Verification:** Round-trip serialization must preserve all field names and
+restore datetime/decimal types accurately.
 
 ### Step 3: Implement Protocol Buffers
 
-Define the schema (`.proto` file):
+Write the schema definition:
 
 ```protobuf
 syntax = "proto3";
@@ -124,7 +132,7 @@ message Measurement {
   string sensor_id = 1;
   double value = 2;
   string unit = 3;
-  int64 timestamp_ms = 4;  // Unix milliseconds
+  int64 timestamp_ms = 4;  // Unix epoch milliseconds
 }
 
 message MeasurementBatch {
@@ -132,74 +140,90 @@ message MeasurementBatch {
 }
 ```
 
-Generate and use:
+Generate language bindings:
 
 ```bash
-# Generate Python code
+# Python
 protoc --python_out=. sensors.proto
 
-# Generate Go code
-protoc --go_out=. sensors.proto
+# Go
+protoc --go_out=. --go_opt=paths=source_relative sensors.proto
+
+# Java
+protoc --java_out=. sensors.proto
 ```
+
+Implement serialization:
 
 ```python
 from sensors_pb2 import Measurement, MeasurementBatch
 import time
 
-# Serialize
+# Create and serialize single message
 m = Measurement(
     sensor_id="sensor-01",
     value=23.5,
     unit="celsius",
     timestamp_ms=int(time.time() * 1000)
 )
-binary = m.SerializeToString()  # Compact binary
+binary_data = m.SerializeToString()
 
 # Deserialize
 m2 = Measurement()
-m2.ParseFromString(binary)
+m2.ParseFromString(binary_data)
+assert m2.value == 23.5  # Verify round-trip
 ```
 
-**Expected:** Binary output 3-10x smaller than equivalent JSON.
-**On failure:** If protoc is unavailable, use a language-native protobuf library (e.g., `betterproto` for Python).
+**Verification:** Binary output should be 3-10x smaller than equivalent JSON.
+Measure with `len(binary_data) / len(json.dumps(data).encode())`.
 
-### Step 4: Implement MessagePack
+### Step 4: Implement MessagePack binary serialization
 
 ```python
 import msgpack
 from datetime import datetime
+from typing import Any, Dict
 
-# Custom packing for datetime
-def encode_datetime(obj):
+def encode_extended(obj: Any) -> Any:
+    """Handle datetime and bytes for MessagePack."""
     if isinstance(obj, datetime):
-        return {"__datetime__": True, "s": obj.isoformat()}
+        return {"__type__": "datetime", "iso": obj.isoformat()}
+    if isinstance(obj, bytes):
+        return {"__type__": "bytes", "b64": base64.b64encode(obj).decode('ascii')}
     return obj
 
-def decode_datetime(obj):
-    if "__datetime__" in obj:
-        return datetime.fromisoformat(obj["s"])
+def decode_extended(obj: Dict) -> Any:
+    """Restore extended types from MessagePack."""
+    if obj.get("__type__") == "datetime":
+        return datetime.fromisoformat(obj["iso"])
+    if obj.get("__type__") == "bytes":
+        return base64.b64decode(obj["b64"])
     return obj
 
-data = {"sensor_id": "sensor-01", "value": 23.5, "ts": datetime.now()}
+data: Dict[str, Any] = {
+    "sensor_id": "sensor-01",
+    "value": 23.5,
+    "ts": datetime.now()
+}
 
-# Serialize (smaller than JSON, faster than JSON)
-packed = msgpack.packb(data, default=encode_datetime)
+# Serialize (typically 15-30% smaller than JSON)
+packed = msgpack.packb(data, default=encode_extended, use_bin_type=True)
 
 # Deserialize
-unpacked = msgpack.unpackb(packed, object_hook=decode_datetime, raw=False)
+unpacked = msgpack.unpackb(packed, object_hook=decode_extended, raw=False)
 ```
 
-**Expected:** MessagePack output is 15-30% smaller than JSON for typical payloads.
-**On failure:** If a language lacks MessagePack support, fall back to JSON with compression (gzip).
+**Verification:** Compare sizes: `len(packed)` should be noticeably smaller than
+`len(json.dumps(data).encode())` for typical payloads.
 
-### Step 5: Implement Apache Parquet (Columnar)
+### Step 5: Implement Apache Parquet for analytics
 
 ```python
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pandas as pd
 
-# Create data
+# Create sample tabular data
 df = pd.DataFrame({
     "sensor_id": ["s-01", "s-02", "s-01", "s-03"] * 1000,
     "value": [23.5, 18.2, 24.1, 19.8] * 1000,
@@ -207,76 +231,144 @@ df = pd.DataFrame({
     "timestamp": pd.date_range("2025-01-01", periods=4000, freq="min")
 })
 
-# Write Parquet (columnar, compressed)
-table = pa.Table.from_pandas(df)
+# Write Parquet with Snappy compression
+table = pa.Table.from_pandas(df, preserve_index=False)
 pq.write_table(table, "measurements.parquet", compression="snappy")
 
-# Read Parquet (can read specific columns without loading all data)
-table_back = pq.read_table("measurements.parquet", columns=["sensor_id", "value"])
-df_subset = table_back.to_pandas()
+# Read with column pruning (only reads selected columns from disk)
+table_subset = pq.read_table("measurements.parquet", columns=["sensor_id", "value"])
+df_filtered = table_subset.to_pandas()
 ```
+
+For R:
 
 ```r
-# R: Parquet with arrow
 library(arrow)
 
-# Write
-df <- data.frame(sensor_id = rep("s-01", 1000), value = rnorm(1000))
-arrow::write_parquet(df, "measurements.parquet")
+# Write Parquet
+write_parquet(df, "measurements.parquet", compression = "snappy")
 
-# Read (with column selection — only reads selected columns from disk)
-df_back <- arrow::read_parquet("measurements.parquet", col_select = c("value"))
+# Read with column selection
+df_filtered <- read_parquet("measurements.parquet", col_select = c("value"))
 ```
 
-**Expected:** Parquet files 5-20x smaller than CSV for typical tabular data.
-**On failure:** If Arrow is unavailable, use `fastparquet` (Python) or CSV with gzip as fallback.
+**Verification:** Parquet file size should be 5-20x smaller than equivalent CSV.
 
-### Step 6: Compare Performance
+### Step 6: Benchmark and validate format choice
 
-Run benchmarks for your specific data and use case:
+Create a benchmark script for the specific data:
 
 ```python
-import json, msgpack, time
-import pyarrow as pa, pyarrow.parquet as pq
+import json
+import msgpack
+import time
+import sys
 
-data = [{"id": i, "value": i * 0.1, "label": f"item-{i}"} for i in range(10000)]
+def benchmark_serialization(data: list, iterations: int = 1000) -> dict:
+    """Compare JSON vs MessagePack performance."""
+    results = {}
 
-# JSON
-start = time.perf_counter()
-json_bytes = json.dumps(data).encode()
-json_time = time.perf_counter() - start
+    # JSON benchmark
+    start = time.perf_counter()
+    for _ in range(iterations):
+        json_bytes = json.dumps(data).encode()
+        json.loads(json_bytes.decode())
+    results["json_time_ms"] = (time.perf_counter() - start) * 1000
+    results["json_size"] = len(json.dumps(data).encode())
 
-# MessagePack
-start = time.perf_counter()
-msgpack_bytes = msgpack.packb(data)
-msgpack_time = time.perf_counter() - start
+    # MessagePack benchmark
+    start = time.perf_counter()
+    for _ in range(iterations):
+        packed = msgpack.packb(data, use_bin_type=True)
+        msgpack.unpackb(packed, raw=False)
+    results["msgpack_time_ms"] = (time.perf_counter() - start) * 1000
+    results["msgpack_size"] = len(msgpack.packb(data, use_bin_type=True))
 
-print(f"JSON:    {len(json_bytes):>8} bytes, {json_time*1000:.1f} ms")
-print(f"MsgPack: {len(msgpack_bytes):>8} bytes, {msgpack_time*1000:.1f} ms")
+    return results
+
+# Run with representative payload
+test_data = [{"id": i, "value": i * 0.1, "label": f"item-{i}"} for i in range(10000)]
+metrics = benchmark_serialization(test_data)
+
+print(f"Format    | Size (bytes) | Time (ms)")
+print(f"JSON      | {metrics['json_size']:>12} | {metrics['json_time_ms']:>9.1f}")
+print(f"MessagePack | {metrics['msgpack_size']:>12} | {metrics['msgpack_time_ms']:>9.1f}")
 ```
 
-**Expected:** Benchmark results guide format selection for production use.
-**On failure:** If performance is insufficient for any format, consider compression (zstd, snappy) as an orthogonal optimization.
+**Documentation:** Record benchmark results and size comparisons to validate
+format selection for production use.
 
-## Validation
+## Output contract
 
-- [ ] Selected format matches use case requirements (documented rationale)
-- [ ] Round-trip serialization preserves all data types
-- [ ] Edge cases handled: empty collections, null/None values, Unicode, large numbers
-- [ ] Performance benchmarked for representative payload sizes
-- [ ] Error handling for malformed input (graceful failures, not crashes)
-- [ ] Schema documented (JSON Schema, .proto, or equivalent)
+The skill produces:
 
-## Common Pitfalls
+1. **Format selection** — One-sentence rationale for chosen format matching use case
+2. **Implementation code** — Working serialization/deserialization in requested language
+3. **Benchmark comparison** — Size and timing metrics vs. alternative formats
+4. **Edge case handling** — Documentation of datetime, binary, null, and large number handling
 
-- **Floating-point precision**: JSON represents all numbers as IEEE 754 doubles. Use string encoding for financial/decimal precision.
-- **Date/time handling**: JSON has no native datetime type. Always document the format (ISO 8601) and timezone handling.
-- **Schema evolution**: Adding or removing fields can break consumers. Protobuf handles this well; JSON requires careful versioning.
-- **Binary data in JSON**: Base64 encoding inflates binary data by ~33%. Use a binary format for binary-heavy payloads.
-- **YAML security**: YAML parsers may execute arbitrary code via `!!python/object` tags. Always use safe loaders.
+Example output structure:
 
-## Related Skills
+```
+Format selected: Protocol Buffers
+Rationale: Strict schema required for gRPC API with mobile clients
 
-- `design-serialization-schema` — schema design, versioning, and evolution strategies
-- `implement-pharma-serialisation` — pharmaceutical serialisation (different domain, same naming)
-- `create-quarto-report` — data output formatting for reports
+Implementation: sensors.proto schema + Python generated code
+Round-trip verified: ✓ (1000 test messages)
+Size vs JSON: 2.3x smaller
+Speed vs JSON: 4.1x faster deserialization
+
+Edge cases handled:
+- Unix epoch milliseconds for datetime (timestamp_ms field)
+- Empty message batches return valid empty repeated field
+- Unknown enum values default to 0 (first variant)
+```
+
+## Failure handling
+
+- **Schema mismatch during deserialization**: Stop and report specific field/type
+  mismatch. Provide the expected schema and the actual received structure.
+- **Custom type not serializable**: Implement encoder/decoder hooks for datetime,
+  bytes, Decimal, or UUID types. Document the encoding strategy (ISO 8601 for dates,
+  base64 for binary).
+- **protoc compiler unavailable**: Use pure-Python protobuf libraries (`betterproto`,
+  `protobuf` with runtime reflection) or pre-generated code checked into version control.
+- **MessagePack library unavailable in target language**: Use JSON with gzip
+  compression as an alternative wire format; document the size/speed trade-off.
+- **PyArrow/Parquet not available**: Use pandas `to_parquet` with `fastparquet`
+  engine, or export to compressed CSV with documented column schema.
+- **Floating-point precision loss in JSON**: Use string encoding for financial
+  decimals or switch to Protocol Buffers with `double` precision documentation.
+- **YAML security warning on load**: Always use `yaml.safe_load()` instead of
+  `yaml.load()` to prevent arbitrary code execution from `!!python/object` tags.
+
+## Validation checklist
+
+Before completing, verify:
+
+- [ ] Format choice documented with one-sentence rationale matching primary use case
+- [ ] Round-trip serialization tested with actual data (all fields preserved)
+- [ ] Datetime types encoded/decoded correctly (ISO 8601 or Unix epoch)
+- [ ] Binary data handled (base64 for JSON, raw bytes for binary formats)
+- [ ] Null/None values serialize without errors
+- [ ] Empty collections (arrays, objects) handled gracefully
+- [ ] Unicode strings round-trip correctly
+- [ ] Large numbers (>2^53 for JSON) use string encoding or binary format
+- [ ] Performance benchmarked with representative payload size
+- [ ] Error handling tested with malformed input (graceful failure, clear message)
+- [ ] Schema documented (JSON Schema, .proto file, or column definitions)
+
+## Next steps
+
+- Schema design and versioning → `design-serialization-schema`
+- Database-specific data handling → `database-access`
+- API design with format selection → `design-rest-api` or `design-graphql-api`
+- Compression optimization → `optimize-data-transfer`
+- Pharmaceutical serialization (different domain) → `implement-pharma-serialisation`
+
+## References
+
+- Protocol Buffers Language Guide: https://protobuf.dev/programming-guides/proto3/
+- MessagePack specification: https://msgpack.org/
+- Apache Arrow/Parquet docs: https://arrow.apache.org/docs/python/parquet.html
+- JSON Schema: https://json-schema.org/

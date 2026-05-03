@@ -1,0 +1,6 @@
+{"prompt":"Set up a Prometheus alert for high error rate","expected":"no_trigger","category":"anti-match","notes":"Alert configuration is handled by configure-alerting-rules skill"}
+{"prompt":"Build a Grafana dashboard for service monitoring","expected":"no_trigger","category":"anti-match","notes":"Dashboard building is handled by build-grafana-dashboards skill"}
+{"prompt":"Define SLOs for our API service","expected":"no_trigger","category":"anti-match","notes":"SLO definition is handled by define-slo-sli-sla skill"}
+{"prompt":"We're having a live incident right now, help me fix it","expected":"no_trigger","category":"anti-match","notes":"Real-time incident response is not this skill's scope - it creates documentation"}
+{"prompt":"Write a post-mortem for yesterday's outage","expected":"no_trigger","category":"anti-match","notes":"Post-mortem is after-incident analysis, not runbook creation"}
+{"prompt":"The service is down, what should I do?","expected":"no_trigger","category":"anti-match","notes":"Real-time troubleshooting request, not runbook documentation"}

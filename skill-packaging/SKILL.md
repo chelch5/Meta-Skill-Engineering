@@ -81,16 +81,6 @@ If the skill targets multiple agent clients, generate per-client overlay files.
 
 **Supported overlay formats:**
 
-Copilot (`overlays/copilot/metadata.json`):
-```json
-{
-  "name": "<name>",
-  "version": "<version>",
-  "description": "<description>",
-  "main": "SKILL.md"
-}
-```
-
 OpenCode (`overlays/opencode/permissions.yaml`):
 ```yaml
 name: <name>
@@ -213,7 +203,7 @@ Contents:
   SKILL.md
   scripts/validate.sh
   references/schema.md
-  overlays/copilot.yaml
+  overlays/opencode.yaml
 
 Ready to install:
   skill-installer add ./skill-name-0.2.0.tar.gz
